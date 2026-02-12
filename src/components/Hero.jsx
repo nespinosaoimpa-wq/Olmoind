@@ -12,7 +12,7 @@ const Hero = () => {
             alignItems: 'center',
             position: 'relative',
             overflow: 'hidden',
-            backgroundColor: '#e5e5e5'
+            backgroundColor: '#111'
         }}>
             {/* Background Image / Texture / Overlay */}
             <div style={{
@@ -22,7 +22,7 @@ const Hero = () => {
                 width: '100%',
                 height: '100%',
                 zIndex: 0,
-                backgroundColor: '#e5e5e5'
+                backgroundColor: '#111'
             }}>
                 <video
                     autoPlay
@@ -52,7 +52,7 @@ const Hero = () => {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    background: 'radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, rgba(229,229,229,0.8) 100%)',
+                    background: 'radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%)',
                     zIndex: 1
                 }}></div>
                 {/* Subtle Geometric Element for "Logo" feel */}
@@ -65,7 +65,7 @@ const Hero = () => {
                     height: '80vw',
                     maxWidth: '800px',
                     maxHeight: '800px',
-                    border: '1px solid rgba(0,0,0,0.03)',
+                    border: '1px solid rgba(255,255,255,0.03)',
                     borderRadius: '50%',
                     zIndex: 0
                 }}></div>
@@ -84,14 +84,14 @@ const Hero = () => {
                         letterSpacing: '-0.04em',
                         lineHeight: 0.8,
                         marginBottom: '8px',
-                        color: '#000',
+                        color: '#fff',
                     }}>
                         OLMO
                     </h1>
                     <p style={{
                         fontSize: 'clamp(14px, 2.5vw, 22px)',
                         letterSpacing: '1.2em',
-                        color: '#000',
+                        color: '#fff',
                         textTransform: 'uppercase',
                         marginLeft: '1.2em',
                         fontWeight: '400'
@@ -114,7 +114,7 @@ const Hero = () => {
                         fontWeight: '700',
                         textTransform: 'uppercase'
                     }}>
-                        ESTÉTICA <span style={{ color: '#000' }}>URBANA</span> CRUDA
+                        ESTÉTICA <span style={{ color: '#fff' }}>URBANA</span> CRUDA
                     </h2>
                 </motion.div>
 
@@ -148,8 +148,8 @@ const Hero = () => {
                                 padding: '22px 30px',
                                 fontSize: '13px',
                                 backgroundColor: 'transparent',
-                                color: '#000',
-                                border: '2px solid #000',
+                                color: '#fff',
+                                border: '2px solid #fff',
                                 fontWeight: '900',
                                 letterSpacing: '3px',
                                 display: 'flex',
@@ -176,8 +176,8 @@ const Hero = () => {
                 gap: '20px',
                 zIndex: 5
             }}>
-                <div style={{ height: '60px', width: '1px', backgroundColor: 'rgba(0,0,0,0.2)' }}></div>
-                <span style={{ fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase', color: 'rgba(0,0,0,0.4)' }}>
+                <div style={{ height: '60px', width: '1px', backgroundColor: 'rgba(255,255,255,0.3)' }}></div>
+                <span style={{ fontSize: '10px', letterSpacing: '4px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
                     Explorar
                 </span>
             </div>
@@ -191,7 +191,7 @@ const Hero = () => {
                 transformOrigin: 'left center',
                 pointerEvents: 'none'
             }}>
-                <span style={{ fontSize: '10px', letterSpacing: '5px', color: 'rgba(0,0,0,0.05)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '10px', letterSpacing: '5px', color: 'rgba(255,255,255,0.05)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                     URBAN MASCULINE IDENTITY
                 </span>
             </div>
