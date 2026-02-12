@@ -7,19 +7,24 @@ import Marquee from './components/Marquee';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
 import AdminDashboard from './admin/AdminDashboard';
+import Login from './components/Login';
 
 function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('admin') === 'true') {
-      setIsAdmin(true);
+      setIsAdminMode(true);
     }
   }, []);
 
-  if (isAdmin) {
-    return <AdminDashboard onBack={() => setIsAdmin(false)} />;
+  if (isAdminMode) {
+    if (!isAuthenticated) {
+      return <Login onLogin={() => setIsAuthenticated(true)} />;
+    }
+    return <AdminDashboard onBack={() => { setIsAdminMode(false); setIsAuthenticated(false); }} />;
   }
 
   return (
@@ -54,7 +59,7 @@ function App() {
                 letterSpacing: '-3px',
                 color: '#fff'
               }}>
-                SIN REGLAS.
+                RAW IDENTITY.
               </h2>
               <div style={{ width: '80px', height: '4px', backgroundColor: 'var(--accent)', margin: '0 auto 40px' }}></div>
               <p style={{
