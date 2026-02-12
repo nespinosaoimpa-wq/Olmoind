@@ -32,7 +32,7 @@ function App() {
       <Header />
       <main>
         <Hero />
-        <Marquee text="OLMO • STREETWEAR • RAW • IDENTITY" />
+        <Marquee text="OLMO • STREETWEAR • ROPA • URBANA" />
         <ProductGrid />
         <Marquee text="EDICIÓN URBANA • SANTA FE • 2026" reverse={true} />
 
@@ -59,7 +59,7 @@ function App() {
                 letterSpacing: '-3px',
                 color: '#fff'
               }}>
-                RAW IDENTITY.
+                ROPA URBANA.
               </h2>
               <div style={{ width: '80px', height: '4px', backgroundColor: 'var(--accent)', margin: '0 auto 40px' }}></div>
               <p style={{
@@ -72,9 +72,9 @@ function App() {
                 textTransform: 'uppercase',
                 fontWeight: '600'
               }}>
-                Olmo no es solo ropa. Es una declaración de identidad urbana cruda. <br />
+                Olmo no es solo ropa. Es estilo urbano real. <br />
                 Forjado en el asfalto santafesino. <br />
-                Calidad sin concesiones, actitud real.
+                Calidad sin concesiones.
               </p>
             </motion.div>
           </div>
@@ -94,7 +94,7 @@ function App() {
             zIndex: 0,
             letterSpacing: '-10px'
           }}>
-            RAW OLMO 26
+            OLMO URBANO 26
           </div>
         </section>
       </main>

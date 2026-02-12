@@ -114,7 +114,7 @@ const Hero = () => {
                         fontWeight: '700',
                         textTransform: 'uppercase'
                     }}>
-                        ESTÉTICA <span style={{ color: '#000' }}>URBANA</span> CRUDA
+                        ROPA <span style={{ color: '#000' }}>URBANA</span>
                     </h2>
                 </motion.div>
 
@@ -192,7 +192,7 @@ const Hero = () => {
                 pointerEvents: 'none'
             }}>
                 <span style={{ fontSize: '10px', letterSpacing: '5px', color: 'rgba(0,0,0,0.05)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                    URBAN MASCULINE IDENTITY
+                    ROPA URBANA MASCULINA
                 </span>
             </div>
         </section>
