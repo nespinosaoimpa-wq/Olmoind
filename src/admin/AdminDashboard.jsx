@@ -7,7 +7,7 @@ import {
 import { useStockStore } from '../store/useStockStore';
 
 const AdminDashboard = ({ onBack }) => {
-    const { stock, sales, updateStock, addStockItem, deleteStockItem, registerSale } = useStockStore();
+    const { stock, sales, updateStock, addStockItem, deleteStockItem } = useStockStore();
     const [activeTab, setActiveTab] = useState('stock');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -18,11 +18,12 @@ const AdminDashboard = ({ onBack }) => {
 
     const [formData, setFormData] = useState({
         name: '',
-        size: 'M',
-        count: 0,
         price: 0,
-        image: ''
+        image: '',
+        variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
     });
+
+    const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
     // Stats based on sales
     const totalRevenue = sales.reduce((acc, sale) => {
@@ -33,22 +34,29 @@ const AdminDashboard = ({ onBack }) => {
         return acc + sale.items.reduce((sum, item) => sum + item.quantity, 0);
     }, 0);
 
-    const lowStockCount = stock.filter(item => item.count < 10).length;
+    const lowStockCount = stock.filter(item => {
+        const total = Object.values(item.variants).reduce((a, b) => a + b, 0);
+        return total < 10;
+    }).length;
 
     const handleOpenModal = (item = null) => {
         if (item) {
             setEditingItem(item);
             setFormData({
                 name: item.name,
-                size: item.size,
-                count: item.count,
                 price: item.price,
-                image: item.image || ''
+                image: item.image || '',
+                variants: { ...item.variants } // Clone to avoid direct mutation
             });
             setPreviewImage(item.image || null);
         } else {
             setEditingItem(null);
-            setFormData({ name: '', size: 'M', count: 0, price: 0, image: '' });
+            setFormData({
+                name: '',
+                price: 0,
+                image: '',
+                variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+            });
             setPreviewImage(null);
         }
         setIsModalOpen(true);
@@ -64,6 +72,16 @@ const AdminDashboard = ({ onBack }) => {
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const handleVariantChange = (size, value) => {
+        setFormData({
+            ...formData,
+            variants: {
+                ...formData.variants,
+                [size]: parseInt(value) || 0
+            }
+        });
     };
 
     const handleSave = () => {
@@ -175,7 +193,7 @@ const AdminDashboard = ({ onBack }) => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
                                     <div>
                                         <h2 className="font-display" style={{ fontSize: '20px', fontWeight: '900', letterSpacing: '2px', marginBottom: '10px' }}>INVENTARIO</h2>
-                                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>GESTIONA TUS PRODUCTOS Y STOCK REAL</p>
+                                        <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>GESTIONA TUS PRODUCTOS Y STOCK POR TALLE</p>
                                     </div>
                                     <button
                                         onClick={() => handleOpenModal()}
@@ -190,34 +208,46 @@ const AdminDashboard = ({ onBack }) => {
                                             <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--accent)', fontSize: '10px', letterSpacing: '2px' }}>
                                                 <th style={{ padding: '20px 15px' }}>INFO</th>
                                                 <th style={{ padding: '20px 15px' }}>PRODUCTO</th>
-                                                <th style={{ padding: '20px 15px' }}>TALLE</th>
-                                                <th style={{ padding: '20px 15px' }}>STOCK</th>
+                                                <th style={{ padding: '20px 15px' }}>STOCK POR TALLE</th>
+                                                <th style={{ padding: '20px 15px' }}>TOTAL</th>
                                                 <th style={{ padding: '20px 15px' }}>PRECIO</th>
                                                 <th style={{ padding: '20px 15px', textAlign: 'right' }}>ACCIONES</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {stock.map(item => (
-                                                <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '13px' }}>
-                                                    <td style={{ padding: '15px' }}>
-                                                        <div style={{ width: '40px', height: '50px', background: '#333', overflow: 'hidden' }}>
-                                                            {item.image && <img src={item.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                                                        </div>
-                                                    </td>
-                                                    <td style={{ padding: '15px', fontWeight: '800', color: '#fff' }}>{item.name}</td>
-                                                    <td style={{ padding: '15px', color: 'var(--text-secondary)', fontWeight: '700' }}>{item.size}</td>
-                                                    <td style={{ padding: '15px', color: item.count < 5 ? '#ff4444' : '#fff', fontWeight: '900' }}>
-                                                        {item.count}
-                                                    </td>
-                                                    <td style={{ padding: '15px', color: '#fff' }}>${item.price.toLocaleString()}</td>
-                                                    <td style={{ padding: '15px', textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end' }}>
-                                                            <button onClick={() => handleOpenModal(item)} style={{ color: 'var(--accent)' }}><Edit2 size={16} /></button>
-                                                            <button onClick={() => handleDelete(item.id)} style={{ color: '#ff4444' }}><Trash2 size={16} /></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {stock.map(item => {
+                                                const totalStock = Object.values(item.variants).reduce((a, b) => a + b, 0);
+                                                return (
+                                                    <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', fontSize: '13px' }}>
+                                                        <td style={{ padding: '15px' }}>
+                                                            <div style={{ width: '40px', height: '50px', background: '#333', overflow: 'hidden' }}>
+                                                                {item.image && <img src={item.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ padding: '15px', fontWeight: '800', color: '#fff' }}>{item.name}</td>
+                                                        <td style={{ padding: '15px' }}>
+                                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                                {Object.entries(item.variants).map(([size, count]) => (
+                                                                    count > 0 && <span key={size} style={{ fontSize: '10px', background: '#333', color: '#fff', padding: '2px 6px', fontWeight: '700' }}>
+                                                                        {size}:{count}
+                                                                    </span>
+                                                                ))}
+                                                                {totalStock === 0 && <span style={{ color: '#ff4444', fontSize: '10px', fontWeight: '900' }}>AGOTADO</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ padding: '15px', color: totalStock < 5 ? '#ff4444' : '#fff', fontWeight: '900' }}>
+                                                            {totalStock}
+                                                        </td>
+                                                        <td style={{ padding: '15px', color: '#fff' }}>${item.price.toLocaleString()}</td>
+                                                        <td style={{ padding: '15px', textAlign: 'right' }}>
+                                                            <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end' }}>
+                                                                <button onClick={() => handleOpenModal(item)} style={{ color: 'var(--accent)' }}><Edit2 size={16} /></button>
+                                                                <button onClick={() => handleDelete(item.id)} style={{ color: '#ff4444' }}><Trash2 size={16} /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -386,23 +416,21 @@ const AdminDashboard = ({ onBack }) => {
                                     style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', padding: '18px', color: '#fff', fontSize: '14px', fontWeight: '700' }} />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '20px' }}>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: '900', letterSpacing: '2px' }}>TALLE</label>
-                                    <select
-                                        value={formData.size}
-                                        onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', padding: '18px', color: '#fff', fontWeight: '700' }}>
-                                        <option>S</option><option>M</option><option>L</option><option>XL</option>
-                                    </select>
-                                </div>
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <label style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: '900', letterSpacing: '2px' }}>STOCK</label>
-                                    <input
-                                        type="number"
-                                        value={formData.count}
-                                        onChange={(e) => setFormData({ ...formData, count: parseInt(e.target.value) })}
-                                        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', padding: '18px', color: '#fff', fontWeight: '700' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <label style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: '900', letterSpacing: '2px' }}>STOCK POR TALLE</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+                                    {SIZES.map(size => (
+                                        <div key={size} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '700' }}>{size}</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={formData.variants[size]}
+                                                onChange={(e) => handleVariantChange(size, e.target.value)}
+                                                style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', padding: '10px', color: '#fff', fontWeight: '700', textAlign: 'center' }}
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
