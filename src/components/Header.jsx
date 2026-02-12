@@ -19,7 +19,7 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const headerColor = '#fff';
+  const headerColor = isScrolled ? '#fff' : '#000';
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
