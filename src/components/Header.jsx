@@ -9,6 +9,17 @@ const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cart, removeItem, clearCart } = useCartStore();
   const { registerSale } = useStockStore();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const headerColor = isScrolled ? '#fff' : '#000';
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -39,18 +50,18 @@ const Header = () => {
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <button onClick={() => setIsOpen(!isOpen)} style={{ display: 'flex', alignItems: 'center' }}>
-            <Menu size={24} color="var(--accent)" />
+            <Menu size={24} color={headerColor} />
           </button>
-          <div style={{ fontWeight: '800', fontSize: '24px', letterSpacing: '4px', color: 'var(--accent)' }}>
+          <div style={{ fontWeight: '800', fontSize: '24px', letterSpacing: '4px', color: headerColor }}>
             OLMO
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Search size={20} color="var(--accent)" />
-          <User size={20} color="var(--accent)" />
+          <Search size={20} color={headerColor} />
+          <User size={20} color={headerColor} />
           <button onClick={() => setIsCartOpen(true)} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <ShoppingCart size={20} color="var(--accent)" />
+            <ShoppingCart size={20} color={headerColor} />
             {cartCount > 0 && (
               <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--accent)', color: 'black', borderRadius: '50%', width: '16px', height: '16px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                 {cartCount}

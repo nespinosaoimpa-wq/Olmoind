@@ -24,17 +24,28 @@ const Hero = () => {
                 zIndex: 0,
                 backgroundColor: '#e5e5e5'
             }}>
-                <img
-                    src="https://images.unsplash.com/photo-1544265852-a41581cab49a?auto=format&fit=crop&q=80&w=1920"
-                    alt="Oversize Streetwear Model"
+                <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
                     style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
-                        opacity: 0.25,
-                        filter: 'grayscale(100%) contrast(1.1) brightness(1.2)'
+                        opacity: 0.45,
+                        filter: 'grayscale(100%) contrast(1.2) brightness(0.8)'
                     }}
-                />
+                >
+                    {/* 
+                        PLACEHOLDER VIDEO: Urban/Streetwear Vibe.
+                        To use your own video:
+                        1. Place your 'banner.mp4' file in the 'public' folder.
+                        2. Change the src below to: src="/banner.mp4"
+                    */}
+                    <source src="https://videos.pexels.com/video-files/3042918/3042918-hd_1920_1080_30fps.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
                 <div style={{
                     position: 'absolute',
                     top: 0,
@@ -113,20 +124,43 @@ const Hero = () => {
                     transition={{ delay: 1.4, duration: 1 }}
                     style={{ marginTop: '60px' }}
                 >
-                    <button
-                        className="btn-primary"
-                        style={{
-                            padding: '22px 60px',
-                            fontSize: '13px',
-                            backgroundColor: '#000',
-                            color: '#fff',
-                            border: 'none',
-                            fontWeight: '900',
-                            letterSpacing: '3px'
-                        }}
-                    >
-                        EXPLORAR DROP
-                    </button>
+                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+                        <button
+                            className="btn-primary"
+                            style={{
+                                padding: '22px 60px',
+                                fontSize: '13px',
+                                backgroundColor: '#000',
+                                color: '#fff',
+                                border: 'none',
+                                fontWeight: '900',
+                                letterSpacing: '3px'
+                            }}
+                        >
+                            EXPLORAR DROP
+                        </button>
+                        <a
+                            href="https://www.instagram.com/olmo.ind/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-primary"
+                            style={{
+                                padding: '22px 30px',
+                                fontSize: '13px',
+                                backgroundColor: 'transparent',
+                                color: '#000',
+                                border: '2px solid #000',
+                                fontWeight: '900',
+                                letterSpacing: '3px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                textDecoration: 'none'
+                            }}
+                        >
+                            INSTAGRAM
+                        </a>
+                    </div>
                 </motion.div>
             </div>
 
