@@ -1,22 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Syncopate:wght@400;700&display=swap');
 
 :root {
-  /* FUTURE URBAN PALETTE */
-  --bg-deep: #050505;
-  --bg-dark: #0a0a0a;
-  --bg-card: rgba(20, 20, 20, 0.6);
-  --bg-glass: rgba(10, 10, 10, 0.8);
+  /* INDUSTRIAL GREY PALETTE */
+  --bg-deep: #1a1a1a;
+  /* Graphite */
+  --bg-dark: #2d2d2d;
+  /* Dark Concrete */
+  --bg-card: rgba(40, 40, 40, 0.4);
+  /* Glassy Grey */
+  --bg-glass: rgba(30, 30, 30, 0.8);
 
   --accent-glow: #ffffff;
-  /* Stark white for high contrast tech feel */
-  --accent-dim: #444444;
+  --accent-dim: #888888;
+  /* Silver */
 
-  --text-primary: #ffffff;
-  --text-secondary: #888888;
-  --text-muted: #4a4a4a;
+  --text-primary: #ededed;
+  /* Off-white for contrast on grey */
+  --text-secondary: #a0a0a0;
+  --text-muted: #666666;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(255, 255, 255, 0.3);
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-glow: rgba(255, 255, 255, 0.2);
 
   /* FONTS */
   --font-display: 'Syncopate', sans-serif;
@@ -36,9 +40,9 @@
 
 body {
   background-color: var(--bg-deep);
+  /* Concrete Gradient: Top-Bottom grey flow */
   background-image:
-    radial-gradient(circle at 50% 0%, #1a1a1a 0%, transparent 70%),
-    linear-gradient(to bottom, var(--bg-deep) 0%, #000000 100%);
+    linear-gradient(to bottom, #1a1a1a 0%, #333333 50%, #1a1a1a 100%);
   color: var(--text-primary);
   font-family: var(--font-body);
   overflow-x: hidden;

@@ -60,9 +60,9 @@ const Header = () => {
             color: 'var(--text-primary)',
             textDecoration: 'none',
             fontFamily: 'var(--font-display)',
-            textShadow: '0 0 10px rgba(255,255,255,0.3)'
+            textShadow: '0 0 10px rgba(0,0,0,0.1)'
           }}>
-            OLMO<span style={{ fontSize: '12px', color: 'var(--accent-dim)', marginLeft: '5px' }}>©2026</span>
+            OLMO<span style={{ fontSize: '12px', color: 'var(--accent-dim)', marginLeft: '5px' }}>IND.</span>
           </a>
         </div>
 

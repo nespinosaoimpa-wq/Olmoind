@@ -23,117 +23,67 @@ const Hero = () => {
                 overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                flexDirection: 'column'
             }}
         >
-            {/* BACKGROUND ELEMENTS - NEON GHOSTS */}
+            {/* BACKGROUND TEXTURE - Concrete/Noise could be added here */}
             <div style={{
                 position: 'absolute',
-                top: '20%',
-                left: '10%',
-                width: '30vw',
-                height: '30vw',
-                background: 'radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%)',
-                filter: 'blur(40px)',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 0%, transparent 70%)',
                 zIndex: 0
             }} />
 
-            <div className="container" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%' }}>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    height: '100%',
-                    alignItems: 'center'
-                }}>
+            <div className="container" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+                <motion.div style={{ y: yText, opacity: opacityText }}>
+                    <motion.h4
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 1 }}
+                        style={{
+                            fontFamily: 'var(--font-body)',
+                            color: 'var(--text-secondary)',
+                            letterSpacing: '8px',
+                            fontSize: '14px',
+                            marginBottom: '20px',
+                            fontWeight: '600'
+                        }}
+                    >
+                        EST. 2026 // SANTA FE
+                    </motion.h4>
 
-                    {/* LEFT CLUSTER - TEXT */}
-                    <motion.div style={{ y: yText, opacity: opacityText, zIndex: 2 }}>
-                        <motion.h4
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2, duration: 1 }}
-                            style={{
-                                fontFamily: 'var(--font-body)',
-                                color: 'var(--text-secondary)',
-                                letterSpacing: '4px',
-                                fontSize: '12px',
-                                marginBottom: '20px',
-                                fontWeight: '600'
-                            }}
-                        >
-                            EST. 2026 // SANTA FE
-                        </motion.h4>
-                        <motion.h1
-                            initial={{ opacity: 0, y: 50 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
-                            className="font-display"
-                            style={{
-                                fontSize: 'clamp(3rem, 8vw, 8rem)',
-                                lineHeight: '0.9',
-                                fontWeight: '900',
-                                color: 'var(--text-primary)',
-                                marginBottom: '30px',
-                                marginLeft: '-5px' // Optical alignment
-                            }}
-                        >
-                            FUTURE<br />URBAN<br />WEAR.
-                        </motion.h1>
-
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.5, duration: 1 }}
-                            style={{ display: 'flex', gap: '20px' }}
-                        >
-                            <button className="btn-primary">EXPLORE DROPS</button>
-                            <button style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text-secondary)',
-                                fontFamily: 'var(--font-display)',
-                                fontSize: '10px',
-                                cursor: 'pointer',
-                                textDecoration: 'underline',
-                                textUnderlineOffset: '5px'
-                            }}>
-                                VIEW LOOKBOOK
-                            </button>
-                        </motion.div>
-                    </motion.div>
-
-                    {/* RIGHT CLUSTER - 3D MODEL */}
-                    <motion.div
-                        style={{ y: yModel, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                    {/* MASSIVE BRAND LOGO */}
+                    <motion.h1
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 1.5, ease: [0.19, 1, 0.22, 1] }}
+                        transition={{ duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
+                        className="font-display"
+                        style={{
+                            fontSize: 'clamp(4rem, 15vw, 12rem)',
+                            lineHeight: '0.85',
+                            fontWeight: '900',
+                            color: 'var(--text-primary)',
+                            marginBottom: '40px',
+                            letterSpacing: '-5px',
+                            textShadow: '0 0 30px rgba(0,0,0,0.5)'
+                        }}
                     >
-                        {/* CIRCLE BEHIND MODEL */}
-                        <div style={{
-                            position: 'absolute',
-                            width: '40vw',
-                            height: '40vw',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '50%',
-                            zIndex: -1,
-                            opacity: 0.5
-                        }} />
+                        OLMO<br />IND.
+                    </motion.h1>
 
-                        {/* MODEL */}
-                        <model-viewer
-                            src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
-                            alt="A 3D model of an astronaut"
-                            auto-rotate
-                            camera-controls
-                            shadow-intensity="1"
-                            exposure="0.6"
-                            style={{ width: '100%', height: '80vh' }}
-                        // Customizing model-viewer CSS vars for transparency if supported or via canvas manipulation
-                        >
-                        </model-viewer>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5, duration: 1 }}
+                        style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}
+                    >
+                        <button className="btn-primary" style={{ background: 'var(--text-primary)', color: '#000' }}>VER COLECCIÓN</button>
                     </motion.div>
-                </div>
+                </motion.div>
             </div>
 
             {/* SCROLL INDICATOR */}
@@ -155,15 +105,6 @@ const Hero = () => {
                 <span style={{ fontSize: '10px', fontFamily: 'var(--font-display)', letterSpacing: '2px', color: 'var(--text-secondary)' }}>SCROLL</span>
                 <div style={{ width: '1px', height: '40px', background: 'linear-gradient(to bottom, var(--text-secondary), transparent)' }} />
             </motion.div>
-
-            {/* CSS Helper for Mobile Layout */}
-            <style>{`
-                @media (max-width: 768px) {
-                    .container > div { grid-template-columns: 1fr !important; }
-                    h1 { font-size: 15vw !important; }
-                    model-viewer { height: 50vh !important; }
-                }
-            `}</style>
         </section>
     );
 };
