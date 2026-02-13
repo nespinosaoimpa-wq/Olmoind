@@ -24,18 +24,21 @@ const Hero = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                background: 'radial-gradient(circle at center, #f5f5f5 0%, #d4d4d4 100%)' // Silver Gradient matching the uploaded branding
             }}
         >
-            {/* BACKGROUND TEXTURE - Concrete/Noise could be added here */}
+            {/* BACKGROUND TEXTURE - Subtle Noise for realism */}
             <div style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
                 height: '100%',
-                background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 0%, transparent 70%)',
-                zIndex: 0
+                opacity: 0.4,
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
+                zIndex: 0,
+                mixBlendMode: 'overlay'
             }} />
 
             <div className="container" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
