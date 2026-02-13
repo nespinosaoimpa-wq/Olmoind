@@ -158,7 +158,7 @@ const ProductGrid = () => {
     return (
         <section id="shop" className="section container" style={{ padding: '150px 20px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '100px' }}>
-                <h2 className="font-display" style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '6px', textAlign: 'center', color: 'var(--text-primary)' }}>LATEST DROPS</h2>
+                <h2 className="font-display" style={{ fontSize: '40px', fontWeight: '900', letterSpacing: '6px', textAlign: 'center', color: 'var(--text-primary)' }}>LANZAMIENTOS URBANOS</h2>
                 <div style={{ height: '1px', width: '80px', backgroundColor: 'var(--text-primary)', marginTop: '20px' }}></div>
             </div>
 
