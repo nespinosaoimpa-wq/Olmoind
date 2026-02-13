@@ -148,7 +148,7 @@ const ProductGrid = () => {
     const { stock } = useStockStore();
 
     return (
-        <section className="container" style={{ padding: '120px 20px' }}>
+        <section id="shop" className="container" style={{ padding: '120px 20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '80px' }}>
                 <h2 className="font-display" style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '4px', textAlign: 'center', color: '#fff' }}>LA VITRINA</h2>
                 <div style={{ height: '4px', width: '60px', backgroundColor: 'var(--accent)', marginTop: '20px' }}></div>

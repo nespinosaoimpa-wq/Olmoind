@@ -3,17 +3,19 @@ import { motion } from 'framer-motion';
 
 const Hero = () => {
     return (
-        <section style={{
-            height: '100vh',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-            backgroundColor: '#e5e5e5'
-        }}>
+        <section
+            id="home"
+            style={{
+                height: '100vh',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundColor: '#e5e5e5'
+            }}>
             {/* Background Image / Texture / Overlay */}
             <div style={{
                 position: 'absolute',
@@ -125,7 +127,8 @@ const Hero = () => {
                     style={{ marginTop: '60px' }}
                 >
                     <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-                        <button
+                        <a
+                            href="#shop"
                             className="btn-primary"
                             style={{
                                 padding: '22px 60px',
@@ -134,11 +137,13 @@ const Hero = () => {
                                 color: '#fff',
                                 border: 'none',
                                 fontWeight: '900',
-                                letterSpacing: '3px'
+                                letterSpacing: '3px',
+                                textDecoration: 'none',
+                                display: 'inline-block'
                             }}
                         >
                             EXPLORAR DROP
-                        </button>
+                        </a>
                         <a
                             href="https://www.instagram.com/olmo.ind/"
                             target="_blank"

@@ -30,12 +30,23 @@ body {
   line-height: 1.2;
   overflow-x: hidden;
   position: relative;
-  /* Safe fallback for debugging */
-  background-image: none;
+
+  /* Dark Gradient - Safe */
+  background-image: linear-gradient(to bottom, #1f1f1f 0%, #0a0a0a 100%);
+  background-attachment: fixed;
 }
 
 body::before {
-  content: none;
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url('https://www.transparenttextures.com/patterns/asfalt-light.png');
 }
 
 a {

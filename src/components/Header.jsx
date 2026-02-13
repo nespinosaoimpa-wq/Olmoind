@@ -25,11 +25,11 @@ const Header = () => {
   const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   const menuItems = [
-    { name: 'HOME', path: '/' },
-    { name: 'SHOP', path: '/shop' },
-    { name: 'NEW ARRIVALS', path: '/new' },
-    { name: 'SALE', path: '/sale' },
-    { name: 'CONTACT', path: '/contact' },
+    { name: 'HOME', path: '#home' },
+    { name: 'SHOP', path: '#shop' },
+    { name: 'NEW ARRIVALS', path: '#shop' },
+    { name: 'SALE', path: '#shop' },
+    { name: 'CONTACT', path: '#contact' },
   ];
 
   const menuVariants = {

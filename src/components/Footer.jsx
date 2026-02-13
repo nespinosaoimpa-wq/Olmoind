@@ -3,14 +3,16 @@ import { Instagram, Facebook, Truck, CreditCard } from 'lucide-react';
 
 const Footer = () => {
     return (
-        <footer style={{
-            backgroundColor: 'var(--bg-primary)',
-            color: '#fff',
-            padding: '100px 40px 40px',
-            borderTop: '1px solid var(--border-color)',
-            fontFamily: 'var(--font-main)',
-            position: 'relative'
-        }}>
+        <footer
+            id="contact"
+            style={{
+                backgroundColor: 'var(--bg-primary)',
+                color: '#fff',
+                padding: '100px 40px 40px',
+                borderTop: '1px solid var(--border-color)',
+                fontFamily: 'var(--font-main)',
+                position: 'relative'
+            }}>
             <div className="container" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
