@@ -1,26 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Syncopate:wght@400;700&display=swap');
+/* Force Deploy: OneStreet Style Update */
 
 :root {
-  /* LIGHT INDUSTRIAL GREY PALETTE */
-  --bg-deep: #d1d1d2;
-  /* Light Concrete */
-  --bg-dark: #e5e5e5;
-  /* Very Light Grey */
-  --bg-card: rgba(255, 255, 255, 0.4);
-  /* Glassy White */
-  --bg-glass: rgba(240, 240, 240, 0.8);
-
-  --accent-glow: #000000;
-  --accent-dim: #666666;
-  /* Dark Grey */
+  /* ONESTREET STYLE PALETTE */
+  --bg-body: #ffffff;
+  /* Pure White Body */
+  --bg-header: #4a4a4a;
+  /* Solid Gray Header */
 
   --text-primary: #000000;
-  /* Black for contrast on light grey */
-  --text-secondary: #4a4a4a;
-  --text-muted: #888888;
+  /* Black Text */
+  --text-header: #ffffff;
+  /* White Text for Header */
+  --text-secondary: #666666;
 
-  --border-subtle: rgba(0, 0, 0, 0.1);
-  --border-glow: rgba(0, 0, 0, 0.2);
+  --border-subtle: #e5e5e5;
 
   /* FONTS */
   --font-display: 'Syncopate', sans-serif;
@@ -39,9 +33,7 @@
 }
 
 body {
-  background-color: var(--bg-deep);
-  /* Solid Light Grey or Subtle Gradient */
-  background-image: linear-gradient(to bottom, #d1d1d2 0%, #e0e0e0 100%);
+  background-color: var(--bg-body);
   color: var(--text-primary);
   font-family: var(--font-body);
   overflow-x: hidden;

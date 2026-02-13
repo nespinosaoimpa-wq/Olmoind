@@ -1,0 +1,3 @@
+;/*FB_PKG_DELIM*/
+
+__d("CAALoginIGLegalReportingGatingUtils",["PolarisIsLoggedIn","gkx"],(function(t,n,r,o,a,i,l){"use strict";function e(){if(o("PolarisIsLoggedIn").isLoggedIn())return!1;var e=s();return e!=null}function s(){return u()?"DSA":c()?"UKOSA":d()?"CA_SMT":null}function u(){return r("gkx")("5380")}function c(){return r("gkx")("1196")}function d(){return r("gkx")("20053")}l.isLoggedOutFRXEligible=e,l.getLoggedOutReportingVariantForUser=s}),98);

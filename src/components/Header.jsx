@@ -31,39 +31,44 @@ const Header = () => {
   return (
     <>
       <header
-        className="glass-card"
         style={{
           position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '95%',
-          maxWidth: '1200px',
-          padding: '15px 30px',
+          top: 0,
+          left: 0,
+          width: '100%',
+          padding: '15px 40px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           zIndex: 1000,
-          borderRadius: '2px', // Slight rounded for modern feel, or keep 0 for brutalist
-          border: isScrolled ? '1px solid var(--border-glow)' : '1px solid var(--border-subtle)',
-          background: isScrolled ? 'var(--bg-glass)' : 'rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(15px)',
+          background: 'var(--bg-header)', // User requested Gray where Blue was
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
           transition: 'all 0.4s ease'
         }}
       >
-        {/* LOGO - CYBER/FUTURE */}
-        <div style={{ zIndex: 1001 }}>
+        {/* LOGO - ONESTREET STYLE (Smaller OLMO + INDUMENTARIA) */}
+        <div style={{ zIndex: 1001, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <a href="/" style={{
-            fontSize: '1.5rem',
+            fontSize: '1.2rem', // "Mas chico" 
             fontWeight: '900',
-            letterSpacing: '4px',
-            color: 'var(--text-primary)',
+            letterSpacing: '2px',
+            color: 'var(--text-header)',
             textDecoration: 'none',
             fontFamily: 'var(--font-display)',
-            textShadow: '0 0 10px rgba(0,0,0,0.1)'
+            lineHeight: '1'
           }}>
-            OLMO<span style={{ fontSize: '12px', color: 'var(--accent-dim)', marginLeft: '5px' }}>IND.</span>
+            OLMO
           </a>
+          <span style={{
+            fontSize: '0.6rem',
+            color: 'var(--text-header)',
+            letterSpacing: '3px',
+            fontFamily: 'var(--font-body)',
+            marginTop: '2px',
+            textTransform: 'uppercase'
+          }}>
+            INDUMENTARIA
+          </span>
         </div>
 
         {/* DESKTOP MENU - FLOATING & GLOW */}
