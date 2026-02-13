@@ -12,6 +12,7 @@ const ProductCard = ({ product, onOpen }) => {
 
     return (
         <motion.div
+            className="product-card"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -21,23 +22,19 @@ const ProductCard = ({ product, onOpen }) => {
                 flexDirection: 'column',
                 gap: '15px',
                 cursor: 'pointer',
-                position: 'relative',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                paddingBottom: '20px',
+                paddingBottom: '20px', // Handled by CSS but kept for spacing
                 opacity: totalStock === 0 ? 0.6 : 1
             }}
         >
-            <div style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
+            <div style={{ position: 'relative', overflow: 'hidden' }}>
                 {totalStock === 0 && (
                     <div style={{ position: 'absolute', top: '20px', left: '20px', background: '#ff4444', color: '#fff', padding: '5px 10px', fontSize: '10px', fontWeight: '900', zIndex: 10, letterSpacing: '2px' }}>SIN STOCK</div>
                 )}
-                <motion.img
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+                {/* Image handled by CSS hover effect, removing framer motion scale to avoid conflict */}
+                <img
                     src={product.image || 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&q=80&w=600&h=800'}
                     alt={product.name}
-                    style={{ width: '100%', display: 'block', objectFit: 'cover', height: '400px', filter: 'grayscale(20%) brightness(0.9)' }}
+                    style={{ width: '100%', height: '400px', objectFit: 'cover', filter: 'grayscale(20%) brightness(0.9)' }}
                 />
                 <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--accent)', padding: '10px', display: 'flex', alignItems: 'center' }}>
                     <Plus size={16} color="#fff" />

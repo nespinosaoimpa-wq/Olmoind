@@ -1,54 +1,185 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;700;900&family=Syncopate:wght@400;700&display=swap');
 
 :root {
-  --bg-primary: #0d0d0d;
-  --bg-secondary: #1a1a1a;
-  --text-primary: #e0e0e0;
-  --text-secondary: #7a7a7a;
-  --accent: #ffffff;
-  /* Neutral Logo Grey */
-  --highlight: #999999;
-  --border-color: rgba(255, 255, 255, 0.05);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(0, 0, 0, 0.05);
+  --black: #0a0a0a;
+  --white: #ffffff;
+  --accent: #333333;
+  --glass: rgba(255, 255, 255, 0.1);
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111;
+  --text-primary: #ffffff;
+  --text-secondary: #888;
+  --border-color: rgba(255, 255, 255, 0.1);
   --font-display: 'Syncopate', sans-serif;
   --font-main: 'Outfit', sans-serif;
-  --noise-filter: url(#noiseFilter);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
+/* --- EFECTO ESCALA DE GRISES EN SCROLL (DEGRADE) --- */
+html {
+  view-timeline-name: --scroll-timeline;
 }
 
 body {
+  background-color: var(--black);
+  color: var(--white);
   font-family: var(--font-main);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.2;
   overflow-x: hidden;
-  position: relative;
-
-  /* Dark Gradient - Safe */
-  background-image: linear-gradient(to bottom, #1f1f1f 0%, #0a0a0a 100%);
-  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  animation: grayscale-flow linear both;
+  animation-timeline: --scroll-timeline;
+  animation-range: exit 0% exit 100%;
 }
 
-body::before {
+@keyframes grayscale-flow {
+  0% {
+    filter: grayscale(0%);
+  }
+
+  50% {
+    filter: grayscale(100%);
+  }
+
+  100% {
+    filter: grayscale(0%);
+  }
+}
+
+/* --- BANNER SUPER FLOW CON ANIMACIÓN TRASERA --- */
+.hero-section {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: black;
+}
+
+.hero-title {
+  font-size: 10vw;
+  font-weight: 900;
+  text-transform: uppercase;
+  z-index: 2;
+  mix-blend-mode: difference;
+  letter-spacing: -5px;
+  color: white;
+  margin: 0;
+}
+
+/* Animación de fondo "Liquid Flow" detrás del título */
+.hero-section::before {
   content: "";
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.05;
-  pointer-events: none;
-  z-index: 9999;
-  background-image: url('https://www.transparenttextures.com/patterns/asfalt-light.png');
+  width: 150%;
+  height: 150%;
+  background: linear-gradient(45deg, #222, #000, #444, #111);
+  background-size: 400% 400%;
+  animation: gradientFlow 10s ease infinite;
+  z-index: 1;
+  filter: blur(50px);
 }
 
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* --- TARJETAS DE PRODUCTO CON EFECTO 3D --- */
+.product-card {
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.5s;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: rotateY(10deg) rotateX(10deg) scale(1.05);
+  box-shadow: 20px 20px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--white);
+  z-index: 10;
+}
+
+.product-card img {
+  transition: transform 0.5s;
+  width: 100%;
+  display: block;
+}
+
+.product-card:hover img {
+  transform: translateZ(50px);
+}
+
+/* --- BOTONES CON GLITCH ANIMATION --- */
+.btn-buy {
+  position: relative;
+  padding: 15px 30px;
+  background: white;
+  color: black;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+  transition: 0.3s;
+  text-decoration: none;
+  display: inline-block;
+  font-family: var(--font-main);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-buy:hover {
+  background: #ff003c;
+  color: white;
+  transform: skewX(-10deg);
+  box-shadow: 0 0 10px #ff003c;
+}
+
+/* --- ESTILO PARA EL INSTAGRAM (LLAMATIVO) --- */
+.instagram-link {
+  text-decoration: none;
+  color: var(--white);
+  font-size: 1.2rem;
+  display: inline-block;
+  margin-top: 20px;
+  border-bottom: 2px solid transparent;
+  transition: 0.5s;
+  font-weight: bold;
+}
+
+.instagram-link:hover {
+  color: #E1306C;
+  letter-spacing: 3px;
+  border-bottom: 2px solid #E1306C;
+}
+
+/* Utilities */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Adjustments for existing layout */
 a {
   text-decoration: none;
   color: inherit;
@@ -56,69 +187,5 @@ a {
 
 ul {
   list-style: none;
-}
-
-.font-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.05em;
-  text-transform: uppercase;
-}
-
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-}
-
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 40px;
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding: 0 20px;
-  }
-}
-
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: inherit;
-}
-
-.btn-primary {
-  padding: 22px 60px;
-  background-color: var(--accent);
-  color: #fff;
-  font-weight: 900;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  font-size: 13px;
-  transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: inline-block;
-}
-
-.btn-primary:hover {
-  background-color: #fff;
-  color: #000;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: #000;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #333;
+  padding: 0;
 }
