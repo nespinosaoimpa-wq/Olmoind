@@ -27,7 +27,7 @@ const ProductCard = ({ product, onOpen }) => {
             {/* Image */}
             <div style={{ width: '100%', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#111' }}>
                 <img
-                    src={product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'} // Using one of the uploaded images as requested
+                    src={product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'}
                     alt={product.name}
                     style={{
                         width: '100%',

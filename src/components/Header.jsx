@@ -79,7 +79,7 @@ const Header = () => {
                 <a
                   href={item.path}
                   style={{
-                    color: 'var(--text-secondary)',
+                    color: '#ffffff',
                     textDecoration: 'none',
                     fontSize: '11px',
                     fontWeight: '600',
