@@ -63,16 +63,16 @@ const Hero = () => {
                         transition={{ duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
                         className="font-display"
                         style={{
-                            fontSize: 'clamp(4rem, 15vw, 12rem)',
+                            fontSize: 'clamp(3rem, 10vw, 8rem)', // Slightly smaller to fit full word
                             lineHeight: '0.85',
                             fontWeight: '900',
                             color: 'var(--text-primary)',
                             marginBottom: '40px',
-                            letterSpacing: '-5px',
-                            textShadow: '0 0 30px rgba(0,0,0,0.5)'
+                            letterSpacing: '-2px',
+                            textShadow: '0 0 30px rgba(0,0,0,0.1)'
                         }}
                     >
-                        OLMO<br />IND.
+                        OLMO<br />INDUMENTARIA
                     </motion.h1>
 
                     <motion.div
@@ -83,7 +83,7 @@ const Hero = () => {
                     >
                         <button
                             className="btn-primary"
-                            style={{ background: 'var(--text-primary)', color: '#000' }}
+                            style={{ background: 'var(--text-primary)', color: '#ffffff' }} // White text
                             onClick={() => document.getElementById('shop').scrollIntoView({ behavior: 'smooth' })}
                         >
                             VER COLECCIÓN
