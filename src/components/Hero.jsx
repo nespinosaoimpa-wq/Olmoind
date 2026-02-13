@@ -66,7 +66,7 @@ const Hero = () => {
                         transition={{ duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
                         className="font-display"
                         style={{
-                            fontSize: 'clamp(5rem, 20vw, 15rem)', // Massive
+                            fontSize: 'clamp(4rem, 18vw, 15rem)', // Adjusted min size for mobile
                             lineHeight: '0.8',
                             fontWeight: '900',
                             color: '#000000', // Pure Black

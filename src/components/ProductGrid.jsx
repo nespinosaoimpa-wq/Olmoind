@@ -27,7 +27,7 @@ const ProductCard = ({ product, onOpen }) => {
             {/* Image */}
             <div style={{ width: '100%', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#111' }}>
                 <img
-                    src={product.image || 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&q=80&w=600&h=800'}
+                    src={product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'} // Using one of the uploaded images as requested
                     alt={product.name}
                     style={{
                         width: '100%',
@@ -164,7 +164,7 @@ const ProductGrid = () => {
 
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                 gap: '40px'
             }}>
                 {stock.map(product => (
