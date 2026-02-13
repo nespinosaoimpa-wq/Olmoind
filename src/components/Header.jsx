@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ShoppingCart, User, Search, Trash2 } from 'lucide-react';
+import { ShoppingBag, Search, User, Menu, X, Trash2 } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useStockStore } from '../store/useStockStore';
 
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const { cart, removeItem, clearCart } = useCartStore();
-  const { registerSale } = useStockStore();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { cart, removeItem, clearCart, totalItems } = useCartStore();
+  const { registerSale } = useStockStore();
 
-  React.useEffect(() => {
+  const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
@@ -19,132 +21,196 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const headerColor = isScrolled ? '#fff' : '#000';
-
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-
   const menuItems = [
     { name: 'HOME', path: '#home' },
     { name: 'SHOP', path: '#shop' },
-    { name: 'NEW ARRIVALS', path: '#shop' },
-    { name: 'SALE', path: '#shop' },
-    { name: 'CONTACT', path: '#contact' },
+    { name: 'DROPS', path: '#shop' },
+    { name: 'VISUALS', path: '#about' },
   ];
 
-  const menuVariants = {
-    closed: {
-      rotateY: -90,
-      originX: 'left',
-      transition: { duration: 0.5, ease: 'easeInOut' }
-    },
-    open: {
-      rotateY: 0,
-      originX: 'left',
-      transition: { duration: 0.5, ease: 'easeInOut' }
-    }
-  };
-
   return (
-    <header className="glass" style={{ position: 'fixed', top: 0, width: '100%', zIndex: 1000, height: '80px', display: 'flex', alignItems: 'center' }}>
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <button onClick={() => setIsOpen(!isOpen)} style={{ display: 'flex', alignItems: 'center' }}>
-            <Menu size={24} color={headerColor} />
-          </button>
-          <div style={{ fontWeight: '800', fontSize: '24px', letterSpacing: '4px', color: headerColor }}>
-            OLMO
-          </div>
+    <>
+      <header
+        className="glass-card"
+        style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '95%',
+          maxWidth: '1200px',
+          padding: '15px 30px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 1000,
+          borderRadius: '2px', // Slight rounded for modern feel, or keep 0 for brutalist
+          border: isScrolled ? '1px solid var(--border-glow)' : '1px solid var(--border-subtle)',
+          background: isScrolled ? 'rgba(5,5,5,0.9)' : 'rgba(20,20,20,0.4)',
+          backdropFilter: 'blur(15px)',
+          transition: 'all 0.4s ease'
+        }}
+      >
+        {/* LOGO - CYBER/FUTURE */}
+        <div style={{ zIndex: 1001 }}>
+          <a href="/" style={{
+            fontSize: '1.5rem',
+            fontWeight: '900',
+            letterSpacing: '4px',
+            color: 'var(--text-primary)',
+            textDecoration: 'none',
+            fontFamily: 'var(--font-display)',
+            textShadow: '0 0 10px rgba(255,255,255,0.3)'
+          }}>
+            OLMO<span style={{ fontSize: '12px', color: 'var(--accent-dim)', marginLeft: '5px' }}>©2026</span>
+          </a>
         </div>
 
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Search size={20} color={headerColor} />
-          <User size={20} color={headerColor} />
-          <button onClick={() => setIsCartOpen(true)} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <ShoppingCart size={20} color={headerColor} />
-            {cartCount > 0 && (
-              <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--accent)', color: 'black', borderRadius: '50%', width: '16px', height: '16px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                {cartCount}
+        {/* DESKTOP MENU - FLOATING & GLOW */}
+        <nav className="desktop-nav" style={{ display: 'none' }}>
+          <ul style={{ display: 'flex', gap: '40px', listStyle: 'none' }}>
+            {menuItems.map((item) => (
+              <li key={item.name}>
+                <a
+                  href={item.path}
+                  style={{
+                    color: 'var(--text-secondary)',
+                    textDecoration: 'none',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    letterSpacing: '2px',
+                    fontFamily: 'var(--font-body)',
+                    transition: 'all 0.3s ease',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.color = 'var(--text-primary)';
+                    e.target.style.textShadow = '0 0 8px rgba(255,255,255,0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.color = 'var(--text-secondary)';
+                    e.target.style.textShadow = 'none';
+                  }}
+                >
+                  {item.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* ICONS & ACTIONS */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '25px', zIndex: 1001 }}>
+          <button style={{ color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => window.location.href = '/admin?admin=true'}>
+            <User size={18} />
+          </button>
+
+          <button
+            style={{ color: 'var(--text-primary)', position: 'relative', background: 'none', border: 'none', cursor: 'pointer' }}
+            onClick={() => setIsCartOpen(true)}
+          >
+            <ShoppingBag size={18} />
+            {totalItems > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-8px',
+                right: '-8px',
+                background: 'var(--text-primary)',
+                color: '#000',
+                fontSize: '9px',
+                fontWeight: '900',
+                width: '14px',
+                height: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%'
+              }}>
+                {totalItems}
               </span>
             )}
           </button>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="mobile-toggle"
+            style={{ color: 'var(--text-primary)', background: 'none', border: 'none' }}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
-      </div>
+      </header>
 
+      {/* CSS Helper for Responsive Display */}
+      <style>{`
+        @media (min-width: 768px) {
+            .desktop-nav { display: block !important; }
+            .mobile-toggle { display: none !important; }
+        }
+        @media (max-width: 767px) {
+            .desktop-nav { display: none !important; }
+            .mobile-toggle { display: block !important; }
+        }
+      `}</style>
+
+      {/* MOBILE OVERLAY MENU - FULL SCREEN CYBER */}
       <AnimatePresence>
-        {/* 3D Menu */}
-        {isOpen && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 1001, perspective: '2000px' }}>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                background: 'rgba(0,0,0,0.8)',
-                zIndex: 999
-              }}
-            />
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: '-100%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: '-100%' }}
+            transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100vh',
+              background: 'var(--bg-deep)',
+              zIndex: 900,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '30px',
+              paddingTop: '60px' // Clear header
+            }}
+          >
+            {/* Background Mesh/Gradient for Mobile Menu */}
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, #1a1a1a 0%, transparent 70%)', zIndex: -1 }} />
 
-            <motion.div
-              variants={menuVariants}
-              initial="closed"
-              animate="open"
-              exit="closed"
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '350px',
-                height: '100vh',
-                background: 'var(--bg-secondary)',
-                zIndex: 1001,
-                padding: '60px 40px',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '20px 0 80px rgba(0,0,0,0.5)',
-                borderRight: '1px solid rgba(255,255,255,0.1)'
-              }}
-            >
-              <button onClick={() => setIsOpen(false)} style={{ alignSelf: 'flex-end', marginBottom: '40px' }}>
-                <X size={24} color="var(--accent)" />
-              </button>
-
-              <nav style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                {menuItems.map((item) => (
-                  <motion.a
-                    key={item.name}
-                    href={item.path}
-                    whileHover={{ x: 10, color: '#fff' }}
-                    style={{
-                      fontSize: '20px',
-                      fontWeight: '600',
-                      color: 'var(--text-secondary)',
-                      letterSpacing: '2px',
-                      borderBottom: '1px solid var(--border-color)',
-                      paddingBottom: '10px'
-                    }}
-                  >
-                    {item.name}
-                  </motion.a>
-                ))}
-              </nav>
-
-              <div style={{ marginTop: 'auto', fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '1px' }}>
-                © 2026 OLMO INDUMENTARIA
-              </div>
-            </motion.div>
-          </div>
+            {menuItems.map((item, i) => (
+              <motion.a
+                key={item.name}
+                href={item.path}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + (i * 0.1) }}
+                style={{
+                  fontSize: '3rem',
+                  fontFamily: 'var(--font-display)',
+                  color: 'var(--text-primary)',
+                  textDecoration: 'none',
+                  fontWeight: '900',
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase',
+                  WebkitTextStroke: '1px rgba(255,255,255,0.2)'
+                }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item.name}
+              </motion.a>
+            ))}
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Shopping Cart Drawer */}
+      {/* Shopping Cart Drawer - Modern */}
+      <AnimatePresence>
         {isCartOpen && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 2000 }}>
+          <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -157,7 +223,8 @@ const Header = () => {
                 width: '100%',
                 height: '100%',
                 background: 'rgba(0,0,0,0.8)',
-                zIndex: 999
+                zIndex: 1999,
+                backdropFilter: 'blur(5px)'
               }}
             />
             <motion.div
@@ -169,38 +236,49 @@ const Header = () => {
                 position: 'fixed',
                 top: 0,
                 right: 0,
-                width: '400px',
+                width: '90%',
+                maxWidth: '450px',
                 height: '100vh',
-                background: 'var(--bg-secondary)',
-                zIndex: 1001,
+                background: '#0a0a0a',
+                zIndex: 2000,
                 padding: '40px',
                 display: 'flex',
                 flexDirection: 'column',
-                boxShadow: '-20px 0 80px rgba(0,0,0,0.5)',
-                borderLeft: '1px solid rgba(255,255,255,0.1)'
+                borderLeft: '1px solid var(--border-subtle)',
+                boxShadow: '-20px 0 50px rgba(0,0,0,0.5)'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '2px', color: '#fff' }}>CARRITO</h2>
-                <button onClick={() => setIsCartOpen(false)}><X size={24} color="#fff" /></button>
+                <h2 className="font-display" style={{ fontSize: '20px', fontWeight: '900', letterSpacing: '2px', color: 'var(--text-primary)' }}>BAG ({totalItems})</h2>
+                <button onClick={() => setIsCartOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}><X size={24} /></button>
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {cart.length === 0 ? (
-                  <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>Tu carrito está vacío.</p>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', opacity: 0.5 }}>
+                    <ShoppingBag size={40} style={{ marginBottom: '20px' }} />
+                    <p style={{ fontFamily: 'var(--font-body)', letterSpacing: '1px' }}>YOUR BAG IS EMPTY</p>
+                  </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.id + item.name} style={{ display: 'flex', gap: '15px', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
-                      <img src={item.image} alt={item.name} style={{ width: '80px', height: '100px', objectFit: 'cover' }} />
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ fontSize: '12px', fontWeight: '700', color: '#fff' }}>{item.name}</h4>
-                        <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>${item.price.toLocaleString()} x {item.quantity}</p>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          style={{ color: '#ff4444', fontSize: '10px', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}
-                        >
-                          <Trash2 size={12} /> ELIMINAR
-                        </button>
+                    <div key={item.id + item.name + item.size} style={{ display: 'flex', gap: '20px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '20px' }}>
+                      <div style={{ width: '80px', height: '100px', background: '#1a1a1a', overflow: 'hidden' }}>
+                        <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }} />
+                      </div>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div>
+                          <h4 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: '5px' }}>{item.name}</h4>
+                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>SIZE: {item.size} | QTY: {item.quantity}</p>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>${(item.price * item.quantity).toLocaleString()}</span>
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            style={{ color: '#ff4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '700' }}
+                          >
+                            REMOVE
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -208,28 +286,30 @@ const Header = () => {
               </div>
 
               {cart.length > 0 && (
-                <div style={{ borderTop: '1px solid #333', paddingTop: '20px', marginTop: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>TOTAL:</span>
-                    <span style={{ fontSize: '20px', fontWeight: '800', color: '#fff' }}>${cartTotal.toLocaleString()}</span>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '30px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontFamily: 'var(--font-display)', fontSize: '14px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>TOTAL</span>
+                    <span style={{ fontWeight: '900', color: 'var(--text-primary)' }}>${cartTotal.toLocaleString()}</span>
                   </div>
                   <button
                     onClick={() => {
                       registerSale(cart);
                       clearCart();
                       setIsCartOpen(false);
-                      alert('¡VENTA REGISTRADA CON ÉXITO!');
+                      // In a real app, this would redirect to checkout
                     }}
-                    style={{ width: '100%', padding: '20px', background: 'var(--accent)', color: '#fff', fontWeight: '900', letterSpacing: '2px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    FINALIZAR COMPRA
+                    className="btn-primary"
+                    style={{ width: '100%', textAlign: 'center' }}
+                  >
+                    CHECKOUT
                   </button>
                 </div>
               )}
             </motion.div>
-          </div>
+          </>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 };
 

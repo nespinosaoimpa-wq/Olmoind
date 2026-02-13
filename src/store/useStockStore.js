@@ -1,60 +1,107 @@
 import { create } from 'zustand';
+import { supabase } from '../supabaseClient';
 
-export const useStockStore = create((set) => ({
-    stock: [
-        {
-            id: 1,
-            name: 'Remera Olmo Oversize',
-            price: 25000,
-            image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&q=80&w=800',
-            variants: { XS: 0, S: 10, M: 15, L: 5, XL: 2, XXL: 0 }
-        },
-        {
-            id: 2,
-            name: 'Pantalón Cargo Grey',
-            price: 45000,
-            image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=80&w=800',
-            variants: { XS: 2, S: 5, M: 8, L: 0, XL: 0, XXL: 0 }
-        },
-        {
-            id: 3,
-            name: 'Buzo Hoodie Noir',
-            price: 55000,
-            image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800',
-            variants: { XS: 0, S: 0, M: 5, L: 5, XL: 5, XXL: 2 }
-        },
-    ],
-    sales: [],
+export const useStockStore = create((set, get) => ({
+    stock: [],
+    loading: false,
+    error: null,
 
-    updateStock: (id, newProductData) => set((state) => ({
-        stock: state.stock.map(item => item.id === id ? { ...item, ...newProductData } : item)
-    })),
+    // Fetch products from Supabase
+    fetchProducts: async () => {
+        set({ loading: true });
+        try {
+            const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-    addStockItem: (item) => set((state) => ({
-        stock: [...state.stock, { ...item, id: Date.now() }]
-    })),
+            if (error) throw error;
+            set({ stock: data, loading: false });
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            set({ error: error.message, loading: false });
+        }
+    },
 
-    deleteStockItem: (id) => set((state) => ({
-        stock: state.stock.filter(item => item.id !== id)
-    })),
+    // Update product stock (for Admin)
+    updateStock: async (id, newVariants) => {
+        try {
+            const { error } = await supabase
+                .from('products')
+                .update({ variants: newVariants })
+                .eq('id', id);
 
-    registerSale: (cart) => set((state) => {
-        const newSales = [...state.sales, { id: Date.now(), items: cart, date: new Date().toISOString() }];
-        // Cart items now must have { ..., size: 'M' }
-        const newStock = state.stock.map(product => {
-            const cartItemsForProduct = cart.filter(c => c.id === product.id);
+            if (error) throw error;
 
-            if (cartItemsForProduct.length > 0) {
-                let updatedVariants = { ...product.variants };
-                cartItemsForProduct.forEach(cartItem => {
-                    if (updatedVariants[cartItem.size] !== undefined) {
-                        updatedVariants[cartItem.size] = Math.max(0, updatedVariants[cartItem.size] - cartItem.quantity);
-                    }
-                });
-                return { ...product, variants: updatedVariants };
+            // Optimistic update
+            set((state) => ({
+                stock: state.stock.map((p) =>
+                    p.id === id ? { ...p, variants: newVariants } : p
+                ),
+            }));
+        } catch (error) {
+            console.error('Error updating stock:', error);
+        }
+    },
+
+    // Register a sale (deduct stock)
+    registerSale: async (cartItems) => {
+        try {
+            // 1. Deduct stock for each item
+            for (const item of cartItems) {
+                // Fetch current product to get latest stock
+                const { data: product } = await supabase
+                    .from('products')
+                    .select('variants')
+                    .eq('id', item.id)
+                    .single();
+
+                if (product) {
+                    const currentVariants = product.variants;
+                    const newStock = (currentVariants[item.size] || 0) - item.quantity;
+
+                    if (newStock < 0) throw new Error(`Not enough stock for ${item.name}`);
+
+                    const newVariants = { ...currentVariants, [item.size]: newStock };
+
+                    await supabase
+                        .from('products')
+                        .update({ variants: newVariants })
+                        .eq('id', item.id);
+                }
             }
-            return product;
-        });
-        return { stock: newStock, sales: newSales };
-    })
+
+            // 2. Record the sale
+            const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+            await supabase.from('sales').insert([{
+                items: cartItems,
+                total: total,
+            }]);
+
+            // 3. Refresh local state
+            get().fetchProducts();
+
+        } catch (error) {
+            console.error('Error registering sale:', error);
+            alert('Error en la venta: ' + error.message);
+        }
+    },
+
+    // Create new product (Admin)
+    addProduct: async (productData) => {
+        const { data, error } = await supabase
+            .from('products')
+            .insert([productData])
+            .select();
+
+        if (data) {
+            set((state) => ({ stock: [...data, ...state.stock] }));
+        }
+    },
+
+    // Delete product
+    deleteProduct: async (id) => {
+        await supabase.from('products').delete().eq('id', id);
+        set((state) => ({ stock: state.stock.filter(p => p.id !== id) }));
+    }
 }));
