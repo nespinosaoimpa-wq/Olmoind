@@ -41,7 +41,7 @@ const Header = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           zIndex: 1000,
-          background: 'var(--bg-header)', // User requested Gray where Blue was
+          background: '#0a0a0a', // Solid Black Header like OneStreet (but black instead of blue)
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           transition: 'all 0.4s ease'
         }}

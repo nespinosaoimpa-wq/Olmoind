@@ -63,17 +63,35 @@ const Hero = () => {
                         transition={{ duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
                         className="font-display"
                         style={{
-                            fontSize: 'clamp(3rem, 10vw, 8rem)', // Slightly smaller to fit full word
-                            lineHeight: '0.85',
+                            fontSize: 'clamp(5rem, 20vw, 15rem)', // Massive
+                            lineHeight: '0.8',
                             fontWeight: '900',
-                            color: 'var(--text-primary)',
-                            marginBottom: '40px',
-                            letterSpacing: '-2px',
-                            textShadow: '0 0 30px rgba(0,0,0,0.1)'
+                            color: '#000000', // Pure Black
+                            marginBottom: '10px',
+                            letterSpacing: '-5px',
+                            textTransform: 'uppercase'
                         }}
                     >
-                        OLMO<br />INDUMENTARIA
+                        OLMO
                     </motion.h1>
+
+                    {/* SUBTITLE MATCHING IMAGE */}
+                    <motion.h2
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 1 }}
+                        style={{
+                            fontSize: 'clamp(0.8rem, 2vw, 1.5rem)',
+                            fontFamily: 'var(--font-body)',
+                            color: '#000000',
+                            letterSpacing: '12px', // Wide spacing like the image
+                            fontWeight: '600',
+                            marginBottom: '60px',
+                            marginLeft: '15px' // Optical alignment
+                        }}
+                    >
+                        INDUMENTARIA
+                    </motion.h2>
 
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -83,7 +101,6 @@ const Hero = () => {
                     >
                         <button
                             className="btn-primary"
-                            style={{ background: 'var(--text-primary)', color: '#ffffff' }} // White text
                             onClick={() => document.getElementById('shop').scrollIntoView({ behavior: 'smooth' })}
                         >
                             VER COLECCIÓN
