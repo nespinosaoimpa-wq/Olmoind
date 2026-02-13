@@ -88,7 +88,7 @@ const Footer = () => {
                 gap: '20px'
             }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '10px', fontWeight: '800', letterSpacing: '2px' }}>
-                    © 2026 OLMO INDUMENTARIA • RAW STREET IDENTITY
+                    © 2026 OLMO INDUMENTARIA • RAW STREET IDENTITY • v1.2
                 </p>
                 <div style={{ display: 'flex', gap: '30px' }}>
                     <a href="#" style={{ color: 'var(--text-secondary)', fontSize: '10px', fontWeight: '600' }}>PRIVACIDAD</a>
