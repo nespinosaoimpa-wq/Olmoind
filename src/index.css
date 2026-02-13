@@ -30,19 +30,8 @@ body {
   line-height: 1.2;
   overflow-x: hidden;
   position: relative;
-
-  /* CSS-only Concrete Relief Effect - v4 (Force Update) */
-  background:
-    /* Noise texture overlay */
-    url('https://www.transparenttextures.com/patterns/asfalt-light.png'),
-    /* Subtle highlight for relief */
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.03) 0%, transparent 60%),
-    /* Main vertical gradient: Lighter grey to darker grey */
-    linear-gradient(to bottom, #1a1a1a 0%, #0d0d0d 40%, #050505 100%);
-
-  background-repeat: repeat, no-repeat, no-repeat;
-  background-attachment: fixed, fixed, fixed;
-  background-size: auto, 100% 100%, 100% 100%;
+  /* Safe fallback for debugging */
+  background-image: none;
 }
 
 body::before {
