@@ -81,7 +81,13 @@ const Hero = () => {
                         transition={{ delay: 0.5, duration: 1 }}
                         style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}
                     >
-                        <button className="btn-primary" style={{ background: 'var(--text-primary)', color: '#000' }}>VER COLECCIÓN</button>
+                        <button
+                            className="btn-primary"
+                            style={{ background: 'var(--text-primary)', color: '#000' }}
+                            onClick={() => document.getElementById('shop').scrollIntoView({ behavior: 'smooth' })}
+                        >
+                            VER COLECCIÓN
+                        </button>
                     </motion.div>
                 </motion.div>
             </div>

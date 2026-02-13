@@ -24,7 +24,7 @@ const Header = () => {
   const menuItems = [
     { name: 'HOME', path: '#home' },
     { name: 'SHOP', path: '#shop' },
-    { name: 'DROPS', path: '#shop' },
+    { name: 'LANZAMIENTOS', path: '#shop' },
     { name: 'VISUALS', path: '#about' },
   ];
 
@@ -46,7 +46,7 @@ const Header = () => {
           zIndex: 1000,
           borderRadius: '2px', // Slight rounded for modern feel, or keep 0 for brutalist
           border: isScrolled ? '1px solid var(--border-glow)' : '1px solid var(--border-subtle)',
-          background: isScrolled ? 'rgba(5,5,5,0.9)' : 'rgba(20,20,20,0.4)',
+          background: isScrolled ? 'var(--bg-glass)' : 'rgba(255,255,255,0.1)',
           backdropFilter: 'blur(15px)',
           transition: 'all 0.4s ease'
         }}
