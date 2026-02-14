@@ -1,24 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Syncopate:wght@400;700&display=swap');
 /* Force Deploy: OneStreet Style Update */
 
+/* VOITURE / PREMIUM DARK PALETTE */
 :root {
-  /* ONESTREET STYLE PALETTE */
-  --bg-body: #ffffff;
-  /* Pure White Body */
-  --bg-header: #4a4a4a;
-  /* Solid Gray Header */
+  --bg-body: #050505;
+  /* Deep Luxury Black */
+  --bg-header: #050505;
+  /* Matching Black Header */
+  --bg-card: #0a0a0a;
 
-  --text-primary: #000000;
-  /* Black Text */
+  --text-primary: #ffffff;
+  /* Pure White */
+  --text-secondary: #888888;
+  /* Silver/Grey for subtle text */
   --text-header: #ffffff;
-  /* White Text for Header */
-  --text-secondary: #666666;
 
-  --border-subtle: #e5e5e5;
+  --accent-gold: #D4AF37;
+  /* Keeping this definition handy if needed, but primary is B&W */
+
+  --border-subtle: #333333;
+  --border-glow: #ffffff;
 
   /* FONTS */
-  --font-display: 'Syncopate', sans-serif;
-  --font-body: 'Outfit', sans-serif;
+  --font-display: 'Syncopate',
+    sans-serif;
+  --font-body: 'Outfit',
+    sans-serif;
 
   /* ANIMATIONS */
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
@@ -75,10 +82,11 @@ body {
   background: var(--text-secondary);
 }
 
-/* BUTTONS - SOLID MINIMALIST */
+/* BUTTONS - PREMIUM CONTRAST */
 .btn-primary {
-  background: #000000;
-  color: #ffffff;
+  background: #ffffff;
+  /* White button on Dark background */
+  color: #000000;
   border: none;
   padding: 15px 50px;
   font-family: var(--font-display);
@@ -88,8 +96,8 @@ body {
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 2px;
-  border-radius: 2px;
-  /* Slight roundness often seen in modern streetwear */
+  border-radius: 0px;
+  /* Sharp edges for luxury feel */
 }
 
 .btn-primary:hover {

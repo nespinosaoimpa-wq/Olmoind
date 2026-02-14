@@ -25,7 +25,7 @@ const Hero = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexDirection: 'column',
-                background: 'radial-gradient(circle at center, #f5f5f5 0%, #d4d4d4 100%)' // Silver Gradient matching the uploaded branding
+                background: '#050505' // Premium Dark Background
             }}
         >
             {/* BACKGROUND TEXTURE - Subtle Noise for realism */}
@@ -69,7 +69,7 @@ const Hero = () => {
                             fontSize: 'clamp(4rem, 18vw, 15rem)', // Adjusted min size for mobile
                             lineHeight: '0.8',
                             fontWeight: '900',
-                            color: '#000000', // Pure Black
+                            color: '#ffffff', // White Text on Dark
                             marginBottom: '10px',
                             letterSpacing: '-5px',
                             textTransform: 'uppercase'
@@ -86,7 +86,7 @@ const Hero = () => {
                         style={{
                             fontSize: 'clamp(0.8rem, 2vw, 1.5rem)',
                             fontFamily: 'var(--font-body)',
-                            color: '#000000',
+                            color: '#ffffff', // White Text on Dark
                             letterSpacing: '12px', // Wide spacing like the image
                             fontWeight: '600',
                             marginBottom: '60px',
