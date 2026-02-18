@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-    Package, Users, BarChart2, ArrowLeft, Plus, Edit2,
+    Package, BarChart2, ArrowLeft, Plus, Edit2,
     Trash2, X, ShoppingBag, Phone, Mail, MapPin, Instagram,
-    Image, Palette, Tag, LayoutGrid, Save, Check
+    Image, Palette, Tag, LayoutGrid, Save, Check, Upload, Loader
 } from 'lucide-react';
 import { useStockStore } from '../store/useStockStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import { supabase } from '../supabaseClient';
 
-// ── Shared input style ────────────────────────────────────────────────────────
+// ── Shared styles ─────────────────────────────────────────────────────────────
 const inputStyle = {
     background: '#1e293b', border: '1px solid #334155',
     padding: '12px 16px', color: '#f1f5f9', outline: 'none',
@@ -19,22 +20,26 @@ const labelStyle = {
     textTransform: 'uppercase', letterSpacing: '0.1em',
     fontFamily: "'Inter', sans-serif", display: 'block', marginBottom: '6px',
 };
-const sectionTitle = {
-    fontSize: '11px', fontWeight: '900', textTransform: 'uppercase',
-    letterSpacing: '0.15em', color: '#64748b', marginBottom: '16px',
-};
 const card = {
     background: 'rgba(30,41,59,0.4)', border: '1px solid #1e293b',
     borderRadius: '10px', padding: '20px', marginBottom: '12px',
 };
+const sectionTitle = {
+    fontSize: '11px', fontWeight: '900', textTransform: 'uppercase',
+    letterSpacing: '0.15em', color: '#64748b', marginBottom: '16px',
+};
 
 const AdminDashboard = ({ onBack }) => {
     const { stock, updateStock, addProduct, deleteProduct, fetchProducts } = useStockStore();
+    const { settings, fetchSettings, updateSetting, subscribeToSettings, uploadImage } = useSettingsStore();
+
     const [activeTab, setActiveTab] = useState('stock');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [localSales, setLocalSales] = useState([]);
     const [savedMsg, setSavedMsg] = useState('');
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef(null);
 
     // ── Product form ──────────────────────────────────────────────────────────
     const [formData, setFormData] = useState({
@@ -43,26 +48,12 @@ const AdminDashboard = ({ onBack }) => {
     });
     const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-    // ── Contact settings ──────────────────────────────────────────────────────
-    const [contact, setContact] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('olmo_contact') || '{}'); } catch { return {}; }
-    });
-
-    // ── Hero / Estética settings ──────────────────────────────────────────────
-    const [hero, setHero] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('olmo_hero') || '{}'); } catch { return {}; }
-    });
-
-    // ── Banners ───────────────────────────────────────────────────────────────
-    const [banners, setBanners] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('olmo_banners') || '[]'); } catch { return []; }
-    });
+    // ── Local editable copies of settings ────────────────────────────────────
+    const [contact, setContact] = useState({});
+    const [hero, setHero] = useState({});
+    const [banners, setBanners] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [newBannerUrl, setNewBannerUrl] = useState('');
-
-    // ── Categories ────────────────────────────────────────────────────────────
-    const [categories, setCategories] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('olmo_categories') || '["Remeras","Pantalones","Sudaderas","Accesorios"]'); } catch { return []; }
-    });
     const [newCategory, setNewCategory] = useState('');
 
     // ── Stats ─────────────────────────────────────────────────────────────────
@@ -72,34 +63,45 @@ const AdminDashboard = ({ onBack }) => {
 
     useEffect(() => {
         fetchProducts();
+        fetchSettings();
+        const unsubscribe = subscribeToSettings();
+
         const fetchSales = async () => {
             const { data } = await supabase.from('sales').select('*').order('created_at', { ascending: false });
             if (data) setLocalSales(data);
         };
         fetchSales();
+
+        return unsubscribe;
     }, []);
+
+    // Sync local editable state when settings load from Supabase
+    useEffect(() => {
+        setContact(settings.contact || {});
+        setHero(settings.hero || {});
+        setBanners(Array.isArray(settings.banners) ? settings.banners : []);
+        setCategories(Array.isArray(settings.categories) ? settings.categories : []);
+    }, [settings]);
 
     // ── Save helpers ──────────────────────────────────────────────────────────
     const showSaved = () => {
         setSavedMsg('¡Guardado!');
-        setTimeout(() => setSavedMsg(''), 2000);
+        setTimeout(() => setSavedMsg(''), 2500);
     };
 
-    const saveContact = () => {
-        localStorage.setItem('olmo_contact', JSON.stringify(contact));
-        showSaved();
-    };
-    const saveHero = () => {
-        localStorage.setItem('olmo_hero', JSON.stringify(hero));
-        showSaved();
-    };
-    const saveBanners = (list) => {
-        localStorage.setItem('olmo_banners', JSON.stringify(list));
-        setBanners(list);
-    };
-    const saveCategories = (list) => {
-        localStorage.setItem('olmo_categories', JSON.stringify(list));
-        setCategories(list);
+    // ── Image upload from device ──────────────────────────────────────────────
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingImage(true);
+        try {
+            const publicUrl = await uploadImage(file);
+            setFormData(prev => ({ ...prev, image: publicUrl }));
+        } catch (err) {
+            alert('Error al subir imagen: ' + err.message);
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     // ── Product handlers ──────────────────────────────────────────────────────
@@ -113,26 +115,33 @@ const AdminDashboard = ({ onBack }) => {
         }
         setIsModalOpen(true);
     };
+
     const handleSave = async () => {
         if (editingItem) {
             await updateStock(editingItem.id, formData.variants);
-            await supabase.from('products').update({ name: formData.name, price: formData.price, image: formData.image, category: formData.category }).eq('id', editingItem.id);
+            await supabase.from('products').update({
+                name: formData.name, price: formData.price,
+                image: formData.image, category: formData.category
+            }).eq('id', editingItem.id);
         } else {
             await addProduct(formData);
         }
         setIsModalOpen(false);
         fetchProducts();
     };
+
     const handleDelete = async (id) => {
         if (window.confirm('¿Eliminar este producto?')) {
             await deleteProduct(id);
             fetchProducts();
         }
     };
+
     const handleUpdateStatus = async (saleId, newStatus) => {
         setLocalSales(localSales.map(s => s.id === saleId ? { ...s, status: newStatus } : s));
         await supabase.from('sales').update({ status: newStatus }).eq('id', saleId);
     };
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'Enviado': return '#3b82f6';
@@ -142,7 +151,7 @@ const AdminDashboard = ({ onBack }) => {
         }
     };
 
-    // ── Shared UI ─────────────────────────────────────────────────────────────
+    // ── Shared UI components ──────────────────────────────────────────────────
     const SectionHeader = ({ title, action }) => (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <h3 style={sectionTitle}>{title}</h3>
@@ -150,7 +159,7 @@ const AdminDashboard = ({ onBack }) => {
         </div>
     );
 
-    const SaveButton = ({ onClick }) => (
+    const SaveButton = ({ onClick, label = 'Guardar' }) => (
         <button onClick={onClick} style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             background: '#ffffff', color: '#000', border: 'none',
@@ -158,11 +167,10 @@ const AdminDashboard = ({ onBack }) => {
             fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.15em',
             cursor: 'pointer', fontFamily: "'Inter', sans-serif", marginTop: '8px',
         }}>
-            <Save size={14} /> Guardar
+            <Save size={14} /> {label}
         </button>
     );
 
-    // ── Bottom nav tabs ───────────────────────────────────────────────────────
     const navTabs = [
         { id: 'stock', icon: <LayoutGrid size={20} />, label: 'Dashboard' },
         { id: 'sales', icon: <ShoppingBag size={20} />, label: 'Pedidos' },
@@ -274,7 +282,7 @@ const AdminDashboard = ({ onBack }) => {
                                             {item.image && <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={item.name} />}
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
-                                            <p style={{ fontSize: '13px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</p>
+                                            <p style={{ fontSize: '13px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</p>
                                             <p style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>${item.price.toLocaleString()} {item.category && `· ${item.category}`}</p>
                                         </div>
                                         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
@@ -301,7 +309,7 @@ const AdminDashboard = ({ onBack }) => {
                                     </div>
                                 </div>
                             ))}
-                            {stock.length === 0 && <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '32px' }}>No hay productos. Agregá uno con el botón +</p>}
+                            {stock.length === 0 && <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '32px' }}>No hay productos. Usá el botón + para agregar.</p>}
                         </div>
                     </div>
                 )}
@@ -385,7 +393,7 @@ const AdminDashboard = ({ onBack }) => {
                     </div>
                 )}
 
-                {/* ── TIENDA (Contacto + Estética + Banners + Categorías) ───── */}
+                {/* ── TIENDA ────────────────────────────────────────────────── */}
                 {activeTab === 'settings' && (
                     <div>
                         <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '20px', letterSpacing: '-0.5px' }}>Configuración de Tienda</h2>
@@ -400,10 +408,10 @@ const AdminDashboard = ({ onBack }) => {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {[
-                                    { key: 'whatsapp', label: 'WhatsApp (número)', placeholder: '543434559599', icon: <Phone size={14} /> },
-                                    { key: 'instagram', label: 'Instagram (sin @)', placeholder: 'olmo.ind', icon: <Instagram size={14} /> },
-                                    { key: 'email', label: 'Email', placeholder: 'olmoshowroom@gmail.com', icon: <Mail size={14} /> },
-                                    { key: 'address', label: 'Dirección', placeholder: 'Cervantes 35 local A', icon: <MapPin size={14} /> },
+                                    { key: 'whatsapp', label: 'WhatsApp (número)', placeholder: '543434559599' },
+                                    { key: 'instagram', label: 'Instagram (sin @)', placeholder: 'olmo.ind' },
+                                    { key: 'email', label: 'Email', placeholder: 'olmoshowroom@gmail.com' },
+                                    { key: 'address', label: 'Dirección', placeholder: 'Cervantes 35 local A' },
                                 ].map(f => (
                                     <div key={f.key}>
                                         <label style={labelStyle}>{f.label}</label>
@@ -416,7 +424,7 @@ const AdminDashboard = ({ onBack }) => {
                                         />
                                     </div>
                                 ))}
-                                <SaveButton onClick={saveContact} />
+                                <SaveButton onClick={async () => { await updateSetting('contact', contact); showSaved(); }} />
                             </div>
                         </div>
 
@@ -433,6 +441,7 @@ const AdminDashboard = ({ onBack }) => {
                                     { key: 'title', label: 'Título principal', placeholder: 'OLMO' },
                                     { key: 'subtitle', label: 'Subtítulo', placeholder: 'INDUMENTARIA' },
                                     { key: 'cta', label: 'Texto del botón CTA', placeholder: 'Ver Colección' },
+                                    { key: 'bgColor', label: 'Color de fondo (CSS)', placeholder: 'linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)' },
                                 ].map(f => (
                                     <div key={f.key}>
                                         <label style={labelStyle}>{f.label}</label>
@@ -445,18 +454,7 @@ const AdminDashboard = ({ onBack }) => {
                                         />
                                     </div>
                                 ))}
-                                <div>
-                                    <label style={labelStyle}>Color de fondo (CSS)</label>
-                                    <input
-                                        type="text"
-                                        value={hero.bgColor || ''}
-                                        onChange={e => setHero({ ...hero, bgColor: e.target.value })}
-                                        placeholder="linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)"
-                                        style={inputStyle}
-                                    />
-                                    <p style={{ fontSize: '10px', color: '#475569', marginTop: '4px' }}>Podés usar colores (#fff), gradientes o dejarlo vacío para el default.</p>
-                                </div>
-                                <SaveButton onClick={saveHero} />
+                                <SaveButton onClick={async () => { await updateSetting('hero', hero); showSaved(); }} />
                             </div>
                         </div>
 
@@ -477,10 +475,13 @@ const AdminDashboard = ({ onBack }) => {
                                     style={{ ...inputStyle, flex: 1 }}
                                 />
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                         if (newBannerUrl.trim()) {
-                                            saveBanners([...banners, { url: newBannerUrl.trim(), alt: 'Banner' }]);
+                                            const updated = [...banners, { url: newBannerUrl.trim(), alt: 'Banner' }];
+                                            setBanners(updated);
+                                            await updateSetting('banners', updated);
                                             setNewBannerUrl('');
+                                            showSaved();
                                         }
                                     }}
                                     style={{ background: '#334155', border: 'none', color: '#f1f5f9', borderRadius: '8px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
@@ -495,7 +496,12 @@ const AdminDashboard = ({ onBack }) => {
                                         <img src={b.url} alt={b.alt} style={{ width: '56px', height: '40px', objectFit: 'cover', borderRadius: '4px', background: '#1e293b', flexShrink: 0 }} onError={e => e.target.style.display = 'none'} />
                                         <p style={{ flex: 1, fontSize: '11px', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.url}</p>
                                         <button
-                                            onClick={() => saveBanners(banners.filter((_, i) => i !== idx))}
+                                            onClick={async () => {
+                                                const updated = banners.filter((_, i) => i !== idx);
+                                                setBanners(updated);
+                                                await updateSetting('banners', updated);
+                                                showSaved();
+                                            }}
                                             style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}
                                         >
                                             <Trash2 size={14} />
@@ -519,20 +525,26 @@ const AdminDashboard = ({ onBack }) => {
                                     type="text"
                                     value={newCategory}
                                     onChange={e => setNewCategory(e.target.value)}
-                                    onKeyDown={e => {
+                                    onKeyDown={async e => {
                                         if (e.key === 'Enter' && newCategory.trim()) {
-                                            saveCategories([...categories, newCategory.trim()]);
+                                            const updated = [...categories, newCategory.trim()];
+                                            setCategories(updated);
+                                            await updateSetting('categories', updated);
                                             setNewCategory('');
+                                            showSaved();
                                         }
                                     }}
                                     placeholder="Ej: Buzos, Remeras, Gorras..."
                                     style={{ ...inputStyle, flex: 1 }}
                                 />
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                         if (newCategory.trim()) {
-                                            saveCategories([...categories, newCategory.trim()]);
+                                            const updated = [...categories, newCategory.trim()];
+                                            setCategories(updated);
+                                            await updateSetting('categories', updated);
                                             setNewCategory('');
+                                            showSaved();
                                         }
                                     }}
                                     style={{ background: '#334155', border: 'none', color: '#f1f5f9', borderRadius: '8px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
@@ -545,7 +557,12 @@ const AdminDashboard = ({ onBack }) => {
                                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e293b', border: '1px solid #334155', borderRadius: '20px', padding: '6px 14px' }}>
                                         <span style={{ fontSize: '12px', fontWeight: '600', color: '#e2e8f0' }}>{cat}</span>
                                         <button
-                                            onClick={() => saveCategories(categories.filter((_, i) => i !== idx))}
+                                            onClick={async () => {
+                                                const updated = categories.filter((_, i) => i !== idx);
+                                                setCategories(updated);
+                                                await updateSetting('categories', updated);
+                                                showSaved();
+                                            }}
                                             style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                                         >
                                             <X size={12} />
@@ -573,8 +590,7 @@ const AdminDashboard = ({ onBack }) => {
                         style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
                             color: activeTab === tab.id ? '#ffffff' : '#475569',
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            padding: '4px 8px',
+                            background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
                         }}
                     >
                         {tab.icon}
@@ -595,37 +611,74 @@ const AdminDashboard = ({ onBack }) => {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                            {[
-                                { label: 'URL Imagen', key: 'image', type: 'text', placeholder: 'https://' },
-                                { label: 'Nombre', key: 'name', type: 'text' },
-                                { label: 'Precio', key: 'price', type: 'number' },
-                            ].map(field => (
-                                <div key={field.key}>
-                                    <label style={labelStyle}>{field.label}</label>
-                                    <input
-                                        type={field.type}
-                                        value={formData[field.key]}
-                                        onChange={e => setFormData({ ...formData, [field.key]: field.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value })}
-                                        placeholder={field.placeholder}
-                                        style={inputStyle}
-                                    />
-                                </div>
-                            ))}
+                            {/* Name */}
+                            <div>
+                                <label style={labelStyle}>Nombre</label>
+                                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={inputStyle} />
+                            </div>
 
+                            {/* Price */}
+                            <div>
+                                <label style={labelStyle}>Precio</label>
+                                <input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })} style={inputStyle} />
+                            </div>
+
+                            {/* Category */}
                             <div>
                                 <label style={labelStyle}>Categoría</label>
-                                <select
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                    style={{ ...inputStyle }}
-                                >
+                                <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} style={inputStyle}>
                                     <option value="">Sin categoría</option>
-                                    {categories.map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
+                                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
 
+                            {/* Image — URL or File Upload */}
+                            <div>
+                                <label style={labelStyle}>Imagen del Producto</label>
+
+                                {/* Preview */}
+                                {formData.image && (
+                                    <div style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', height: '120px', background: '#1e293b' }}>
+                                        <img src={formData.image} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                )}
+
+                                {/* Upload from device */}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    ref={fileInputRef}
+                                    onChange={handleFileUpload}
+                                    style={{ display: 'none' }}
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={uploadingImage}
+                                    style={{
+                                        width: '100%', padding: '12px', marginBottom: '8px',
+                                        background: uploadingImage ? '#1e293b' : 'rgba(59,130,246,0.1)',
+                                        border: '1px dashed #3b82f6', borderRadius: '8px',
+                                        color: '#3b82f6', fontSize: '12px', fontWeight: '700',
+                                        cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                        fontFamily: "'Inter', sans-serif",
+                                    }}
+                                >
+                                    {uploadingImage ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo...</> : <><Upload size={14} /> Subir desde dispositivo</>}
+                                </button>
+
+                                {/* Or URL */}
+                                <p style={{ fontSize: '10px', color: '#475569', textAlign: 'center', margin: '4px 0' }}>— o pegá una URL —</p>
+                                <input
+                                    type="text"
+                                    value={formData.image}
+                                    onChange={e => setFormData({ ...formData, image: e.target.value })}
+                                    placeholder="https://..."
+                                    style={inputStyle}
+                                />
+                            </div>
+
+                            {/* Stock per size */}
                             <div>
                                 <label style={labelStyle}>Stock por Talle</label>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>

@@ -1,16 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useSettingsStore } from '../store/useSettingsStore';
 
 const Hero = () => {
-    // Read hero settings from localStorage (set by admin)
-    const heroSettings = (() => {
-        try { return JSON.parse(localStorage.getItem('olmo_hero') || '{}'); } catch { return {}; }
-    })();
+    const { settings, fetchSettings, subscribeToSettings } = useSettingsStore();
 
-    const title = heroSettings.title || 'OLMO';
-    const subtitle = heroSettings.subtitle || 'INDUMENTARIA';
-    const cta = heroSettings.cta || 'Ver Colección';
-    const bgColor = heroSettings.bgColor || null;
+    useEffect(() => {
+        fetchSettings();
+        const unsubscribe = subscribeToSettings();
+        return unsubscribe;
+    }, []);
+
+    const hero = settings.hero || {};
+    const title = hero.title || 'OLMO';
+    const subtitle = hero.subtitle || 'INDUMENTARIA';
+    const cta = hero.cta || 'Ver Colección';
+    const bgColor = hero.bgColor || null;
 
     return (
         <section
@@ -40,7 +45,6 @@ const Hero = () => {
             }} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
-                {/* EST. label */}
                 <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -58,7 +62,6 @@ const Hero = () => {
                     EST. 2025 // SANTA FE
                 </motion.p>
 
-                {/* Title */}
                 <motion.h1
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -77,7 +80,6 @@ const Hero = () => {
                     {title}
                 </motion.h1>
 
-                {/* Subtitle */}
                 <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -95,7 +97,6 @@ const Hero = () => {
                     {subtitle}
                 </motion.p>
 
-                {/* CTA */}
                 <motion.button
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useStockStore } from '../store/useStockStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 
 // ── Product Card (2-col grid style matching Stitch design) ──────────────────
 const ProductCard = ({ product, onOpen }) => {
@@ -253,17 +254,18 @@ const ProductGrid = ({ searchQuery = '' }) => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [activeCategory, setActiveCategory] = useState('Todos');
     const { stock } = useStockStore();
+    const { settings, fetchSettings, subscribeToSettings } = useSettingsStore();
 
-    // Read categories from localStorage (set by admin)
-    const savedCategories = (() => {
-        try { return JSON.parse(localStorage.getItem('olmo_categories') || '[]'); } catch { return []; }
-    })();
+    useEffect(() => {
+        fetchSettings();
+        const unsubscribe = subscribeToSettings();
+        return unsubscribe;
+    }, []);
+
+    // Read categories and contact from Supabase settings
+    const savedCategories = Array.isArray(settings.categories) ? settings.categories : [];
     const categories = ['Todos', ...savedCategories];
-
-    // Read contact from localStorage (set by admin)
-    const contact = (() => {
-        try { return JSON.parse(localStorage.getItem('olmo_contact') || '{}'); } catch { return {}; }
-    })();
+    const contact = settings.contact || {};
 
     // Filter: category + search query
     const filteredStock = stock
