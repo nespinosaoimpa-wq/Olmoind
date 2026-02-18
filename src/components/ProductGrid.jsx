@@ -211,7 +211,7 @@ const ProductModal = ({ product, onClose }) => {
                                     transition: 'all 0.2s ease',
                                 }}
                             >
-                                {size}
+                                <span style={{ fontFamily: "'Inter', sans-serif" }}>{size}</span>
                             </button>
                         );
                     })}
