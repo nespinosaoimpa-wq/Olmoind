@@ -7,6 +7,7 @@ import { useStockStore } from '../store/useStockStore';
 const Header = ({ searchQuery, setSearchQuery }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('mp'); // 'mp' | 'whatsapp'
   const { cart, removeItem, clearCart, totalItems } = useCartStore();
   const { registerSale } = useStockStore();
 
@@ -14,7 +15,35 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Fallback: scroll to top for 'home'
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Mercado Pago: build a payment link
+  // Replace MP_ACCESS_TOKEN with your real Mercado Pago link or use Checkout Pro
+  const handleMercadoPago = async () => {
+    // Build WhatsApp order message as fallback until MP is configured
+    const itemsList = cart.map(i => `• ${i.name} (${i.size}) x${i.quantity} = $${(i.price * i.quantity).toLocaleString()}`).join('%0A');
+    const msg = `Hola! Quiero hacer un pedido:%0A${itemsList}%0A%0ATOTAL: $${cartTotal.toLocaleString()}%0A%0APago: Mercado Pago`;
+    const phone = '543434559599';
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+    await registerSale(cart);
+    clearCart();
+    setIsCartOpen(false);
+  };
+
+  const handleWhatsApp = async () => {
+    const itemsList = cart.map(i => `• ${i.name} (${i.size}) x${i.quantity} = $${(i.price * i.quantity).toLocaleString()}`).join('%0A');
+    const msg = `Hola! Quiero hacer un pedido:%0A${itemsList}%0A%0ATOTAL: $${cartTotal.toLocaleString()}%0A%0APago: Efectivo / Transferencia`;
+    const phone = '543434559599';
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+    await registerSale(cart);
+    clearCart();
+    setIsCartOpen(false);
   };
 
   return (
@@ -165,8 +194,8 @@ const Header = ({ searchQuery, setSearchQuery }) => {
               ].map((item) => (
                 <a
                   key={item.label}
-                  href={`#${item.id}`}
-                  onClick={() => { scrollTo(item.id); setMobileMenuOpen(false); }}
+                  href="#"
+                  onClick={(e) => { e.preventDefault(); scrollTo(item.id); setMobileMenuOpen(false); }}
                   style={{
                     fontFamily: "'Montserrat', sans-serif",
                     fontSize: '1.5rem',
@@ -224,8 +253,8 @@ const Header = ({ searchQuery, setSearchQuery }) => {
         ].map((item) => (
           <a
             key={item.label}
-            href={item.href || `#${item.id}`}
-            onClick={item.action ? (e) => { e.preventDefault(); item.action(); } : undefined}
+            href="#"
+            onClick={(e) => { e.preventDefault(); item.action ? item.action() : scrollTo(item.id); }}
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -324,15 +353,54 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
               {cart.length > 0 && (
                 <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
                     <span style={{ color: '#6b7280', fontWeight: '600' }}>TOTAL</span>
                     <span style={{ fontWeight: '800', color: '#1A1A1A' }}>${cartTotal.toLocaleString()}</span>
                   </div>
+
+                  {/* Payment method selector */}
+                  <p style={{ fontSize: '10px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px', fontFamily: "'Inter', sans-serif" }}>Método de pago</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+                    <button
+                      onClick={() => setPaymentMethod('mp')}
+                      style={{
+                        padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'mp' ? '#009ee3' : '#e5e7eb'}`,
+                        background: paymentMethod === 'mp' ? '#f0f9ff' : '#fff',
+                        cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                      }}
+                    >
+                      <span style={{ fontSize: '18px' }}>💳</span>
+                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#009ee3', fontFamily: "'Inter', sans-serif" }}>Mercado Pago</span>
+                    </button>
+                    <button
+                      onClick={() => setPaymentMethod('whatsapp')}
+                      style={{
+                        padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'whatsapp' ? '#25d366' : '#e5e7eb'}`,
+                        background: paymentMethod === 'whatsapp' ? '#f0fdf4' : '#fff',
+                        cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                      }}
+                    >
+                      <span style={{ fontSize: '18px' }}>💬</span>
+                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#25d366', fontFamily: "'Inter', sans-serif" }}>WhatsApp</span>
+                    </button>
+                  </div>
+
+                  {paymentMethod === 'mp' && (
+                    <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif", marginBottom: '12px', textAlign: 'center' }}>
+                      Te vamos a contactar por WhatsApp para enviarte el link de pago de Mercado Pago.
+                    </p>
+                  )}
+                  {paymentMethod === 'whatsapp' && (
+                    <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif", marginBottom: '12px', textAlign: 'center' }}>
+                      Coordinamos el pago por transferencia o efectivo vía WhatsApp.
+                    </p>
+                  )}
+
                   <button
-                    onClick={() => { registerSale(cart); clearCart(); setIsCartOpen(false); }}
+                    onClick={paymentMethod === 'mp' ? handleMercadoPago : handleWhatsApp}
                     style={{
                       width: '100%',
-                      background: '#1A1A1A',
+                      background: paymentMethod === 'mp' ? '#009ee3' : '#25d366',
                       color: '#ffffff',
                       border: 'none',
                       padding: '16px',
@@ -342,10 +410,14 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                       letterSpacing: '0.2em',
                       textTransform: 'uppercase',
                       cursor: 'pointer',
-                      borderRadius: '4px',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
                     }}
                   >
-                    FINALIZAR COMPRA
+                    {paymentMethod === 'mp' ? '💳 PAGAR CON MERCADO PAGO' : '💬 PEDIR POR WHATSAPP'}
                   </button>
                 </div>
               )}

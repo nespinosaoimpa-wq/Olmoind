@@ -400,7 +400,7 @@ const ProductGrid = ({ searchQuery = '' }) => {
             </section>
 
             {/* Footer */}
-            <footer style={{
+            <footer id="contact" style={{
                 background: '#ffffff',
                 padding: '48px 32px',
                 borderTop: '1px solid #f3f4f6',
