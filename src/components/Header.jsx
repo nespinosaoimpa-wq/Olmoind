@@ -41,7 +41,7 @@ const Header = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           zIndex: 1000,
-          background: '#050505', // Deep Luxury Black
+          background: '#333333', // Dark Gray (Charcoal) - "Gris donde esta el azul"
           borderBottom: '1px solid rgba(255,255,255,0.1)',
           transition: 'all 0.4s ease'
         }}

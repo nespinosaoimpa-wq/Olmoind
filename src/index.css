@@ -3,23 +3,22 @@
 
 /* VOITURE / PREMIUM DARK PALETTE */
 :root {
-  --bg-body: #050505;
-  /* Deep Luxury Black */
-  --bg-header: #050505;
-  /* Matching Black Header */
-  --bg-card: #0a0a0a;
+  /* ONESTREET / SILVER BRAND PALETTE */
+  --bg-body: #ffffff;
+  /* Pure White Body */
+  --bg-header: #333333;
+  /* Dark Gray Header */
+  --bg-card: rgba(255, 255, 255, 0.8);
 
-  --text-primary: #ffffff;
-  /* Pure White */
-  --text-secondary: #888888;
-  /* Silver/Grey for subtle text */
+  --text-primary: #000000;
+  /* Black Text */
+  --text-secondary: #666666;
+  /* Dark Grey for subtle text */
   --text-header: #ffffff;
+  /* White Text for Header */
 
-  --accent-gold: #D4AF37;
-  /* Keeping this definition handy if needed, but primary is B&W */
-
-  --border-subtle: #333333;
-  --border-glow: #ffffff;
+  --border-subtle: #e5e5e5;
+  --border-glow: #000000;
 
   /* FONTS */
   --font-display: 'Syncopate',
@@ -82,11 +81,10 @@ body {
   background: var(--text-secondary);
 }
 
-/* BUTTONS - PREMIUM CONTRAST */
+/* BUTTONS - SOLID MINIMALIST */
 .btn-primary {
-  background: #ffffff;
-  /* White button on Dark background */
-  color: #000000;
+  background: #000000;
+  color: #ffffff;
   border: none;
   padding: 15px 50px;
   font-family: var(--font-display);
@@ -96,8 +94,8 @@ body {
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 2px;
-  border-radius: 0px;
-  /* Sharp edges for luxury feel */
+  border-radius: 2px;
+  /* Slight roundness often seen in modern streetwear */
 }
 
 .btn-primary:hover {
