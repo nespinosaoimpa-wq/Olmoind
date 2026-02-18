@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>OLMO Indumentaria | Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&amp;family=Montserrat:wght@800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1A1A1A",
+                        "background-light": "#F5F5F5",
+                        "background-dark": "#121212",
+                    },
+                    fontFamily: {
+                        display: ["Montserrat", "sans-serif"],
+                        sans: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "4px",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        .gradient-bg {
+            background: linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%);
+        }
+        .dark .gradient-bg {
+            background: linear-gradient(180deg, #1A1A1A 0%, #0A0A0A 100%);
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-primary dark:text-gray-100 font-sans antialiased">
+<header class="pt-10 pb-6 px-6 text-center bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-800">
+<div class="flex justify-between items-center mb-6">
+<button class="text-primary dark:text-white">
+<span class="material-icons-outlined">menu</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="font-display text-2xl tracking-tighter leading-none">OLMO</h1>
+<p class="text-[8px] tracking-[0.4em] uppercase font-light mt-1">Indumentaria</p>
+</div>
+<button class="text-primary dark:text-white relative">
+<span class="material-icons-outlined">shopping_bag</span>
+<span class="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+</button>
+</div>
+<div class="relative mt-4">
+<input class="w-full bg-gray-100 dark:bg-zinc-900 border-none rounded-full py-3 px-12 text-sm focus:ring-1 focus:ring-primary" placeholder="¿Qué estás buscando?" type="text"/>
+<span class="material-icons-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+</div>
+</header>
+<main class="gradient-bg min-h-screen pb-24">
+<div class="flex overflow-x-auto gap-4 px-6 py-6 no-scrollbar">
+<button class="flex-shrink-0 px-6 py-2 bg-primary text-white text-xs font-bold uppercase tracking-widest rounded-full">Oversized</button>
+<button class="flex-shrink-0 px-6 py-2 bg-white dark:bg-zinc-800 text-primary dark:text-white text-xs font-bold uppercase tracking-widest rounded-full border border-gray-200 dark:border-zinc-700">Hoodies</button>
+<button class="flex-shrink-0 px-6 py-2 bg-white dark:bg-zinc-800 text-primary dark:text-white text-xs font-bold uppercase tracking-widest rounded-full border border-gray-200 dark:border-zinc-700">Pantalones</button>
+<button class="flex-shrink-0 px-6 py-2 bg-white dark:bg-zinc-800 text-primary dark:text-white text-xs font-bold uppercase tracking-widest rounded-full border border-gray-200 dark:border-zinc-700">Accesorios</button>
+</div>
+<section class="px-6 mb-12">
+<div class="flex justify-between items-end mb-6">
+<h2 class="text-2xl font-display font-extrabold tracking-tight uppercase">Destacados</h2>
+<a class="text-xs font-semibold underline decoration-2 underline-offset-4" href="#">Ver todo</a>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="group">
+<div class="aspect-[3/4] overflow-hidden bg-gray-200 mb-3 rounded-sm">
+<img alt="Chomba Boxi Rústica" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNxW8Lr7tFHcM-_D-OsGQ-0O3ffeTaocFQqjKd94fJ_yG5eyjagdx7cvV971FadZiDoH7cl86zlbVnV9UupL-S_iVObOi9sQKNd_hKOdXblbPS5QebWqaIuIv0Ycl8NlxVD4xgcjSNBna7m97QXIBHc8aZYHlZy3pRfZTZhI7N3TLDCLsvvcZKgf-tB_G8e0DbmPJ1iMHtd2CVvkjU2bza1_9MXKRMkqXT18ZssWWoO_G160e5FfPEX6tSu9nclq8s2XOhnvO35iQK"/>
+</div>
+<p class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">OLMO CORE</p>
+<h3 class="text-sm font-semibold mb-2 truncate">Chomba Boxi Rústica</h3>
+<p class="text-base font-bold mb-3">$42.000,00</p>
+<button class="w-full py-3 bg-primary text-white text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors">Comprar</button>
+</div>
+<div class="group">
+<div class="aspect-[3/4] overflow-hidden bg-gray-200 mb-3 rounded-sm">
+<img alt="Cargo Pants" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGh7CDh7U5RLPU8-P_aILBdakZ1eAGOESOKFpZBYp694N7hIJaUfr6HuChldGlUg_yGIG_6MI8DnyBrYD9WUucYkR4pBBRr9-Rxw0dySQ7HVXn-LJjpZwYmQq79nnqAZ0ERv6Uu8ekRn7iV9hoN4HhQ0o0UHnylTujoGZPN5XCyJW0JKP8Mjv7boNOp5IxbLYo2VFOtG02VI-42BMScW8dEOJbPhuEdZ7rZmPkN-hH74wwn2XyQ3dY087YDEapVdrpSbg10YXkwfWy"/>
+</div>
+<p class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">SEASONAL</p>
+<h3 class="text-sm font-semibold mb-2 truncate">Pantalón Cargo Black</h3>
+<p class="text-base font-bold mb-3">$36.000,00</p>
+<button class="w-full py-3 bg-primary text-white text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors">Comprar</button>
+</div>
+</div>
+</section>
+<section class="bg-primary py-16 px-8 text-center text-white mb-12 mx-4 rounded-xl">
+<h2 class="text-2xl font-display font-extrabold mb-4">NEWSLETTER</h2>
+<p class="text-sm text-gray-400 mb-8 font-light">Recibí ofertas exclusivas y lanzamientos anticipados de nuestras colecciones urbanas.</p>
+<div class="relative">
+<input class="w-full bg-white text-primary border-none py-4 px-6 rounded-full text-sm placeholder:text-gray-400" placeholder="Tu Email" type="email"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center">
+<span class="material-icons-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</section>
+<section class="px-6 mb-12">
+<div class="flex justify-between items-end mb-6">
+<h2 class="text-2xl font-display font-extrabold tracking-tight uppercase">NEW ARRIVALS</h2>
+<a class="text-xs font-semibold underline decoration-2 underline-offset-4" href="#">Explorar</a>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="group">
+<div class="aspect-[3/4] overflow-hidden bg-gray-200 mb-3 rounded-sm">
+<img alt="Musculosa Marrón" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT-jTOLJTI2Yo7jZdqogzwzaZUmEVPMzceAeidFOcUk5Oht_KPvMOZVlkrxOvFcFyCfhZ3W5c-x6fvHOyUUSmQ4HoAhsKSB9cA-u2krtFMRzrRE_6qVhgfsW1raDIJ4IvDzc9ckBng36zIGI-bEXQrHfQ3KJtxpIXNMbvhUJQuMhuH-bwiguLmKwNIOznRea9QhEsK1sgyfRJKO8DYEhcFYMQAEONnjni5b7fMQlIq7Ejklu_ilFfnSVQqCG4x8paEq7-yAwKuBWpH"/>
+</div>
+<h3 class="text-sm font-semibold mb-2 truncate">Musculosa Marrón Lisa</h3>
+<p class="text-base font-bold mb-3">$16.000,00</p>
+<button class="w-full py-3 bg-primary text-white text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors">Comprar</button>
+</div>
+<div class="group">
+<div class="aspect-[3/4] overflow-hidden bg-gray-200 mb-3 rounded-sm">
+<img alt="White Tee" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvcTdDij5VRJTX0wPSVHA7MGMi9pR4PxNZPjbj_59ojBQSNyKEvm7Y1dut45-O2NWhKQlq1UsWgNpr3rDo8lEfJ-vC8mDwY2yQzrqLwqe8jDewvm_EE2oF6cLQ9m4QX1ynzxm5nvWSqu8j2kFq9zTaEPtWPdeO5DYBBoVQR02f2hsoxAmeWMcTlZlh6UfqPAnXNObuPu7Qic98emnKHmc_3soKf4p5-OpodS1TTCCOvsCFl9af2qj7tvpmJAwqZvtBZVvRPdezZBc8"/>
+</div>
+<h3 class="text-sm font-semibold mb-2 truncate">Boxy White Tee</h3>
+<p class="text-base font-bold mb-3">$18.500,00</p>
+<button class="w-full py-3 bg-primary text-white text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors">Comprar</button>
+</div>
+</div>
+</section>
+<section class="px-6 py-12 border-t border-gray-200 dark:border-gray-800">
+<div class="flex flex-col items-center text-center">
+<span class="material-icons-outlined text-3xl mb-4">photo_camera</span>
+<h3 class="text-lg font-bold mb-1">@olmo_indumentaria</h3>
+<p class="text-sm text-gray-500 mb-6">Estamos en Instagram</p>
+<button class="px-10 py-3 border border-primary dark:border-white text-[11px] font-bold uppercase tracking-[0.2em] rounded-full hover:bg-primary hover:text-white transition-all">Seguinos</button>
+</div>
+</section>
+<footer class="bg-white dark:bg-background-dark px-8 py-12 border-t border-gray-100 dark:border-zinc-900">
+<div class="mb-10">
+<h4 class="text-xs font-bold uppercase tracking-widest mb-6 opacity-50">Categorías</h4>
+<ul class="space-y-4 text-sm font-medium">
+<li><a href="#">Inicio</a></li>
+<li><a href="#">Contacto</a></li>
+<li><a href="#">Productos</a></li>
+</ul>
+</div>
+<div class="mb-10">
+<h4 class="text-xs font-bold uppercase tracking-widest mb-6 opacity-50">Contactános</h4>
+<ul class="space-y-4 text-sm font-medium">
+<li class="flex items-center gap-3"><span class="material-icons-outlined text-lg">whatsapp</span> 543434559599</li>
+<li class="flex items-center gap-3"><span class="material-icons-outlined text-lg">mail</span> olmoshowroom@gmail.com</li>
+<li class="flex items-center gap-3"><span class="material-icons-outlined text-lg">location_on</span> Cervantes 35 local A</li>
+</ul>
+</div>
+<div class="flex gap-4 mb-12">
+<a class="w-10 h-10 bg-primary text-white flex items-center justify-center rounded-full" href="#"><span class="material-icons-outlined">facebook</span></a>
+<a class="w-10 h-10 bg-primary text-white flex items-center justify-center rounded-full" href="#"><span class="material-icons-outlined">camera_alt</span></a>
+</div>
+<div class="mb-10 opacity-60">
+<h4 class="text-[10px] font-bold uppercase tracking-widest mb-4">Medios de pago</h4>
+<div class="flex flex-wrap gap-2">
+<div class="h-6 w-10 bg-gray-100 dark:bg-zinc-800 rounded"></div>
+<div class="h-6 w-10 bg-gray-100 dark:bg-zinc-800 rounded"></div>
+<div class="h-6 w-10 bg-gray-100 dark:bg-zinc-800 rounded"></div>
+<div class="h-6 w-10 bg-gray-100 dark:bg-zinc-800 rounded"></div>
+</div>
+</div>
+<div class="pt-10 border-t border-gray-100 dark:border-zinc-900 text-center">
+<h1 class="font-display text-xl tracking-tighter opacity-20">OLMO</h1>
+<p class="text-[9px] mt-4 opacity-40">Copyright Olmo Indumentaria - 2024. Todos los derechos reservados.</p>
+</div>
+</footer>
+</main>
+<nav class="fixed bottom-0 w-full bg-white/90 dark:bg-background-dark/90 backdrop-blur-md border-t border-gray-200 dark:border-zinc-800 px-6 py-4 z-50">
+<div class="flex justify-between items-center max-w-md mx-auto">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-icons-outlined">home</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Inicio</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-400" href="#">
+<span class="material-icons-outlined">grid_view</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Productos</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-400" href="#">
+<span class="material-icons-outlined">shopping_cart</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Carrito</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-gray-400" href="#">
+<span class="material-icons-outlined">person</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Admin</span>
+</a>
+</div>
+</nav>
+<div class="fixed bottom-20 left-4 right-4 bg-primary text-white p-4 rounded-lg flex items-center justify-between z-40 text-xs shadow-2xl">
+<p class="pr-4 leading-relaxed font-light">Utilizamos cookies para mejorar tu experiencia de compra.</p>
+<button class="bg-white text-primary px-4 py-2 font-bold uppercase tracking-widest text-[10px] whitespace-nowrap">ENTENDIDO</button>
+</div>
+
+</body></html>

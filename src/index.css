@@ -1,30 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Syncopate:wght@400;700&display=swap');
-/* Force Deploy: OneStreet Style Update */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@800&display=swap');
 
-/* VOITURE / PREMIUM DARK PALETTE */
+/* ── STITCH DESIGN SYSTEM ─────────────────────────────────────────────────── */
 :root {
-  /* ONESTREET / SILVER BRAND PALETTE */
-  --bg-body: #ffffff;
-  /* Pure White Body */
-  --bg-header: #333333;
-  /* Dark Gray Header */
-  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-body: #F9F9F9;
+  --bg-white: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.9);
 
-  --text-primary: #000000;
-  /* Black Text */
-  --text-secondary: #666666;
-  /* Dark Grey for subtle text */
-  --text-header: #ffffff;
-  /* White Text for Header */
+  --text-primary: #1A1A1A;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
 
-  --border-subtle: #e5e5e5;
-  --border-glow: #000000;
+  --border-subtle: #e5e7eb;
+  --border-glow: #1A1A1A;
 
   /* FONTS */
-  --font-display: 'Syncopate',
-    sans-serif;
-  --font-body: 'Outfit',
-    sans-serif;
+  --font-display: 'Montserrat', sans-serif;
+  --font-body: 'Inter', sans-serif;
 
   /* ANIMATIONS */
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
@@ -44,13 +35,13 @@ body {
   font-family: var(--font-body);
   overflow-x: hidden;
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* UTILITY CLASSES */
+/* ── UTILITY CLASSES ─────────────────────────────────────────────────────── */
 .font-display {
   font-family: var(--font-display);
   text-transform: uppercase;
-  letter-spacing: 2px;
 }
 
 .font-body {
@@ -60,70 +51,75 @@ body {
 .container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 0 24px;
 }
 
-/* SCROLLBAR */
+/* ── SCROLLBAR ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-deep);
+  background: #f3f4f6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--accent-dim);
-  border-radius: 3px;
+  background: #d1d5db;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: #9ca3af;
 }
 
-/* BUTTONS - SOLID MINIMALIST */
+/* Hide scrollbar for horizontal scroll containers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────────── */
 .btn-primary {
-  background: #000000;
+  background: #1A1A1A;
   color: #ffffff;
   border: none;
-  padding: 15px 50px;
-  font-family: var(--font-display);
-  font-size: 14px;
+  padding: 14px 40px;
+  font-family: var(--font-body);
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  border-radius: 2px;
-  /* Slight roundness often seen in modern streetwear */
+  letter-spacing: 0.2em;
+  border-radius: 4px;
 }
 
 .btn-primary:hover {
-  background: #333333;
-  /* Dark Grey on hover */
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  background: #3f3f3f;
 }
 
-/* CARDS - GLASSMORPHISM */
+/* ── CARDS ───────────────────────────────────────────────────────────────── */
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
-  transition: transform 0.4s var(--ease-out-expo), border-color 0.4s ease;
+  transition: transform 0.3s var(--ease-out-expo), border-color 0.3s ease;
+  border-radius: 4px;
 }
 
 .glass-card:hover {
   border-color: var(--border-glow);
-  transform: translateY(-5px);
+  transform: translateY(-3px);
 }
 
-/* SCROLL REVELATION */
+/* ── REVEAL ANIMATION ────────────────────────────────────────────────────── */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: all 1s var(--ease-out-expo);
+  transform: translateY(20px);
+  transition: all 0.8s var(--ease-out-expo);
 }
 
 .reveal.active {

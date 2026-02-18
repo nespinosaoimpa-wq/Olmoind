@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gestión de Stock - OLMO INDUMENTARIA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .ios-shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#1c1c1e] dark:text-[#f2f2f7] min-h-screen pb-24">
+<!-- Header Navigation -->
+<header class="sticky top-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between">
+<button class="flex items-center text-primary">
+<span class="material-symbols-outlined text-[28px]">chevron_left</span>
+<span class="text-base font-medium">Volver</span>
+</button>
+<h1 class="text-base font-semibold">Detalles del Producto</h1>
+<button class="text-primary">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</header>
+<main class="max-w-md mx-auto p-4 space-y-6">
+<!-- Product Image Hero -->
+<div class="relative group">
+<div class="aspect-[3/4] w-full rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 ios-shadow">
+<img alt="Remera Oversized Blanca" class="w-full h-full object-cover" data-alt="Remera blanca oversized de algodón pesado" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAxjah94i5y4Ln2d6Wukw4SZCkYuqmsvLwd2zwwTGVbSe34nTzJEg8hoN3Pxx8zKmOO7FwkHV4emTWZl68rkOgjxKIbm4pnzZxtv6-n3JXco6zZMHqVRz_6DBl3T8zHgv-axWPE0YLhnT-sl2fiDH_0zngwPrk8qaeINScYgp6EM-mJXMXOfjV2pq_FEZXhqHAcQv5H8cKrHoqUkBFCH45123BfNx-M0Wr5LDV4O0MYUob2A4GOKXCSuUabjjiWOYexQNgpR8A67EC"/>
+</div>
+<button class="absolute bottom-4 right-4 bg-white/90 dark:bg-black/60 p-2 rounded-full ios-shadow">
+<span class="material-symbols-outlined text-primary">edit</span>
+</button>
+</div>
+<!-- Product Title Section -->
+<div>
+<span class="text-xs font-bold uppercase tracking-wider text-gray-500">OLMO INDUMENTARIA</span>
+<h2 class="text-2xl font-bold mt-1">Remera Oversized Heavy</h2>
+</div>
+<!-- Stock Management Grid -->
+<section class="bg-white dark:bg-gray-900 rounded-xl p-4 ios-shadow">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-lg">Control de Stock</h3>
+<span class="text-xs text-gray-500">Actualizado hace 2m</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<!-- Stock Item: XS (Zero Stock) -->
+<div class="border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10 rounded-lg p-3 flex flex-col items-center">
+<span class="text-xs font-bold mb-1">XS</span>
+<input class="w-full bg-transparent border-0 text-center font-bold text-lg focus:ring-0 p-0 text-red-600" type="number" value="0"/>
+<span class="material-symbols-outlined text-red-500 text-sm mt-1">close</span>
+</div>
+<!-- Stock Item: S -->
+<div class="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex flex-col items-center">
+<span class="text-xs font-bold mb-1">S</span>
+<input class="w-full bg-transparent border-0 text-center font-bold text-lg focus:ring-0 p-0" type="number" value="12"/>
+<span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>
+</div>
+<!-- Stock Item: M -->
+<div class="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex flex-col items-center">
+<span class="text-xs font-bold mb-1">M</span>
+<input class="w-full bg-transparent border-0 text-center font-bold text-lg focus:ring-0 p-0" type="number" value="45"/>
+<span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>
+</div>
+<!-- Stock Item: L -->
+<div class="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex flex-col items-center">
+<span class="text-xs font-bold mb-1">L</span>
+<input class="w-full bg-transparent border-0 text-center font-bold text-lg focus:ring-0 p-0" type="number" value="32"/>
+<span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>
+</div>
+<!-- Stock Item: XL -->
+<div class="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex flex-col items-center">
+<span class="text-xs font-bold mb-1">XL</span>
+<input class="w-full bg-transparent border-0 text-center font-bold text-lg focus:ring-0 p-0" type="number" value="18"/>
+<span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>
+</div>
+<!-- Stock Item: XXL (Zero Stock) -->
+<div class="border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10 rounded-lg p-3 flex flex-col items-center">
+<span class="text-xs font-bold mb-1">XXL</span>
+<input class="w-full bg-transparent border-0 text-center font-bold text-lg focus:ring-0 p-0 text-red-600" type="number" value="0"/>
+<span class="material-symbols-outlined text-red-500 text-sm mt-1">close</span>
+</div>
+</div>
+<p class="text-[11px] text-gray-500 mt-4 leading-tight italic">
+                * Los talles con stock "0" se mostrarán como agotados automáticamente en la tienda.
+            </p>
+</section>
+<!-- Product Details Form -->
+<section class="space-y-4">
+<div class="bg-white dark:bg-gray-900 rounded-xl overflow-hidden ios-shadow divide-y divide-gray-100 dark:divide-gray-800">
+<div class="p-4 flex flex-col">
+<label class="text-xs font-semibold text-gray-500 mb-1">Precio Unitario</label>
+<div class="flex items-center">
+<span class="text-lg font-medium text-gray-400 mr-1">$</span>
+<input class="w-full border-0 p-0 focus:ring-0 text-lg font-bold bg-transparent" type="text" value="15.000,00"/>
+</div>
+</div>
+<div class="p-4 flex flex-col">
+<label class="text-xs font-semibold text-gray-500 mb-1">Categoría</label>
+<select class="w-full border-0 p-0 focus:ring-0 text-base bg-transparent appearance-none">
+<option>Remeras / Verano</option>
+<option>Básicos</option>
+<option>Edición Limitada</option>
+</select>
+</div>
+<div class="p-4 flex flex-col">
+<label class="text-xs font-semibold text-gray-500 mb-1">Descripción del Producto</label>
+<textarea class="w-full border-0 p-0 focus:ring-0 text-sm bg-transparent resize-none leading-relaxed" rows="3">Algodón 24/1 premium con terminación peinado. Corte oversized con hombros caídos y cuello de rib ancho. Ideal para un look urbano y duradero.</textarea>
+</div>
+</div>
+</section>
+<!-- Danger Zone -->
+<div class="pt-4 pb-8">
+<button class="w-full flex items-center justify-center gap-2 py-4 rounded-xl border border-red-200 dark:border-red-900/30 text-red-500 font-semibold bg-red-50/30 dark:bg-red-950/20 active:bg-red-100 transition-colors">
+<span class="material-symbols-outlined text-xl">delete</span>
+                Eliminar Prenda
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar & Actions -->
+<div class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-background-dark/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 px-6 pt-4 pb-8 flex items-center gap-4 z-50">
+<div class="flex-1">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl ios-shadow transition-all active:scale-[0.98]">
+                Guardar Cambios
+            </button>
+</div>
+</div>
+<!-- Floating Navigation Simulation (BottomNavBar Component Style) -->
+<nav class="hidden">
+<!-- Structural reference for component rules -->
+<div class="flex gap-2 border-t border-[#e7edf3] bg-slate-50 px-4 pb-3 pt-2">
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-[#4c739a]" href="#">
+<span class="material-symbols-outlined">home</span>
+<p class="text-xs font-medium">Inicio</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-full text-[#0d141b]" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<p class="text-xs font-medium">Inventario</p>
+</a>
+</div>
+</nav>
+</body></html>

@@ -1,218 +1,273 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Search, User, Menu, X, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ShoppingBag, Search, Menu, X, Home, Grid, ShoppingCart, User, Trash2 } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useStockStore } from '../store/useStockStore';
 
 const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { cart, removeItem, clearCart, totalItems } = useCartStore();
   const { registerSale } = useStockStore();
 
   const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const menuItems = [
-    { name: 'HOME', path: '#home' },
-    { name: 'SHOP', path: '#shop' },
-    { name: 'LANZAMIENTOS', path: '#shop' },
-    { name: 'VISUALS', path: '#about' },
-  ];
+  const scrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <>
-      <header
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          padding: '15px 40px',
+      {/* TOP HEADER */}
+      <header style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        zIndex: 1000,
+        background: '#ffffff',
+        borderBottom: '1px solid #e5e7eb',
+      }}>
+        {/* Top Row: Menu | Logo | Cart */}
+        <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          zIndex: 1000,
-          background: '#333333', // Dark Gray (Charcoal) - "Gris donde esta el azul"
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          transition: 'all 0.4s ease'
-        }}
-      >
-        {/* LOGO - ONESTREET STYLE (Smaller OLMO + INDUMENTARIA) */}
-        <div style={{ zIndex: 1001, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <a href="/" style={{
-            fontSize: '1.2rem', // "Mas chico" 
-            fontWeight: '900',
-            letterSpacing: '2px',
-            color: 'var(--text-header)',
-            textDecoration: 'none',
-            fontFamily: 'var(--font-display)',
-            lineHeight: '1'
-          }}>
-            OLMO
-          </a>
-          <span style={{
-            fontSize: '0.6rem',
-            color: 'var(--text-header)',
-            letterSpacing: '3px',
-            fontFamily: 'var(--font-body)',
-            marginTop: '2px',
-            textTransform: 'uppercase'
-          }}>
-            INDUMENTARIA
-          </span>
-        </div>
-
-        {/* DESKTOP MENU - FLOATING & GLOW */}
-        <nav className="desktop-nav" style={{ display: 'none' }}>
-          <ul style={{ display: 'flex', gap: '40px', listStyle: 'none' }}>
-            {menuItems.map((item) => (
-              <li key={item.name}>
-                <a
-                  href={item.path}
-                  style={{
-                    color: '#ffffff',
-                    textDecoration: 'none',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    letterSpacing: '2px',
-                    fontFamily: 'var(--font-body)',
-                    transition: 'all 0.3s ease',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.color = 'var(--text-primary)';
-                    e.target.style.textShadow = '0 0 8px rgba(255,255,255,0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.color = 'var(--text-secondary)';
-                    e.target.style.textShadow = 'none';
-                  }}
-                >
-                  {item.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* ICONS & ACTIONS */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '25px', zIndex: 1001 }}>
-          <button style={{ color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => window.location.href = '/admin?admin=true'}>
-            <User size={18} />
+          padding: '12px 24px 8px',
+        }}>
+          {/* Hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A', padding: '4px' }}
+          >
+            <Menu size={24} />
           </button>
 
+          {/* Logo */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <a href="/" style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '1.5rem',
+              fontWeight: '800',
+              letterSpacing: '-2px',
+              color: '#1A1A1A',
+              textDecoration: 'none',
+              lineHeight: '1',
+            }}>
+              OLMO
+            </a>
+            <span style={{
+              fontSize: '8px',
+              letterSpacing: '0.4em',
+              textTransform: 'uppercase',
+              fontWeight: '300',
+              color: '#1A1A1A',
+              marginTop: '2px',
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              Indumentaria
+            </span>
+          </div>
+
+          {/* Cart */}
           <button
-            style={{ color: 'var(--text-primary)', position: 'relative', background: 'none', border: 'none', cursor: 'pointer' }}
             onClick={() => setIsCartOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A', padding: '4px', position: 'relative' }}
           >
-            <ShoppingBag size={18} />
+            <ShoppingBag size={24} />
             {totalItems > 0 && (
               <span style={{
                 position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                background: 'var(--text-primary)',
-                color: '#000',
-                fontSize: '9px',
+                top: '-4px',
+                right: '-4px',
+                background: '#1A1A1A',
+                color: '#fff',
+                fontSize: '10px',
                 fontWeight: '900',
-                width: '14px',
-                height: '14px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '50%'
               }}>
                 {totalItems}
               </span>
             )}
           </button>
+        </div>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            className="mobile-toggle"
-            style={{ color: 'var(--text-primary)', background: 'none', border: 'none' }}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+        {/* Search Bar */}
+        <div style={{ padding: '0 24px 12px', position: 'relative' }}>
+          <Search size={16} style={{
+            position: 'absolute',
+            left: '40px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#9ca3af',
+          }} />
+          <input
+            type="text"
+            placeholder="¿Qué estás buscando?"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              background: '#f3f4f6',
+              border: 'none',
+              borderRadius: '9999px',
+              padding: '10px 16px 10px 40px',
+              fontSize: '14px',
+              fontFamily: "'Inter', sans-serif",
+              outline: 'none',
+              color: '#1A1A1A',
+              boxSizing: 'border-box',
+            }}
+          />
         </div>
       </header>
 
-      {/* CSS Helper for Responsive Display */}
-      <style>{`
-        @media (min-width: 768px) {
-            .desktop-nav { display: block !important; }
-            .mobile-toggle { display: none !important; }
-        }
-        @media (max-width: 767px) {
-            .desktop-nav { display: none !important; }
-            .mobile-toggle { display: block !important; }
-        }
-      `}</style>
-
-      {/* MOBILE OVERLAY MENU - FULL SCREEN CYBER */}
+      {/* MOBILE FULL-SCREEN MENU */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: '-100%' }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: '-100%' }}
-            transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+            initial={{ opacity: 0, x: '-100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '-100%' }}
+            transition={{ duration: 0.3, ease: [0.19, 1, 0.22, 1] }}
             style={{
               position: 'fixed',
               top: 0,
               left: 0,
-              width: '100%',
+              width: '80%',
+              maxWidth: '320px',
               height: '100vh',
-              background: 'var(--bg-deep)',
-              zIndex: 900,
+              background: '#ffffff',
+              zIndex: 2000,
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '30px',
-              paddingTop: '60px' // Clear header
+              padding: '40px 32px',
+              boxShadow: '4px 0 30px rgba(0,0,0,0.15)',
             }}
           >
-            {/* Background Mesh/Gradient for Mobile Menu */}
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, #1a1a1a 0%, transparent 70%)', zIndex: -1 }} />
-
-            {menuItems.map((item, i) => (
-              <motion.a
-                key={item.name}
-                href={item.path}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + (i * 0.1) }}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', alignSelf: 'flex-end', marginBottom: '40px', color: '#1A1A1A' }}
+            >
+              <X size={24} />
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              {[
+                { label: 'Inicio', id: 'home' },
+                { label: 'Productos', id: 'shop' },
+                { label: 'Contacto', id: 'contact' },
+              ].map((item) => (
+                <a
+                  key={item.label}
+                  href={`#${item.id}`}
+                  onClick={() => { scrollTo(item.id); setMobileMenuOpen(false); }}
+                  style={{
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontSize: '1.5rem',
+                    fontWeight: '800',
+                    color: '#1A1A1A',
+                    textDecoration: 'none',
+                    letterSpacing: '-1px',
+                  }}
+                >
+                  {item.label}
+                </a>
+              ))}
+              <a
+                href="/admin?admin=true"
                 style={{
-                  fontSize: '3rem',
-                  fontFamily: 'var(--font-display)',
-                  color: 'var(--text-primary)',
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  color: '#6b7280',
                   textDecoration: 'none',
-                  fontWeight: '900',
-                  letterSpacing: '2px',
-                  textTransform: 'uppercase',
-                  WebkitTextStroke: '1px rgba(255,255,255,0.2)'
+                  marginTop: '16px',
+                  borderTop: '1px solid #e5e7eb',
+                  paddingTop: '24px',
                 }}
-                onClick={() => setMobileMenuOpen(false)}
               >
-                {item.name}
-              </motion.a>
-            ))}
+                Panel Admin →
+              </a>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Shopping Cart Drawer - Modern */}
+      {/* BACKDROP for menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.4)',
+              zIndex: 1999,
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* BOTTOM NAVIGATION BAR */}
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(12px)',
+        borderTop: '1px solid #e5e7eb',
+        padding: '12px 24px 16px',
+        zIndex: 1000,
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+      }}>
+        {[
+          { icon: <Home size={22} />, label: 'Inicio', id: 'home' },
+          { icon: <Grid size={22} />, label: 'Productos', id: 'shop' },
+          { icon: <ShoppingCart size={22} />, label: 'Carrito', action: () => setIsCartOpen(true) },
+          { icon: <User size={22} />, label: 'Admin', href: '/admin?admin=true' },
+        ].map((item) => (
+          <a
+            key={item.label}
+            href={item.href || `#${item.id}`}
+            onClick={item.action ? (e) => { e.preventDefault(); item.action(); } : undefined}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              color: '#1A1A1A',
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {item.icon}
+            <span style={{
+              fontSize: '10px',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              {item.label}
+            </span>
+          </a>
+        ))}
+      </nav>
+
+      {/* CART DRAWER */}
       <AnimatePresence>
         {isCartOpen && (
           <>
@@ -222,14 +277,10 @@ const Header = () => {
               exit={{ opacity: 0 }}
               onClick={() => setIsCartOpen(false)}
               style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                background: 'rgba(0,0,0,0.8)',
-                zIndex: 1999,
-                backdropFilter: 'blur(5px)'
+                position: 'fixed', inset: 0,
+                background: 'rgba(0,0,0,0.5)',
+                zIndex: 2999,
+                backdropFilter: 'blur(4px)',
               }}
             />
             <motion.div
@@ -239,49 +290,47 @@ const Header = () => {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               style={{
                 position: 'fixed',
-                top: 0,
-                right: 0,
-                width: '90%',
-                maxWidth: '450px',
+                top: 0, right: 0,
+                width: '90%', maxWidth: '420px',
                 height: '100vh',
-                background: '#0a0a0a',
-                zIndex: 2000,
-                padding: '40px',
+                background: '#ffffff',
+                zIndex: 3000,
+                padding: '32px 24px',
                 display: 'flex',
                 flexDirection: 'column',
-                borderLeft: '1px solid var(--border-subtle)',
-                boxShadow: '-20px 0 50px rgba(0,0,0,0.5)'
+                boxShadow: '-10px 0 40px rgba(0,0,0,0.15)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <h2 className="font-display" style={{ fontSize: '20px', fontWeight: '900', letterSpacing: '2px', color: 'var(--text-primary)' }}>BAG ({totalItems})</h2>
-                <button onClick={() => setIsCartOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}><X size={24} /></button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <h2 style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: '#1A1A1A' }}>
+                  CARRITO ({totalItems})
+                </h2>
+                <button onClick={() => setIsCartOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A' }}>
+                  <X size={22} />
+                </button>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {cart.length === 0 ? (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', opacity: 0.5 }}>
-                    <ShoppingBag size={40} style={{ marginBottom: '20px' }} />
-                    <p style={{ fontFamily: 'var(--font-body)', letterSpacing: '1px' }}>YOUR BAG IS EMPTY</p>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#9ca3af', gap: '16px' }}>
+                    <ShoppingBag size={40} />
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: '600' }}>Tu carrito está vacío</p>
                   </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.id + item.name + item.size} style={{ display: 'flex', gap: '20px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '20px' }}>
-                      <div style={{ width: '80px', height: '100px', background: '#1a1a1a', overflow: 'hidden' }}>
+                    <div key={item.id + item.size} style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #f3f4f6', paddingBottom: '16px' }}>
+                      <div style={{ width: '72px', height: '90px', background: '#f3f4f6', overflow: 'hidden', borderRadius: '4px', flexShrink: 0 }}>
                         <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }} />
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
-                          <h4 style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginBottom: '5px' }}>{item.name}</h4>
-                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>SIZE: {item.size} | QTY: {item.quantity}</p>
+                          <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1A1A1A', fontFamily: "'Inter', sans-serif", marginBottom: '4px' }}>{item.name}</h4>
+                          <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif" }}>TALLE: {item.size} | CANT: {item.quantity}</p>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                          <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>${(item.price * item.quantity).toLocaleString()}</span>
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            style={{ color: '#ff4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '700' }}
-                          >
-                            REMOVE
+                          <span style={{ fontSize: '15px', fontWeight: '700', color: '#1A1A1A', fontFamily: "'Inter', sans-serif" }}>${(item.price * item.quantity).toLocaleString()}</span>
+                          <button onClick={() => removeItem(item.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '700' }}>
+                            <Trash2 size={14} /> QUITAR
                           </button>
                         </div>
                       </div>
@@ -291,22 +340,29 @@ const Header = () => {
               </div>
 
               {cart.length > 0 && (
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '30px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontFamily: 'var(--font-display)', fontSize: '14px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>TOTAL</span>
-                    <span style={{ fontWeight: '900', color: 'var(--text-primary)' }}>${cartTotal.toLocaleString()}</span>
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
+                    <span style={{ color: '#6b7280', fontWeight: '600' }}>TOTAL</span>
+                    <span style={{ fontWeight: '800', color: '#1A1A1A' }}>${cartTotal.toLocaleString()}</span>
                   </div>
                   <button
-                    onClick={() => {
-                      registerSale(cart);
-                      clearCart();
-                      setIsCartOpen(false);
-                      // In a real app, this would redirect to checkout
+                    onClick={() => { registerSale(cart); clearCart(); setIsCartOpen(false); }}
+                    style={{
+                      width: '100%',
+                      background: '#1A1A1A',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '16px',
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      borderRadius: '4px',
                     }}
-                    className="btn-primary"
-                    style={{ width: '100%', textAlign: 'center' }}
                   >
-                    CHECKOUT
+                    FINALIZAR COMPRA
                   </button>
                 </div>
               )}

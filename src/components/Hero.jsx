@@ -1,136 +1,116 @@
-import React, { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 
 const Hero = () => {
-    const ref = useRef(null);
-    const { scrollYProgress } = useScroll({
-        target: ref,
-        offset: ["start start", "end start"]
-    });
-
-    const yText = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-    const yModel = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
-    const opacityText = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-
     return (
         <section
-            ref={ref}
-            className="section"
             id="home"
             style={{
-                height: '100vh',
-                position: 'relative',
-                overflow: 'hidden',
+                minHeight: '60vh',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexDirection: 'column',
-                background: 'radial-gradient(circle at center, #f5f5f5 0%, #d4d4d4 100%)' // Silver Gradient matching the uploaded branding
+                textAlign: 'center',
+                background: 'linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)',
+                padding: '120px 24px 60px', // top padding for fixed header
+                position: 'relative',
+                overflow: 'hidden',
             }}
         >
-            {/* BACKGROUND TEXTURE - Subtle Noise for realism */}
+            {/* Subtle noise texture */}
             <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0.4,
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
+                position: 'absolute', top: 0, left: 0,
+                width: '100%', height: '100%',
+                opacity: 0.3,
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
                 zIndex: 0,
-                mixBlendMode: 'overlay'
+                mixBlendMode: 'overlay',
+                pointerEvents: 'none',
             }} />
 
-            <div className="container" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-                <motion.div style={{ y: yText, opacity: opacityText }}>
-                    <motion.h4
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2, duration: 1 }}
-                        style={{
-                            fontFamily: 'var(--font-body)',
-                            color: 'var(--text-secondary)',
-                            letterSpacing: '8px',
-                            fontSize: '14px',
-                            marginBottom: '20px',
-                            fontWeight: '600'
-                        }}
-                    >
-                        EST. 2026 // SANTA FE
-                    </motion.h4>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+                {/* EST. label */}
+                <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, duration: 0.8 }}
+                    style={{
+                        fontSize: '11px',
+                        letterSpacing: '0.4em',
+                        textTransform: 'uppercase',
+                        color: '#6b7280',
+                        fontFamily: "'Inter', sans-serif",
+                        fontWeight: '600',
+                        marginBottom: '16px',
+                    }}
+                >
+                    EST. 2025 // SANTA FE
+                </motion.p>
 
-                    {/* MASSIVE BRAND LOGO */}
-                    <motion.h1
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
-                        className="font-display"
-                        style={{
-                            fontSize: 'clamp(4rem, 18vw, 15rem)', // Adjusted min size for mobile
-                            lineHeight: '0.8',
-                            fontWeight: '900',
-                            color: '#000000', // Pure Black on Silver
-                            marginBottom: '10px',
-                            letterSpacing: '-5px',
-                            textTransform: 'uppercase'
-                        }}
-                    >
-                        OLMO
-                    </motion.h1>
+                {/* OLMO */}
+                <motion.h1
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
+                    style={{
+                        fontFamily: "'Montserrat', sans-serif",
+                        fontSize: 'clamp(5rem, 22vw, 14rem)',
+                        fontWeight: '800',
+                        color: '#1A1A1A',
+                        lineHeight: '0.85',
+                        letterSpacing: '-4px',
+                        textTransform: 'uppercase',
+                        marginBottom: '12px',
+                    }}
+                >
+                    OLMO
+                </motion.h1>
 
-                    {/* SUBTITLE MATCHING IMAGE */}
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 1 }}
-                        style={{
-                            fontSize: 'clamp(0.8rem, 2vw, 1.5rem)',
-                            fontFamily: 'var(--font-body)',
-                            color: '#000000', // Black on Silver
-                            letterSpacing: '12px', // Wide spacing like the image
-                            fontWeight: '600',
-                            marginBottom: '60px',
-                            marginLeft: '15px' // Optical alignment
-                        }}
-                    >
-                        INDUMENTARIA
-                    </motion.h2>
+                {/* INDUMENTARIA */}
+                <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.8 }}
+                    style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 'clamp(0.7rem, 2vw, 1.1rem)',
+                        letterSpacing: '0.5em',
+                        textTransform: 'uppercase',
+                        color: '#1A1A1A',
+                        fontWeight: '300',
+                        marginBottom: '48px',
+                    }}
+                >
+                    INDUMENTARIA
+                </motion.p>
 
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5, duration: 1 }}
-                        style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}
-                    >
-                        <button
-                            className="btn-primary"
-                            onClick={() => document.getElementById('shop').scrollIntoView({ behavior: 'smooth' })}
-                        >
-                            VER COLECCIÓN
-                        </button>
-                    </motion.div>
-                </motion.div>
+                {/* CTA */}
+                <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4, duration: 0.8 }}
+                    onClick={() => document.getElementById('shop').scrollIntoView({ behavior: 'smooth' })}
+                    style={{
+                        padding: '14px 48px',
+                        background: '#1A1A1A',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '9999px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.2em',
+                        cursor: 'pointer',
+                        fontFamily: "'Inter', sans-serif",
+                        transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#3f3f3f'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#1A1A1A'}
+                >
+                    Ver Colección
+                </motion.button>
             </div>
-
-            {/* SCROLL INDICATOR */}
-            <motion.div
-                style={{
-                    position: 'absolute',
-                    bottom: '40px',
-                    left: '50%',
-                    x: '-50%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '10px',
-                    opacity: opacityText
-                }}
-                animate={{ y: [0, 10, 0] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-            >
-                <span style={{ fontSize: '10px', fontFamily: 'var(--font-display)', letterSpacing: '2px', color: 'var(--text-secondary)' }}>SCROLL</span>
-                <div style={{ width: '1px', height: '40px', background: 'linear-gradient(to bottom, var(--text-secondary), transparent)' }} />
-            </motion.div>
         </section>
     );
 };
