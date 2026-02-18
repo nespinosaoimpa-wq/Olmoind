@@ -10,6 +10,7 @@ import { useStockStore } from './store/useStockStore';
 function App() {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { fetchProducts } = useStockStore();
 
   useEffect(() => {
@@ -34,13 +35,10 @@ function App() {
 
   return (
     <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh' }}>
-      {/* Fixed Header with search bar - takes ~100px */}
-      <Header />
-
-      {/* Main content - padded top to account for fixed header */}
+      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
       <main style={{ paddingTop: '100px' }}>
         <Hero />
-        <ProductGrid />
+        <ProductGrid searchQuery={searchQuery} />
       </main>
     </div>
   );

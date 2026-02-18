@@ -4,10 +4,9 @@ import { ShoppingBag, Search, Menu, X, Home, Grid, ShoppingCart, User, Trash2 } 
 import { useCartStore } from '../store/cartStore';
 import { useStockStore } from '../store/useStockStore';
 
-const Header = () => {
+const Header = ({ searchQuery, setSearchQuery }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const { cart, removeItem, clearCart, totalItems } = useCartStore();
   const { registerSale } = useStockStore();
 
@@ -180,21 +179,6 @@ const Header = () => {
                   {item.label}
                 </a>
               ))}
-              <a
-                href="/admin?admin=true"
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: '0.85rem',
-                  fontWeight: '600',
-                  color: '#6b7280',
-                  textDecoration: 'none',
-                  marginTop: '16px',
-                  borderTop: '1px solid #e5e7eb',
-                  paddingTop: '24px',
-                }}
-              >
-                Panel Admin →
-              </a>
             </div>
           </motion.div>
         )}
@@ -237,7 +221,6 @@ const Header = () => {
           { icon: <Home size={22} />, label: 'Inicio', id: 'home' },
           { icon: <Grid size={22} />, label: 'Productos', id: 'shop' },
           { icon: <ShoppingCart size={22} />, label: 'Carrito', action: () => setIsCartOpen(true) },
-          { icon: <User size={22} />, label: 'Admin', href: '/admin?admin=true' },
         ].map((item) => (
           <a
             key={item.label}

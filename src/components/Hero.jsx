@@ -2,6 +2,16 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const Hero = () => {
+    // Read hero settings from localStorage (set by admin)
+    const heroSettings = (() => {
+        try { return JSON.parse(localStorage.getItem('olmo_hero') || '{}'); } catch { return {}; }
+    })();
+
+    const title = heroSettings.title || 'OLMO';
+    const subtitle = heroSettings.subtitle || 'INDUMENTARIA';
+    const cta = heroSettings.cta || 'Ver Colección';
+    const bgColor = heroSettings.bgColor || null;
+
     return (
         <section
             id="home"
@@ -12,8 +22,8 @@ const Hero = () => {
                 justifyContent: 'center',
                 flexDirection: 'column',
                 textAlign: 'center',
-                background: 'linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)',
-                padding: '120px 24px 60px', // top padding for fixed header
+                background: bgColor || 'linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)',
+                padding: '120px 24px 60px',
                 position: 'relative',
                 overflow: 'hidden',
             }}
@@ -48,7 +58,7 @@ const Hero = () => {
                     EST. 2025 // SANTA FE
                 </motion.p>
 
-                {/* OLMO */}
+                {/* Title */}
                 <motion.h1
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -64,10 +74,10 @@ const Hero = () => {
                         marginBottom: '12px',
                     }}
                 >
-                    OLMO
+                    {title}
                 </motion.h1>
 
-                {/* INDUMENTARIA */}
+                {/* Subtitle */}
                 <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -82,7 +92,7 @@ const Hero = () => {
                         marginBottom: '48px',
                     }}
                 >
-                    INDUMENTARIA
+                    {subtitle}
                 </motion.p>
 
                 {/* CTA */}
@@ -108,7 +118,7 @@ const Hero = () => {
                     onMouseEnter={(e) => e.currentTarget.style.background = '#3f3f3f'}
                     onMouseLeave={(e) => e.currentTarget.style.background = '#1A1A1A'}
                 >
-                    Ver Colección
+                    {cta}
                 </motion.button>
             </div>
         </section>

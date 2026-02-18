@@ -249,16 +249,33 @@ const ProductModal = ({ product, onClose }) => {
 };
 
 // ── Main Product Grid ────────────────────────────────────────────────────────
-const ProductGrid = () => {
+const ProductGrid = ({ searchQuery = '' }) => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [activeCategory, setActiveCategory] = useState('Todos');
     const { stock } = useStockStore();
 
-    const categories = ['Todos', 'Oversized', 'Hoodies', 'Pantalones', 'Accesorios'];
+    // Read categories from localStorage (set by admin)
+    const savedCategories = (() => {
+        try { return JSON.parse(localStorage.getItem('olmo_categories') || '[]'); } catch { return []; }
+    })();
+    const categories = ['Todos', ...savedCategories];
 
-    const filteredStock = activeCategory === 'Todos'
-        ? stock
-        : stock.filter(p => p.category === activeCategory);
+    // Read contact from localStorage (set by admin)
+    const contact = (() => {
+        try { return JSON.parse(localStorage.getItem('olmo_contact') || '{}'); } catch { return {}; }
+    })();
+
+    // Filter: category + search query
+    const filteredStock = stock
+        .filter(p => activeCategory === 'Todos' || p.category === activeCategory)
+        .filter(p => {
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.toLowerCase();
+            return (
+                (p.name || '').toLowerCase().includes(q) ||
+                (p.category || '').toLowerCase().includes(q)
+            );
+        });
 
     return (
         <section id="shop" style={{
@@ -343,7 +360,9 @@ const ProductGrid = () => {
                         fontFamily: "'Inter', sans-serif",
                         fontSize: '14px',
                     }}>
-                        No hay productos en esta categoría todavía.
+                        {searchQuery.trim()
+                            ? `No se encontraron productos para "${searchQuery}"`
+                            : 'No hay productos en esta categoría todavía.'}
                     </div>
                 )}
             </div>
@@ -397,9 +416,10 @@ const ProductGrid = () => {
                 <div style={{ marginBottom: '40px' }}>
                     <h4 style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '24px', opacity: 0.5, fontFamily: "'Inter', sans-serif" }}>Contactános</h4>
                     <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📱 543434559599</li>
-                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>✉️ olmoshowroom@gmail.com</li>
-                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📍 Cervantes 35 local A</li>
+                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📱 {contact.whatsapp || '543434559599'}</li>
+                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>✉️ {contact.email || 'olmoshowroom@gmail.com'}</li>
+                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📍 {contact.address || 'Cervantes 35 local A'}</li>
+                        {contact.instagram && <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📸 @{contact.instagram}</li>}
                     </ul>
                 </div>
                 <div style={{ paddingTop: '40px', borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
