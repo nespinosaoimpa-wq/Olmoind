@@ -40,7 +40,8 @@ const ProductCard = ({ product, onOpen }) => {
                     style={{
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover',
+                        objectFit: 'contain',
+                        padding: '10px',
                         filter: hovered ? 'grayscale(0%)' : 'grayscale(100%)',
                         transform: hovered ? 'scale(1.05)' : 'scale(1)',
                         transition: 'all 0.5s ease',
@@ -170,7 +171,7 @@ const ProductModal = ({ product, onClose }) => {
                         <img
                             src={(Array.isArray(product.images) && product.images[0]) || product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'}
                             alt={product.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '20px', filter: 'grayscale(100%)' }}
                         />
                     </div>
                     {/* Basic horizontal scroll for multiple images */}
@@ -181,7 +182,7 @@ const ProductModal = ({ product, onClose }) => {
                                     minWidth: '100px', height: '133px', flexShrink: 0,
                                     borderRadius: '4px', overflow: 'hidden', border: '1px solid #f3f4f6'
                                 }}>
-                                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }} />
+                                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '5px', filter: 'grayscale(100%)' }} />
                                 </div>
                             ))}
                         </div>

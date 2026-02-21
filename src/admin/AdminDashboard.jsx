@@ -307,7 +307,7 @@ const AdminDashboard = ({ onBack }) => {
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
                     <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>
-                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.4.0</span>
+                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.5.0</span>
                     </h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -437,8 +437,8 @@ const AdminDashboard = ({ onBack }) => {
                             {(stock || []).map(item => (
                                 <div key={item.id} style={{ background: '#1e293b', borderRadius: '10px', overflow: 'hidden', border: '1px solid #334155' }}>
                                     <div style={{ padding: '14px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                        <div style={{ width: '56px', height: '56px', borderRadius: '6px', background: '#0f172a', border: '1px solid #334155', overflow: 'hidden', flexShrink: 0 }}>
-                                            {item.image && <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={item.name} />}
+                                        <div style={{ width: '56px', height: '56px', borderRadius: '6px', background: '#0f172a', border: '1px solid #334155', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            {item.image && <img src={item.image} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} alt={item.name} />}
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <p style={{ fontSize: '13px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</p>
