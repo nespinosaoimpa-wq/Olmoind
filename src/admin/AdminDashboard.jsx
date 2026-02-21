@@ -40,7 +40,18 @@ const AdminDashboard = ({ onBack }) => {
     const [localSales, setLocalSales] = useState([]);
     const [savedMsg, setSavedMsg] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [lastError, setLastError] = useState(null);
     const fileInputRef = useRef(null);
+
+    // Global error listener to catch "White Screen" crashes
+    useEffect(() => {
+        const handleError = (event) => {
+            console.error('Caught global error:', event.error);
+            setLastError(String(event.error?.message || event.message || 'Error desconocido del sistema'));
+        };
+        window.addEventListener('error', handleError);
+        return () => window.removeEventListener('error', handleError);
+    }, []);
 
     // ── Product form ──────────────────────────────────────────────────────────
     const [formData, setFormData] = useState({
@@ -232,7 +243,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.5</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.6</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
@@ -247,6 +258,26 @@ const AdminDashboard = ({ onBack }) => {
             </header>
 
             <div style={{ padding: '16px' }}>
+
+                {/* ERROR DISPLAY */}
+                {lastError && (
+                    <div style={{
+                        background: 'rgba(239,68,68,0.2)', color: '#f87171',
+                        padding: '16px', borderRadius: '8px', border: '1px solid #ef4444',
+                        marginBottom: '20px', fontSize: '12px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                                <p style={{ fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase' }}>⚠️ Error Detectado</p>
+                                <p style={{ opacity: 0.9 }}>{lastError}</p>
+                            </div>
+                            <button onClick={() => setLastError(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
+                        </div>
+                        <p style={{ marginTop: '10px', fontSize: '10px', opacity: 0.7 }}>
+                            Este error causó la pantalla blanca. Por favor, saca una captura o cópialo.
+                        </p>
+                    </div>
+                )}
 
                 {/* ── DASHBOARD ─────────────────────────────────────────────── */}
                 {activeTab === 'stock' && (
