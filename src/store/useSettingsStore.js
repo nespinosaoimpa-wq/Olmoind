@@ -71,13 +71,16 @@ export const useSettingsStore = create((set, get) => ({
 
     // ── Upload image to Supabase Storage ──────────────────────────────────────
     uploadImage: async (file) => {
-        const ext = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
         const filePath = `products/${fileName}`;
 
         const { error } = await supabase.storage
             .from('product-images')
-            .upload(filePath, file, { cacheControl: '3600', upsert: false });
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: 'image/jpeg'
+            });
 
         if (error) throw error;
 

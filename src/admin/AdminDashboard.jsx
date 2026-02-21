@@ -7,6 +7,7 @@ import {
 import { useStockStore } from '../store/useStockStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { supabase } from '../supabaseClient';
+import Resizer from 'react-image-file-resizer';
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
 const inputStyle = {
@@ -95,10 +96,25 @@ const AdminDashboard = ({ onBack }) => {
         if (!file) return;
         setUploadingImage(true);
         try {
-            const publicUrl = await uploadImage(file);
+            // Resize image before upload
+            const resizedImage = await new Promise((resolve) => {
+                Resizer.imageFileResizer(
+                    file,
+                    1200, // max width
+                    1200, // max height
+                    'JPEG',
+                    80, // quality
+                    0, // rotation
+                    (uri) => resolve(uri),
+                    'blob' // output type
+                );
+            });
+
+            const publicUrl = await uploadImage(resizedImage);
             setFormData(prev => ({ ...prev, image: publicUrl }));
         } catch (err) {
-            alert('Error al subir imagen: ' + err.message);
+            console.error('Resize/Upload error:', err);
+            alert('Error al procesar/subir imagen: ' + err.message);
         } finally {
             setUploadingImage(false);
         }
@@ -192,7 +208,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin</h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.4</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "clean": "if exist dist rmdir /s /q dist",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
