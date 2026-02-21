@@ -37,6 +37,7 @@ const AdminDashboard = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState('stock');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [localSales, setLocalSales] = useState([]);
     const [savedMsg, setSavedMsg] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -269,7 +270,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.9</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.8.0</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
