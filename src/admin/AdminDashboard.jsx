@@ -94,27 +94,44 @@ const AdminDashboard = ({ onBack }) => {
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        // Basic file type check
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor selecciona un archivo de imagen válido.');
+            return;
+        }
+
         setUploadingImage(true);
         try {
-            // Resize image before upload
-            const resizedImage = await new Promise((resolve) => {
-                Resizer.imageFileResizer(
-                    file,
-                    1200, // max width
-                    1200, // max height
-                    'JPEG',
-                    80, // quality
-                    0, // rotation
-                    (uri) => resolve(uri),
-                    'blob' // output type
-                );
+            // Resize image before upload (Promise-wrapped)
+            const resizedImage = await new Promise((resolve, reject) => {
+                try {
+                    Resizer.imageFileResizer(
+                        file,
+                        1200, // max width
+                        1200, // max height
+                        'JPEG',
+                        80, // quality
+                        0, // rotation
+                        (uri) => {
+                            if (uri) resolve(uri);
+                            else reject(new Error('Fallo al procesar la imagen'));
+                        },
+                        'blob' // output type
+                    );
+                } catch (resizerErr) {
+                    reject(resizerErr);
+                }
             });
 
             const publicUrl = await uploadImage(resizedImage);
-            setFormData(prev => ({ ...prev, image: publicUrl }));
+
+            if (publicUrl) {
+                setFormData(prev => ({ ...prev, image: publicUrl }));
+            }
         } catch (err) {
             console.error('Resize/Upload error:', err);
-            alert('Error al procesar/subir imagen: ' + err.message);
+            alert('Error al procesar/subir imagen: ' + (err.message || 'Error desconocido'));
         } finally {
             setUploadingImage(false);
         }

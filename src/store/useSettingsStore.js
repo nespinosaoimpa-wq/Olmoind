@@ -71,23 +71,34 @@ export const useSettingsStore = create((set, get) => ({
 
     // ── Upload image to Supabase Storage ──────────────────────────────────────
     uploadImage: async (file) => {
-        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-        const filePath = `products/${fileName}`;
+        try {
+            const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+            const filePath = `products/${fileName}`;
 
-        const { error } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false,
-                contentType: 'image/jpeg'
-            });
+            const { error } = await supabase.storage
+                .from('product-images')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: 'image/jpeg'
+                });
 
-        if (error) throw error;
+            if (error) throw error;
 
-        const { data } = supabase.storage
-            .from('product-images')
-            .getPublicUrl(filePath);
+            const res = supabase.storage.from('product-images').getPublicUrl(filePath);
 
-        return data.publicUrl;
+            // Handle different Supabase SDK return formats defensively
+            const publicUrl = res.data?.publicUrl || res.data || res.publicURL || res.publicUrl || res;
+
+            if (typeof publicUrl !== 'string') {
+                console.warn('Unexpected publicUrl format:', publicUrl);
+                return String(publicUrl);
+            }
+
+            return publicUrl;
+        } catch (err) {
+            console.error('uploadImage error:', err);
+            throw err;
+        }
     },
 }));
