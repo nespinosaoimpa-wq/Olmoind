@@ -164,6 +164,12 @@ const AdminDashboard = ({ onBack }) => {
         } catch (err) {
             console.error('Resize/Upload error:', err);
             const errMsg = err.message || 'Error desconocido';
+
+            // Helpful tip for resizer errors
+            if (errMsg.includes('processors')) {
+                addLog('ERROR: Problema con la librería de imagen. Reintentando...');
+            }
+
             addLog('ERROR: ' + errMsg);
             alert('Error al procesar/subir imagen: ' + errMsg);
         } finally {
@@ -220,10 +226,17 @@ const AdminDashboard = ({ onBack }) => {
             addLog('Guardado con éxito.');
             setIsModalOpen(false);
             fetchProducts();
-        } catch (err) {
-            addLog('ERROR EN GUARDADO: ' + (err.message || 'Error desconocido'));
-            console.error('Save error:', err);
-            alert('Error al guardar: ' + (err.message || 'Error desconocido'));
+        } catch (error) {
+            console.error('Error saving product:', error);
+            addLog('ERROR CRÍTICO AL GUARDAR: ' + (error.message || 'Error desconocido'));
+
+            // Check for missing column error
+            if (error.message?.includes("column 'images' of relation 'products' does not exist") ||
+                error.message?.includes("Could not find the 'images' column")) {
+                alert('⚠️ ERROR DE BASE DE DATOS: Falta la columna "images". \n\nPor favor, ejecuta el comando SQL que te pasé en el panel de Supabase para activar el modo multi-imagen.');
+            } else {
+                alert('No se pudo guardar el producto: ' + (error.message || 'Error de conexión'));
+            }
         } finally {
             setIsSaving(false);
         }
@@ -292,7 +305,7 @@ const AdminDashboard = ({ onBack }) => {
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
                     <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>
-                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.2.0</span>
+                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.3.0</span>
                     </h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
