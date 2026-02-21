@@ -278,7 +278,7 @@ const AdminDashboard = ({ onBack }) => {
     ];
 
     return (
-        <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', color: '#f1f5f9', fontFamily: "'Inter', sans-serif", paddingBottom: '96px' }}>
+        <div translate="no" className="admin-container" style={{ backgroundColor: '#0f172a', minHeight: '100vh', color: '#f1f5f9', fontFamily: "'Inter', sans-serif", paddingBottom: '96px' }}>
 
             {/* TOP BAR */}
             <header style={{
@@ -291,14 +291,18 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.1.0</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>
+                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.2.0</span>
+                    </h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {savedMsg && (
-                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Check size={14} /> {savedMsg}
-                        </span>
-                    )}
+                    <div style={{ minWidth: '100px', textAlign: 'right' }}>
+                        {savedMsg && (
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                                <Check size={14} /> <span>{savedMsg}</span>
+                            </span>
+                        )}
+                    </div>
                     <button onClick={onBack} style={{ padding: '8px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <ArrowLeft size={18} />
                     </button>
@@ -313,11 +317,17 @@ const AdminDashboard = ({ onBack }) => {
                     marginBottom: '16px', border: '1px solid #334155'
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <p style={{ fontSize: '9px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Log del Sistema</p>
-                        <button onClick={() => setDebugLog([])} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '9px', cursor: 'pointer' }}>LIMPIAR</button>
+                        <p style={{ fontSize: '9px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>
+                            <span>Log del Sistema</span>
+                        </p>
+                        <button onClick={() => setDebugLog([])} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '9px', cursor: 'pointer' }}>
+                            <span>LIMPIAR</span>
+                        </button>
                     </div>
                     {debugLog.map((log, i) => (
-                        <p key={i} style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0', fontFamily: 'monospace' }}>{log}</p>
+                        <p key={`log-${i}`} style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0', fontFamily: 'monospace' }}>
+                            <span>{`> ${log}`}</span>
+                        </p>
                     ))}
                     {debugLog.length === 0 && <p style={{ fontSize: '10px', color: '#475569' }}>Sin actividad reciente.</p>}
                 </div>
