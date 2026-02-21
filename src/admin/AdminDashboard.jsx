@@ -233,7 +233,9 @@ const AdminDashboard = ({ onBack }) => {
             // Check for missing column error
             if (error.message?.includes("column 'images' of relation 'products' does not exist") ||
                 error.message?.includes("Could not find the 'images' column")) {
-                alert('⚠️ ERROR DE BASE DE DATOS: Falta la columna "images". \n\nPor favor, ejecuta el comando SQL que te pasé en el panel de Supabase para activar el modo multi-imagen.');
+                alert('⚠️ ERROR DE BASE DE DATOS: Falta la columna "images". \n\nPor favor, ejecuta el primer comando SQL que te pasé en Supabase.');
+            } else if (error.message?.includes("row-level security policy") || error.code === '42501') {
+                alert('⚠️ ERROR DE PERMISOS (RLS): Supabase está bloqueando el guardado. \n\nPor favor, ejecuta el SEGUNDO comando SQL (DROP POLICY...) que te pasé para habilitar los permisos.');
             } else {
                 alert('No se pudo guardar el producto: ' + (error.message || 'Error de conexión'));
             }
@@ -305,7 +307,7 @@ const AdminDashboard = ({ onBack }) => {
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
                     <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>
-                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.3.0</span>
+                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.4.0</span>
                     </h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
