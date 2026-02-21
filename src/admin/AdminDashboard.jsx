@@ -7,7 +7,7 @@ import {
 import { useStockStore } from '../store/useStockStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { supabase } from '../supabaseClient';
-import Resizer from 'react-image-file-resizer';
+import FileResizer from 'react-image-file-resizer';
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
 const inputStyle = {
@@ -103,21 +103,24 @@ const AdminDashboard = ({ onBack }) => {
 
         setUploadingImage(true);
         try {
+            // Determine the actual function (handle both default and module exports)
+            const resizerFn = FileResizer.imageFileResizer || (typeof FileResizer === 'function' ? FileResizer : null);
+
+            if (!resizerFn) {
+                throw new Error('Librería de redimensionamiento no encontrada.');
+            }
+
             // Resize image before upload (Promise-wrapped)
             const resizedImage = await new Promise((resolve, reject) => {
                 try {
-                    Resizer.imageFileResizer(
+                    resizerFn(
                         file,
-                        1200, // max width
-                        1200, // max height
-                        'JPEG',
-                        80, // quality
-                        0, // rotation
+                        1200, 1200, 'JPEG', 80, 0,
                         (uri) => {
                             if (uri) resolve(uri);
                             else reject(new Error('Fallo al procesar la imagen'));
                         },
-                        'blob' // output type
+                        'blob'
                     );
                 } catch (resizerErr) {
                     reject(resizerErr);
@@ -127,13 +130,17 @@ const AdminDashboard = ({ onBack }) => {
             const publicUrl = await uploadImage(resizedImage);
 
             if (publicUrl) {
-                setFormData(prev => ({ ...prev, image: publicUrl }));
+                // FORCE string type to avoid React crash if publicUrl is somehow an object
+                const cleanUrl = typeof publicUrl === 'string' ? publicUrl : String(publicUrl);
+                setFormData(prev => ({ ...prev, image: cleanUrl }));
             }
         } catch (err) {
             console.error('Resize/Upload error:', err);
             alert('Error al procesar/subir imagen: ' + (err.message || 'Error desconocido'));
         } finally {
             setUploadingImage(false);
+            // Clear input value so same file can be selected again if needed
+            if (e.target) e.target.value = '';
         }
     };
 
@@ -225,7 +232,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.4</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.5</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
