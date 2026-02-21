@@ -35,7 +35,7 @@ const ProductCard = ({ product, onOpen }) => {
                     }}>AGOTADO</div>
                 )}
                 <img
-                    src={product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'}
+                    src={(Array.isArray(product.images) && product.images[0]) || product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'}
                     alt={product.name}
                     style={{
                         width: '100%',
@@ -158,19 +158,34 @@ const ProductModal = ({ product, onClose }) => {
                     <X size={18} />
                 </button>
 
-                {/* Product Image */}
-                <div style={{
-                    aspectRatio: '3/4',
-                    background: '#e5e7eb',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    marginBottom: '24px',
-                }}>
-                    <img
-                        src={product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'}
-                        alt={product.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }}
-                    />
+                {/* Product Images Gallery */}
+                <div style={{ marginBottom: '24px' }}>
+                    <div style={{
+                        aspectRatio: '3/4',
+                        background: '#e5e7eb',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        marginBottom: (Array.isArray(product.images) && product.images.length > 1) ? '12px' : '0',
+                    }}>
+                        <img
+                            src={(Array.isArray(product.images) && product.images[0]) || product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'}
+                            alt={product.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }}
+                        />
+                    </div>
+                    {/* Basic horizontal scroll for multiple images */}
+                    {Array.isArray(product.images) && product.images.length > 1 && (
+                        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px' }}>
+                            {product.images.map((img, idx) => (
+                                <div key={idx} style={{
+                                    minWidth: '100px', height: '133px', flexShrink: 0,
+                                    borderRadius: '4px', overflow: 'hidden', border: '1px solid #f3f4f6'
+                                }}>
+                                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Info */}

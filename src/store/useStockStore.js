@@ -90,9 +90,16 @@ export const useStockStore = create((set, get) => ({
 
     // Create new product (Admin)
     addProduct: async (productData) => {
+        // Ensure both 'images' array and legacy 'image' string are set
+        const finalData = {
+            ...productData,
+            image: (productData.images && productData.images[0]) || productData.image || '',
+            images: productData.images || (productData.image ? [productData.image] : [])
+        };
+
         const { data, error } = await supabase
             .from('products')
-            .insert([productData])
+            .insert([finalData])
             .select();
 
         if (error) throw error;

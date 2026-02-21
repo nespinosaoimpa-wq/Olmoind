@@ -61,7 +61,7 @@ const AdminDashboard = ({ onBack }) => {
 
     // ── Product form ──────────────────────────────────────────────────────────
     const [formData, setFormData] = useState({
-        name: '', price: 0, image: '', category: '',
+        name: '', price: 0, images: [], category: '',
         variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
     });
     const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -74,10 +74,13 @@ const AdminDashboard = ({ onBack }) => {
     const [newBannerUrl, setNewBannerUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
 
-    // ── Stats ─────────────────────────────────────────────────────────────────
-    const totalRevenue = localSales.reduce((acc, s) => acc + s.total, 0);
-    const totalItemsSold = localSales.reduce((acc, s) => acc + (s.items || []).reduce((sum, i) => sum + i.quantity, 0), 0);
-    const lowStockCount = stock.filter(item => Object.values(item.variants).reduce((a, b) => a + b, 0) < 10).length;
+    // ── Stats (Safe calculations) ─────────────────────────────────────────────
+    const totalRevenue = (localSales || []).reduce((acc, s) => acc + (s.total || 0), 0);
+    const totalItemsSold = (localSales || []).reduce((acc, s) => acc + (s.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0), 0);
+    const lowStockCount = (stock || []).filter(item => {
+        if (!item || !item.variants) return false;
+        return Object.values(item.variants).reduce((a, b) => (a || 0) + (b || 0), 0) < 10;
+    }).length;
 
     useEffect(() => {
         fetchProducts();
@@ -147,9 +150,13 @@ const AdminDashboard = ({ onBack }) => {
             const publicUrl = await uploadImage(resizedImage);
 
             if (publicUrl) {
-                // FORCE string type to avoid React crash if publicUrl is somehow an object
                 const cleanUrl = typeof publicUrl === 'string' ? publicUrl : String(publicUrl);
-                setFormData(prev => ({ ...prev, image: cleanUrl }));
+                // Append instead of replace
+                setFormData(prev => ({
+                    ...prev,
+                    images: [...(prev.images || []), cleanUrl]
+                }));
+                addLog('Imagen subida y agregada a la lista.');
             }
         } catch (err) {
             console.error('Resize/Upload error:', err);
@@ -165,10 +172,18 @@ const AdminDashboard = ({ onBack }) => {
     const handleOpenModal = (item = null) => {
         if (item) {
             setEditingItem(item);
-            setFormData({ name: item.name, price: item.price, image: item.image || '', category: item.category || '', variants: { ...item.variants } });
+            // Handle both legacy 'image' and new 'images'
+            const initialImages = Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []);
+            setFormData({
+                name: item.name || '',
+                price: item.price || 0,
+                images: initialImages,
+                category: item.category || '',
+                variants: item.variants ? { ...item.variants } : { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+            });
         } else {
             setEditingItem(null);
-            setFormData({ name: '', price: 0, image: '', category: '', variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 } });
+            setFormData({ name: '', price: 0, images: [], category: '', variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 } });
         }
         setIsModalOpen(true);
     };
@@ -182,7 +197,8 @@ const AdminDashboard = ({ onBack }) => {
                 const { error } = await supabase.from('products').update({
                     name: formData.name,
                     price: formData.price,
-                    image: formData.image,
+                    images: formData.images,
+                    image: formData.images[0] || '', // Maintain legacy field too
                     category: formData.category,
                     variants: formData.variants
                 }).eq('id', editingItem.id);
@@ -270,7 +286,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.8.0</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.8.1</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
@@ -328,7 +344,7 @@ const AdminDashboard = ({ onBack }) => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                             <div>
                                 <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '4px' }}>Reporte Mensual</p>
-                                <h2 style={{ fontSize: '30px', fontWeight: '700', letterSpacing: '-1px', color: '#fff' }}>${totalRevenue.toLocaleString()},00</h2>
+                                <h2 style={{ fontSize: '30px', fontWeight: '700', letterSpacing: '-1px', color: '#fff' }}>${(totalRevenue || 0).toLocaleString()},00</h2>
                             </div>
                             <div style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', border: '1px solid rgba(16,185,129,0.2)' }}>
                                 ↑ {localSales.length} ventas
@@ -361,7 +377,7 @@ const AdminDashboard = ({ onBack }) => {
                             <button onClick={() => setActiveTab('sales')} style={{ color: '#fff', background: 'none', border: 'none', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', textDecoration: 'underline' }}>Ver todos</button>
                         } />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '32px' }}>
-                            {localSales.slice(0, 3).map(sale => (
+                            {(localSales || []).slice(0, 3).map(sale => (
                                 <div key={sale.id} style={{ ...card, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #334155' }}>
@@ -373,7 +389,7 @@ const AdminDashboard = ({ onBack }) => {
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <p style={{ fontWeight: '900', fontSize: '13px', color: '#fff' }}>${sale.total.toLocaleString()}</p>
+                                        <p style={{ fontWeight: '900', fontSize: '13px', color: '#fff' }}>${(sale.total || 0).toLocaleString()}</p>
                                         <span style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', color: getStatusColor(sale.status) }}>{sale.status || 'Pendiente'}</span>
                                     </div>
                                 </div>
@@ -388,7 +404,7 @@ const AdminDashboard = ({ onBack }) => {
                             </button>
                         } />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {stock.map(item => (
+                            {(stock || []).map(item => (
                                 <div key={item.id} style={{ background: '#1e293b', borderRadius: '10px', overflow: 'hidden', border: '1px solid #334155' }}>
                                     <div style={{ padding: '14px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                                         <div style={{ width: '56px', height: '56px', borderRadius: '6px', background: '#0f172a', border: '1px solid #334155', overflow: 'hidden', flexShrink: 0 }}>
@@ -432,8 +448,8 @@ const AdminDashboard = ({ onBack }) => {
                     <div>
                         <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '20px', letterSpacing: '-0.5px' }}>Órdenes</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {localSales.length === 0 && <p style={{ color: '#64748b', textAlign: 'center', padding: '40px' }}>No hay ventas registradas.</p>}
-                            {localSales.map(sale => (
+                            {(localSales || []).length === 0 && <p style={{ color: '#64748b', textAlign: 'center', padding: '40px' }}>No hay ventas registradas.</p>}
+                            {(localSales || []).map(sale => (
                                 <div key={sale.id} style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                                         <div style={{ width: '40px', height: '40px', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', border: '1px solid #334155' }}>
@@ -452,7 +468,7 @@ const AdminDashboard = ({ onBack }) => {
                                         ))}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <p style={{ fontSize: '16px', fontWeight: '900', color: '#fff' }}>${sale.total.toLocaleString()}</p>
+                                        <p style={{ fontSize: '16px', fontWeight: '900', color: '#fff' }}>${(sale.total || 0).toLocaleString()}</p>
                                         <select
                                             value={sale.status || 'Pendiente'}
                                             onChange={(e) => handleUpdateStatus(sale.id, e.target.value)}
@@ -489,7 +505,7 @@ const AdminDashboard = ({ onBack }) => {
                             ].map(m => (
                                 <div key={m.label} style={{ ...card, marginBottom: 0 }}>
                                     <p style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{m.label}</p>
-                                    <h3 style={{ fontSize: '26px', fontWeight: '900', color: m.color, letterSpacing: '-1px' }}>{m.value}</h3>
+                                    <h3 style={{ fontSize: '26px', fontWeight: '900', color: m.color, letterSpacing: '-1px' }}>{m.value === undefined ? '0' : m.value.toLocaleString()}</h3>
                                 </div>
                             ))}
                         </div>
@@ -745,25 +761,48 @@ const AdminDashboard = ({ onBack }) => {
                                 </select>
                             </div>
 
-                            {/* Image — URL or File Upload */}
+                            {/* Images — Gallery with Delete and Add */}
                             <div>
-                                <label style={labelStyle}>Imagen del Producto</label>
+                                <label style={labelStyle}>Imágenes del Producto ({formData.images.length})</label>
 
-                                {/* Preview */}
-                                {formData.image && (
-                                    <div style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', height: '120px', background: '#1e293b' }}>
-                                        <img src={formData.image} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    </div>
-                                )}
+                                {/* Gallery */}
+                                <div style={{
+                                    display: 'flex', gap: '10px', overflowX: 'auto',
+                                    padding: '10px 0', marginBottom: '14px',
+                                    scrollbarWidth: 'none'
+                                }}>
+                                    {formData.images.map((url, idx) => (
+                                        <div key={idx} style={{
+                                            position: 'relative', minWidth: '80px', height: '80px',
+                                            borderRadius: '8px', overflow: 'hidden', border: '1px solid #1e293b'
+                                        }}>
+                                            <img src={url} alt={`img-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <button
+                                                onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                                                style={{
+                                                    position: 'absolute', top: '4px', right: '4px',
+                                                    background: 'rgba(239, 68, 68, 0.8)', border: 'none',
+                                                    borderRadius: '50%', width: '20px', height: '20px',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', color: '#fff'
+                                                }}
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                            {idx === 0 && (
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(16,185,129,0.8)', color: '#fff', fontSize: '8px', textAlign: 'center', fontWeight: '900', padding: '2px 0' }}>PORTADA</div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {formData.images.length === 0 && (
+                                        <div style={{ width: '100%', height: '80px', background: 'rgba(30,41,59,0.3)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #1e293b' }}>
+                                            <span style={{ fontSize: '10px', color: '#475569' }}>Sin imágenes</span>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Upload from device */}
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    ref={fileInputRef}
-                                    onChange={handleFileUpload}
-                                    style={{ display: 'none' }}
-                                />
+                                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} />
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={uploadingImage}
@@ -777,18 +816,36 @@ const AdminDashboard = ({ onBack }) => {
                                         fontFamily: "'Inter', sans-serif",
                                     }}
                                 >
-                                    {uploadingImage ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo...</> : <><Upload size={14} /> Subir desde dispositivo</>}
+                                    {uploadingImage ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo...</> : <><Upload size={14} /> Agregar Imagen</>}
                                 </button>
 
                                 {/* Or URL */}
-                                <p style={{ fontSize: '10px', color: '#475569', textAlign: 'center', margin: '4px 0' }}>— o pegá una URL —</p>
-                                <input
-                                    type="text"
-                                    value={formData.image}
-                                    onChange={e => setFormData({ ...formData, image: e.target.value })}
-                                    placeholder="https://..."
-                                    style={inputStyle}
-                                />
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                    <input
+                                        type="text"
+                                        id="manualUrl"
+                                        placeholder="Pegar URL de foto..."
+                                        style={{ ...inputStyle, flex: 1 }}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' && e.target.value.trim()) {
+                                                setFormData(prev => ({ ...prev, images: [...prev.images, e.target.value.trim()] }));
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const inp = document.getElementById('manualUrl');
+                                            if (inp.value.trim()) {
+                                                setFormData(prev => ({ ...prev, images: [...prev.images, inp.value.trim()] }));
+                                                inp.value = '';
+                                            }
+                                        }}
+                                        style={{ background: '#334155', border: 'none', color: '#fff', padding: '0 12px', borderRadius: '8px', cursor: 'pointer' }}
+                                    >
+                                        <Check size={16} />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Stock per size */}
