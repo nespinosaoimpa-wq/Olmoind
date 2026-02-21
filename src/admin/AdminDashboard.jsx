@@ -123,13 +123,15 @@ const AdminDashboard = ({ onBack }) => {
 
         setUploadingImage(true);
         try {
-            // Determine the actual function (handle both default and module exports)
-            const resizerFn = FileResizer.imageFileResizer || (typeof FileResizer === 'function' ? FileResizer : null);
+            // Determine the actual function safely
+            const resizerFn = FileResizer?.imageFileResizer || (typeof FileResizer === 'function' ? FileResizer : null);
 
             if (!resizerFn) {
-                throw new Error('Librería de redimensionamiento no encontrada.');
+                console.error('FileResizer not found', FileResizer);
+                throw new Error('No se pudo encontrar el procesador de imágenes.');
             }
 
+            addLog('Redimensionando imagen...');
             // Resize image before upload (Promise-wrapped)
             const resizedImage = await new Promise((resolve, reject) => {
                 try {
@@ -138,7 +140,7 @@ const AdminDashboard = ({ onBack }) => {
                         1200, 1200, 'JPEG', 80, 0,
                         (uri) => {
                             if (uri) resolve(uri);
-                            else reject(new Error('Fallo al procesar la imagen'));
+                            else reject(new Error('El procesador de imagen devolvió vacío.'));
                         },
                         'blob'
                     );
@@ -147,6 +149,7 @@ const AdminDashboard = ({ onBack }) => {
                 }
             });
 
+            addLog('Subiendo a la nube...');
             const publicUrl = await uploadImage(resizedImage);
 
             if (publicUrl) {
@@ -156,7 +159,7 @@ const AdminDashboard = ({ onBack }) => {
                     ...prev,
                     images: [...(prev.images || []), cleanUrl]
                 }));
-                addLog('Imagen subida y agregada a la lista.');
+                addLog('¡Imagen subida con éxito!');
             }
         } catch (err) {
             console.error('Resize/Upload error:', err);
@@ -286,7 +289,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.8.1</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.0.0</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
@@ -763,7 +766,7 @@ const AdminDashboard = ({ onBack }) => {
 
                             {/* Images — Gallery with Delete and Add */}
                             <div>
-                                <label style={labelStyle}>Imágenes del Producto ({formData.images.length})</label>
+                                <label style={labelStyle}>Imágenes del Producto ({(formData.images || []).length})</label>
 
                                 {/* Gallery */}
                                 <div style={{
@@ -771,7 +774,7 @@ const AdminDashboard = ({ onBack }) => {
                                     padding: '10px 0', marginBottom: '14px',
                                     scrollbarWidth: 'none'
                                 }}>
-                                    {formData.images.map((url, idx) => (
+                                    {(formData.images || []).map((url, idx) => (
                                         <div key={idx} style={{
                                             position: 'relative', minWidth: '80px', height: '80px',
                                             borderRadius: '8px', overflow: 'hidden', border: '1px solid #1e293b'
