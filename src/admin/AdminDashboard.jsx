@@ -163,7 +163,9 @@ const AdminDashboard = ({ onBack }) => {
             }
         } catch (err) {
             console.error('Resize/Upload error:', err);
-            alert('Error al procesar/subir imagen: ' + (err.message || 'Error desconocido'));
+            const errMsg = err.message || 'Error desconocido';
+            addLog('ERROR: ' + errMsg);
+            alert('Error al procesar/subir imagen: ' + errMsg);
         } finally {
             setUploadingImage(false);
             // Clear input value so same file can be selected again if needed
@@ -289,7 +291,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.0.0</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.1.0</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
@@ -388,7 +390,7 @@ const AdminDashboard = ({ onBack }) => {
                                         </div>
                                         <div>
                                             <p style={{ fontWeight: '700', fontSize: '12px', color: '#fff' }}>#{sale.id.slice(0, 6).toUpperCase()}</p>
-                                            <p style={{ fontSize: '10px', color: '#64748b' }}>{new Date(sale.created_at).toLocaleDateString()}</p>
+                                            <p style={{ fontSize: '10px', color: '#64748b' }}>{sale.created_at ? new Date(sale.created_at).toLocaleDateString() : '—'}</p>
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
@@ -415,7 +417,7 @@ const AdminDashboard = ({ onBack }) => {
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <p style={{ fontSize: '13px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</p>
-                                            <p style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>${item.price.toLocaleString()} {item.category && `· ${item.category}`}</p>
+                                            <p style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>${(item.price || 0).toLocaleString()} {item.category && `· ${item.category}`}</p>
                                         </div>
                                         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                                             <button onClick={() => handleOpenModal(item)} style={{ background: '#334155', border: 'none', color: '#94a3b8', borderRadius: '6px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Edit2 size={13} /></button>
@@ -423,7 +425,7 @@ const AdminDashboard = ({ onBack }) => {
                                         </div>
                                     </div>
                                     <div style={{ overflowX: 'auto', padding: '0 14px 14px', display: 'flex', gap: '8px' }}>
-                                        {Object.entries(item.variants).map(([size, count]) => (
+                                        {Object.entries(item.variants || {}).map(([size, count]) => (
                                             <div key={size} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                                                 <span style={{ fontSize: '9px', fontWeight: '900', color: count === 0 ? '#ef4444' : '#64748b' }}>{size}</span>
                                                 <div style={{
@@ -460,7 +462,7 @@ const AdminDashboard = ({ onBack }) => {
                                         </div>
                                         <div>
                                             <h4 style={{ fontSize: '13px', fontWeight: '900', color: '#fff' }}>ORDEN #{sale.id.slice(0, 6).toUpperCase()}</h4>
-                                            <p style={{ fontSize: '10px', color: '#64748b' }}>{new Date(sale.created_at).toLocaleDateString()} · {new Date(sale.created_at).toLocaleTimeString()}</p>
+                                            <p style={{ fontSize: '10px', color: '#64748b' }}>{sale.created_at ? `${new Date(sale.created_at).toLocaleDateString()} · ${new Date(sale.created_at).toLocaleTimeString()}` : '—'}</p>
                                         </div>
                                     </div>
                                     <div style={{ flex: 1, minWidth: '160px' }}>
@@ -514,10 +516,13 @@ const AdminDashboard = ({ onBack }) => {
                         </div>
                         <div style={card}>
                             <p style={sectionTitle}>Productos con stock bajo (&lt;10 unidades)</p>
-                            {stock.filter(item => Object.values(item.variants).reduce((a, b) => a + b, 0) < 10).map(item => (
+                            {(stock || []).filter(item => {
+                                const totalStock = Object.values(item.variants || {}).reduce((a, b) => (a || 0) + (b || 0), 0);
+                                return totalStock < 10;
+                            }).map(item => (
                                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1e293b' }}>
                                     <span style={{ fontSize: '13px', color: '#f1f5f9', fontWeight: '600' }}>{item.name}</span>
-                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '900' }}>{Object.values(item.variants).reduce((a, b) => a + b, 0)} uds.</span>
+                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '900' }}>{Object.values(item.variants || {}).reduce((a, b) => (a || 0) + (b || 0), 0)} uds.</span>
                                 </div>
                             ))}
                             {lowStockCount === 0 && <p style={{ color: '#10b981', fontSize: '13px', textAlign: 'center', padding: '16px' }}>✓ Todo el stock está en buen nivel</p>}

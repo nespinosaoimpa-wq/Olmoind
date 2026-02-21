@@ -4,6 +4,7 @@ import Hero from './components/Hero';
 import ProductGrid from './components/ProductGrid';
 import AdminDashboard from './admin/AdminDashboard';
 import Login from './components/Login';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { useStockStore } from './store/useStockStore';
 
@@ -30,17 +31,23 @@ function App() {
         </div>
       );
     }
-    return <AdminDashboard onBack={() => { setIsAdminMode(false); setIsAuthenticated(false); }} />;
+    return (
+      <ErrorBoundary>
+        <AdminDashboard onBack={() => { setIsAdminMode(false); setIsAuthenticated(false); }} />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh' }}>
-      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      <main style={{ paddingTop: '100px' }}>
-        <Hero />
-        <ProductGrid searchQuery={searchQuery} />
-      </main>
-    </div>
+    <ErrorBoundary>
+      <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh' }}>
+        <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <main style={{ paddingTop: '100px' }}>
+          <Hero />
+          <ProductGrid searchQuery={searchQuery} />
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
 
