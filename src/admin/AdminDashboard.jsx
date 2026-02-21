@@ -40,6 +40,7 @@ const AdminDashboard = ({ onBack }) => {
     const [localSales, setLocalSales] = useState([]);
     const [savedMsg, setSavedMsg] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [lastError, setLastError] = useState(null);
     const fileInputRef = useRef(null);
 
@@ -168,17 +169,34 @@ const AdminDashboard = ({ onBack }) => {
     };
 
     const handleSave = async () => {
-        if (editingItem) {
-            await updateStock(editingItem.id, formData.variants);
-            await supabase.from('products').update({
-                name: formData.name, price: formData.price,
-                image: formData.image, category: formData.category
-            }).eq('id', editingItem.id);
-        } else {
-            await addProduct(formData);
+        setIsSaving(true);
+        try {
+            if (editingItem) {
+                // Update stock variants
+                await updateStock(editingItem.id, formData.variants);
+
+                // Update product details
+                const { error } = await supabase.from('products').update({
+                    name: formData.name,
+                    price: formData.price,
+                    image: formData.image,
+                    category: formData.category
+                }).eq('id', editingItem.id);
+
+                if (error) throw error;
+            } else {
+                await addProduct(formData);
+            }
+
+            showSaved();
+            setIsModalOpen(false);
+            fetchProducts();
+        } catch (err) {
+            console.error('Save error:', err);
+            alert('Error al guardar: ' + (err.message || 'Error desconocido'));
+        } finally {
+            setIsSaving(false);
         }
-        setIsModalOpen(false);
-        fetchProducts();
     };
 
     const handleDelete = async (id) => {
@@ -243,7 +261,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.6</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.7</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
@@ -767,8 +785,20 @@ const AdminDashboard = ({ onBack }) => {
                                 </div>
                             </div>
 
-                            <button onClick={handleSave} style={{ width: '100%', marginTop: '4px', background: '#ffffff', color: '#000000', border: 'none', padding: '16px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.2em', cursor: 'pointer', borderRadius: '10px', fontFamily: "'Inter', sans-serif" }}>
-                                GUARDAR CAMBIOS
+                            <button
+                                onClick={handleSave}
+                                disabled={isSaving || uploadingImage}
+                                style={{
+                                    width: '100%', marginTop: '4px',
+                                    background: (isSaving || uploadingImage) ? '#475569' : '#ffffff',
+                                    color: '#000000', border: 'none', padding: '16px',
+                                    fontSize: '11px', fontWeight: '900', textTransform: 'uppercase',
+                                    letterSpacing: '0.2em', cursor: (isSaving || uploadingImage) ? 'not-allowed' : 'pointer',
+                                    borderRadius: '10px', fontFamily: "'Inter', sans-serif",
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                }}
+                            >
+                                {isSaving ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> GUARDANDO...</> : 'GUARDAR CAMBIOS'}
                             </button>
                         </div>
                     </div>

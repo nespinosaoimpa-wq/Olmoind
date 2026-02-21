@@ -94,6 +94,8 @@ export const useStockStore = create((set, get) => ({
             .insert([productData])
             .select();
 
+        if (error) throw error;
+
         if (data) {
             set((state) => ({ stock: [...data, ...state.stock] }));
         }
@@ -101,7 +103,8 @@ export const useStockStore = create((set, get) => ({
 
     // Delete product
     deleteProduct: async (id) => {
-        await supabase.from('products').delete().eq('id', id);
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw error;
         set((state) => ({ stock: state.stock.filter(p => p.id !== id) }));
     }
 }));
