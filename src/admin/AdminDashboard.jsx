@@ -38,11 +38,13 @@ const AdminDashboard = ({ onBack }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [localSales, setLocalSales] = useState([]);
-    const [savedMsg, setSavedMsg] = useState('');
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [lastError, setLastError] = useState(null);
+    const [debugLog, setDebugLog] = useState([]);
     const fileInputRef = useRef(null);
+
+    const addLog = (msg) => {
+        setDebugLog(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${msg}`]);
+    };
 
     // Global error listener to catch "White Screen" crashes
     useEffect(() => {
@@ -169,29 +171,33 @@ const AdminDashboard = ({ onBack }) => {
     };
 
     const handleSave = async () => {
+        addLog('Iniciando guardado...');
         setIsSaving(true);
         try {
             if (editingItem) {
-                // Update stock variants
-                await updateStock(editingItem.id, formData.variants);
-
-                // Update product details
+                addLog('Actualizando producto existente...');
                 const { error } = await supabase.from('products').update({
                     name: formData.name,
                     price: formData.price,
                     image: formData.image,
-                    category: formData.category
+                    category: formData.category,
+                    variants: formData.variants
                 }).eq('id', editingItem.id);
 
                 if (error) throw error;
+                addLog('Respuesta ok de Supabase (Update).');
             } else {
+                addLog('Insertando nuevo producto...');
                 await addProduct(formData);
+                addLog('Respuesta ok de Supabase (Insert).');
             }
 
             showSaved();
+            addLog('Guardado con éxito.');
             setIsModalOpen(false);
             fetchProducts();
         } catch (err) {
+            addLog('ERROR EN GUARDADO: ' + (err.message || 'Error desconocido'));
             console.error('Save error:', err);
             alert('Error al guardar: ' + (err.message || 'Error desconocido'));
         } finally {
@@ -261,7 +267,7 @@ const AdminDashboard = ({ onBack }) => {
                     <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.7</span></h1>
+                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>Olmo Admin <span style={{ opacity: 0.5, fontSize: '10px' }}>v1.7.8</span></h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {savedMsg && (
@@ -276,6 +282,21 @@ const AdminDashboard = ({ onBack }) => {
             </header>
 
             <div style={{ padding: '16px' }}>
+
+                {/* DEBUG CONSOLE */}
+                <div style={{
+                    background: '#1e293b', padding: '10px', borderRadius: '8px',
+                    marginBottom: '16px', border: '1px solid #334155'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <p style={{ fontSize: '9px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>Log del Sistema</p>
+                        <button onClick={() => setDebugLog([])} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '9px', cursor: 'pointer' }}>LIMPIAR</button>
+                    </div>
+                    {debugLog.map((log, i) => (
+                        <p key={i} style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0', fontFamily: 'monospace' }}>{log}</p>
+                    ))}
+                    {debugLog.length === 0 && <p style={{ fontSize: '10px', color: '#475569' }}>Sin actividad reciente.</p>}
+                </div>
 
                 {/* ERROR DISPLAY */}
                 {lastError && (

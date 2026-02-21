@@ -41,6 +41,7 @@ export const useStockStore = create((set, get) => ({
             }));
         } catch (error) {
             console.error('Error updating stock:', error);
+            throw error;
         }
     },
 
