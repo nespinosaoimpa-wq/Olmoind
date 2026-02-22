@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Package, BarChart2, ArrowLeft, Plus, Edit2,
     Trash2, X, ShoppingBag, Phone, Mail, MapPin, Instagram,
-    Image, Palette, Tag, LayoutGrid, Save, Check, Upload, Loader
+    Image, Palette, Tag, LayoutGrid, Save, Check, Upload, Loader, LogOut
 } from 'lucide-react';
 import { useStockStore } from '../store/useStockStore';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -307,10 +307,10 @@ const AdminDashboard = ({ onBack }) => {
                         <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
                     <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>
-                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v2.5.0</span>
+                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v3.0.0</span>
                     </h1>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ minWidth: '100px', textAlign: 'right' }}>
                         {savedMsg && (
                             <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
@@ -318,6 +318,21 @@ const AdminDashboard = ({ onBack }) => {
                             </span>
                         )}
                     </div>
+
+                    <button
+                        onClick={async () => {
+                            await supabase.auth.signOut();
+                        }}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            background: '#ef4444', color: '#fff', border: 'none',
+                            padding: '8px 16px', borderRadius: '6px',
+                            fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                            textTransform: 'uppercase', letterSpacing: '0.1em'
+                        }}
+                    >
+                        <LogOut size={14} /> SALIR
+                    </button>
                     <button onClick={onBack} style={{ padding: '8px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
                         <ArrowLeft size={18} />
                     </button>

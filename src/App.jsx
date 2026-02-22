@@ -8,32 +8,48 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 import { useStockStore } from './store/useStockStore';
 
+import { supabase } from './supabaseClient';
+
 function App() {
   const [isAdminMode, setIsAdminMode] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [session, setSession] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { fetchProducts } = useStockStore();
 
   useEffect(() => {
     fetchProducts();
 
+    // Initialize session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('admin') === 'true') {
       setIsAdminMode(true);
     }
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (isAdminMode) {
-    if (!isAuthenticated) {
+    if (!session) {
       return (
-        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
-          <Login onLogin={() => setIsAuthenticated(true)} />
-        </div>
+        <ErrorBoundary>
+          <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+            <Login onLogin={() => { }} />
+          </div>
+        </ErrorBoundary>
       );
     }
     return (
       <ErrorBoundary>
-        <AdminDashboard onBack={() => { setIsAdminMode(false); setIsAuthenticated(false); }} />
+        <AdminDashboard onBack={() => { setIsAdminMode(false); }} />
       </ErrorBoundary>
     );
   }
