@@ -79,6 +79,18 @@ export const useStockStore = create((set, get) => ({
                 total: total,
             }]);
 
+            // 2.5. Enviar Notificación Push (Telegram)
+            try {
+                const itemsList = cartItems.map(i => `• ${i.name} (${i.size}) x${i.quantity}`).join('\n');
+                fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemsList, total })
+                });
+            } catch (e) {
+                console.error('Error enviando push notification:', e);
+            }
+
             // 3. Refresh local state
             get().fetchProducts();
 

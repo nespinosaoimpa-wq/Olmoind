@@ -1,7 +1,10 @@
 import React from 'react';
 import { Instagram, Facebook, Truck, CreditCard } from 'lucide-react';
+import { useSettingsStore } from '../store/useSettingsStore';
 
 const Footer = () => {
+    const { contact } = useSettingsStore();
+
     return (
         <footer
             id="contact"
@@ -28,9 +31,9 @@ const Footer = () => {
                         SANTA FE, ARGENTINA.
                     </p>
                     <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
-                        <a href="https://www.instagram.com/olmo.ind/" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)' }}><Instagram size={22} /></a>
+                        <a href={`https://www.instagram.com/${contact?.instagram || 'olmo.ind'}/`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)' }}><Instagram size={22} /></a>
                         <a href="https://facebook.com" target="_blank" rel="noreferrer" style={{ color: 'var(--text-primary)' }}><Facebook size={22} /></a>
-                        <a href="https://wa.me/543424625174" target="_blank" rel="noreferrer">
+                        <a href={`https://wa.me/${contact?.whatsapp || '543424625174'}`} target="_blank" rel="noreferrer">
                             <img
                                 src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
                                 alt="WhatsApp"
@@ -55,10 +58,24 @@ const Footer = () => {
                 <div>
                     <h4 style={{ fontSize: '12px', fontWeight: '900', marginBottom: '30px', letterSpacing: '3px', color: 'var(--text-primary)' }}>CONTACTO</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '600' }}>
-                        <p>SANTA FE, ARGENTINA</p>
-                        <p>WHATSAPP: 342 462-5174</p>
-                        <p>INFO@OLMOIND.COM</p>
+                        <p style={{ textTransform: 'uppercase' }}>{contact?.address || 'SANTA FE, ARGENTINA'}</p>
+                        <p>WHATSAPP: {contact?.whatsapp || '342 462-5174'}</p>
+                        <p style={{ textTransform: 'uppercase' }}>{contact?.email || 'INFO@OLMOIND.COM'}</p>
                     </div>
+
+                    {/* Google Maps Iframe Dinámico */}
+                    {contact?.address && (
+                        <div style={{ marginTop: '25px', width: '100%', height: '160px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                            <iframe 
+                                width="100%" 
+                                height="100%" 
+                                style={{ border: 0 }} 
+                                loading="lazy" 
+                                allowFullScreen 
+                                src={`https://www.google.com/maps?q=${encodeURIComponent(contact.address)}&output=embed`}
+                            ></iframe>
+                        </div>
+                    )}
                 </div>
 
                 {/* Methods Badge */}

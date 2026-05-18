@@ -23,17 +23,36 @@ const Header = ({ searchQuery, setSearchQuery }) => {
     }
   };
 
-  // Mercado Pago: build a payment link
-  // Replace MP_ACCESS_TOKEN with your real Mercado Pago link or use Checkout Pro
+  const [isProcessingMP, setIsProcessingMP] = useState(false);
+
+  // Mercado Pago: Checkout Pro API Call
   const handleMercadoPago = async () => {
-    // Build WhatsApp order message as fallback until MP is configured
-    const itemsList = cart.map(i => `• ${i.name} (${i.size}) x${i.quantity} = $${(i.price * i.quantity).toLocaleString()}`).join('%0A');
-    const msg = `Hola! Quiero hacer un pedido:%0A${itemsList}%0A%0ATOTAL: $${cartTotal.toLocaleString()}%0A%0APago: Mercado Pago`;
-    const phone = '543434559599';
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-    await registerSale(cart);
-    clearCart();
-    setIsCartOpen(false);
+    setIsProcessingMP(true);
+    try {
+      const response = await fetch('/api/create-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart, total: cartTotal })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.init_point) {
+        // Register the sale in the database before redirecting
+        await registerSale(cart);
+        clearCart();
+        setIsCartOpen(false);
+        // Redirect the user to Mercado Pago official checkout
+        window.location.href = data.init_point;
+      } else {
+        alert('Ups, falta vincular Mercado Pago. Contacta por WhatsApp mientras tanto.');
+        setIsProcessingMP(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión con Mercado Pago.');
+      setIsProcessingMP(false);
+    }
   };
 
   const handleWhatsApp = async () => {
@@ -398,6 +417,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
                   <button
                     onClick={paymentMethod === 'mp' ? handleMercadoPago : handleWhatsApp}
+                    disabled={isProcessingMP}
                     style={{
                       width: '100%',
                       background: paymentMethod === 'mp' ? '#009ee3' : '#25d366',
@@ -409,15 +429,18 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                       fontWeight: '700',
                       letterSpacing: '0.2em',
                       textTransform: 'uppercase',
-                      cursor: 'pointer',
+                      cursor: isProcessingMP ? 'not-allowed' : 'pointer',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
+                      opacity: isProcessingMP ? 0.7 : 1
                     }}
                   >
-                    {paymentMethod === 'mp' ? '💳 PAGAR CON MERCADO PAGO' : '💬 PEDIR POR WHATSAPP'}
+                    {paymentMethod === 'mp' 
+                      ? (isProcessingMP ? '⌛ PROCESANDO PAGO...' : '💳 PAGAR CON MERCADO PAGO') 
+                      : '💬 PEDIR POR WHATSAPP'}
                   </button>
                 </div>
               )}
