@@ -46,7 +46,7 @@ export const useStockStore = create((set, get) => ({
     },
 
     // Register a sale (deduct stock)
-    registerSale: async (cartItems) => {
+    registerSale: async (cartItems, paymentData = {}) => {
         try {
             // 1. Deduct stock for each item
             for (const item of cartItems) {
@@ -77,6 +77,9 @@ export const useStockStore = create((set, get) => ({
             await supabase.from('sales').insert([{
                 items: cartItems,
                 total: total,
+                payment_method: paymentData.method || 'cash',
+                notes: paymentData.notes || '',
+                status: 'Completada', // POS sales are completed instantly
             }]);
 
             // 2.5. Enviar Notificación Push (Telegram)

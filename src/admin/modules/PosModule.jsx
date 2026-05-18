@@ -19,9 +19,12 @@ const PosModule = () => {
     const { stock, registerSale } = useStockStore();
     const [query, setQuery] = useState('');
     const [cart, setCart] = useState([]);
-    const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [paymentMethod, setPaymentMethod] = useState('Efectivo');
     const [saleComplete, setSaleComplete] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [showCheckout, setShowCheckout] = useState(false);
+    const [amountTendered, setAmountTendered] = useState('');
+    const [paymentNotes, setPaymentNotes] = useState('');
     const searchRef = useRef(null);
 
     // Focus search on mount (also works with barcode pistol scanner)
@@ -65,12 +68,25 @@ const PosModule = () => {
         if (cart.length === 0) return;
         setProcessing(true);
         try {
-            await registerSale(cart);
+            let finalNotes = paymentNotes;
+            if (paymentMethod === 'Efectivo' && amountTendered) {
+                const vuelto = parseFloat(amountTendered) - total;
+                finalNotes = `Pagó con: $${amountTendered} | Vuelto: $${vuelto >= 0 ? vuelto : 0}`;
+            }
+
+            await registerSale(cart, {
+                method: paymentMethod,
+                notes: finalNotes
+            });
+
             setSaleComplete(true);
             setTimeout(() => {
                 setSaleComplete(false);
+                setShowCheckout(false);
                 setCart([]);
                 setQuery('');
+                setAmountTendered('');
+                setPaymentNotes('');
                 if (searchRef.current) searchRef.current.focus();
             }, 2500);
         } catch (e) {
@@ -233,22 +249,128 @@ const PosModule = () => {
                     </div>
 
                     {/* Confirm Button */}
-                    {saleComplete ? (
-                        <div style={{ background: '#d1fae5', color: '#065f46', padding: '16px', borderRadius: '10px', textAlign: 'center', fontSize: '15px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <Check size={20} /> ¡Venta registrada con éxito!
-                        </div>
-                    ) : (
-                        <button onClick={handleSale} disabled={cart.length === 0 || processing} style={{
-                            width: '100%', padding: '16px', background: cart.length === 0 ? '#e2e8f0' : colors.primary,
-                            color: cart.length === 0 ? '#94a3b8' : '#fff', border: 'none', borderRadius: '10px',
-                            fontSize: '15px', fontWeight: '800', cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                            fontFamily: "'Inter', sans-serif", transition: 'all 0.2s'
-                        }}>
-                            {processing ? 'Procesando...' : `Cobrar $${total.toLocaleString()}`}
-                        </button>
-                    )}
+                    <button onClick={() => setShowCheckout(true)} disabled={cart.length === 0 || processing} style={{
+                        width: '100%', padding: '16px', background: cart.length === 0 ? '#e2e8f0' : colors.primary,
+                        color: cart.length === 0 ? '#94a3b8' : '#fff', border: 'none', borderRadius: '10px',
+                        fontSize: '15px', fontWeight: '800', cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                        fontFamily: "'Inter', sans-serif", transition: 'all 0.2s'
+                    }}>
+                        Cobrar ${total.toLocaleString()}
+                    </button>
                 </div>
             </div>
+
+            {/* Checkout Modal Overlay */}
+            {showCheckout && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '16px', padding: '32px',
+                        width: '90%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        position: 'relative'
+                    }}>
+                        {saleComplete ? (
+                            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Check size={32} />
+                                </div>
+                                <h3 style={{ fontSize: '24px', fontWeight: '800', color: colors.text, margin: '0 0 8px 0' }}>¡Venta Registrada!</h3>
+                                <p style={{ color: colors.textSecondary }}>La caja ha sido actualizada.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <button onClick={() => setShowCheckout(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: colors.textSecondary }}>
+                                    <X size={20} />
+                                </button>
+                                <h2 style={{ fontSize: '20px', fontWeight: '800', color: colors.text, marginBottom: '24px' }}>Detalles de Cobro</h2>
+
+                                <div style={{ background: '#f8fafc', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'center' }}>
+                                    <p style={{ fontSize: '13px', fontWeight: '700', color: colors.textSecondary, margin: '0 0 4px 0', textTransform: 'uppercase' }}>Total a Pagar</p>
+                                    <p style={{ fontSize: '36px', fontWeight: '900', color: colors.primary, margin: 0 }}>${total.toLocaleString()}</p>
+                                </div>
+
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Método de Pago</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                        {['Efectivo', 'Débito', 'Crédito', 'Transferencia', 'Mixto', 'Crédito de la casa'].map(method => (
+                                            <button key={method} onClick={() => { setPaymentMethod(method); setPaymentNotes(''); setAmountTendered(''); }} style={{
+                                                padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+                                                border: paymentMethod === method ? `2px solid ${colors.primary}` : `1px solid ${colors.border}`,
+                                                background: paymentMethod === method ? `${colors.primary}10` : '#fff',
+                                                color: paymentMethod === method ? colors.primary : colors.text,
+                                                fontFamily: "'Inter', sans-serif"
+                                            }}>
+                                                {method}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {paymentMethod === 'Efectivo' && (
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ fontSize: '12px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>¿Con cuánto paga?</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <DollarSign size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: colors.textSecondary }} />
+                                            <input
+                                                type="number"
+                                                placeholder="Ej: 50000"
+                                                value={amountTendered}
+                                                onChange={e => setAmountTendered(e.target.value)}
+                                                style={{
+                                                    width: '100%', boxSizing: 'border-box', background: '#fff', border: `1px solid ${colors.border}`,
+                                                    borderRadius: '8px', padding: '12px 16px 12px 36px', fontSize: '16px', fontWeight: '700',
+                                                    color: colors.text, outline: 'none', fontFamily: "'Inter', sans-serif"
+                                                }}
+                                            />
+                                        </div>
+                                        {amountTendered && parseFloat(amountTendered) >= total && (
+                                            <div style={{ marginTop: '12px', padding: '12px', background: '#ecfdf5', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
+                                                <p style={{ fontSize: '13px', color: '#065f46', margin: 0, display: 'flex', justifyContent: 'space-between', fontWeight: '700' }}>
+                                                    <span>VUELTO A ENTREGAR:</span>
+                                                    <span style={{ fontSize: '16px' }}>${(parseFloat(amountTendered) - total).toLocaleString()}</span>
+                                                </p>
+                                            </div>
+                                        )}
+                                        {amountTendered && parseFloat(amountTendered) < total && (
+                                            <p style={{ fontSize: '12px', color: colors.error, marginTop: '8px', fontWeight: '600' }}>El monto es menor al total.</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {(paymentMethod === 'Mixto' || paymentMethod === 'Crédito de la casa') && (
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ fontSize: '12px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
+                                            {paymentMethod === 'Mixto' ? 'Detalle del pago (Ej: 10000 efvo, resto débito)' : 'Nombre del cliente / Detalles'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={paymentNotes}
+                                            onChange={e => setPaymentNotes(e.target.value)}
+                                            placeholder="Ingresá los detalles aquí..."
+                                            style={{
+                                                width: '100%', boxSizing: 'border-box', background: '#fff', border: `1px solid ${colors.border}`,
+                                                borderRadius: '8px', padding: '12px 16px', fontSize: '14px',
+                                                color: colors.text, outline: 'none', fontFamily: "'Inter', sans-serif"
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                <button onClick={handleSale} disabled={processing || (paymentMethod === 'Efectivo' && amountTendered && parseFloat(amountTendered) < total)} style={{
+                                    width: '100%', padding: '16px', background: colors.primary, color: '#fff',
+                                    border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '800', cursor: processing ? 'not-allowed' : 'pointer',
+                                    fontFamily: "'Inter', sans-serif", transition: 'all 0.2s', opacity: processing ? 0.7 : 1
+                                }}>
+                                    {processing ? 'Confirmando...' : 'Confirmar Venta y Cerrar Caja'}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
