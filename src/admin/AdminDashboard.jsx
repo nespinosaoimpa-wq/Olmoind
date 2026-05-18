@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    Package, BarChart2, ArrowLeft, Plus, Edit2,
+    Package, BarChart2, Plus, Edit2,
     Trash2, X, ShoppingBag, Phone, Mail, MapPin, Instagram,
-    Image, Palette, Tag, LayoutGrid, Save, Check, Upload, Loader, LogOut, Home, ArrowUpRight, CheckCircle2, ChevronRight
+    Image, Palette, Tag, Save, Check, Upload, LogOut, Home, ArrowUpRight, CheckCircle2,
+    Users, Truck, CreditCard, Monitor, TrendingUp, Settings, ChevronDown, ChevronRight, Scan
 } from 'lucide-react';
 import { useStockStore } from '../store/useStockStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { supabase } from '../supabaseClient';
 import FileResizer from 'react-image-file-resizer';
+import DiscountsModule from './modules/DiscountsModule';
+import ShippingModule from './modules/ShippingModule';
+import PosModule from './modules/PosModule';
+import CustomersModule from './modules/CustomersModule';
+import StatisticsModule from './modules/StatisticsModule';
 
 // ── Tiendanube Theme Design System ─────────────────────────────────────────────
 const colors = {
@@ -288,12 +294,45 @@ const AdminDashboard = ({ onBack }) => {
         }
     };
 
-    const navTabs = [
-        { id: 'home', icon: <Home size={18} />, label: 'Inicio' },
-        { id: 'products', icon: <Package size={18} />, label: 'Productos' },
-        { id: 'sales', icon: <ShoppingBag size={18} />, label: 'Ventas y Pedidos' },
-        { id: 'settings', icon: <Palette size={18} />, label: 'Personalizar Tienda' },
-        { id: 'contact', icon: <Phone size={18} />, label: 'Datos de Contacto' },
+    const [openGroups, setOpenGroups] = useState({ gestion: true, canales: true });
+    const toggleGroup = (g) => setOpenGroups(prev => ({ ...prev, [g]: !prev[g] }));
+
+    const navGroups = [
+        {
+            id: 'top',
+            items: [
+                { id: 'home', icon: <Home size={16} />, label: 'Inicio' },
+                { id: 'statistics', icon: <BarChart2 size={16} />, label: 'Estadísticas' },
+            ]
+        },
+        {
+            id: 'gestion',
+            label: 'GESTIÓN',
+            items: [
+                { id: 'sales', icon: <ShoppingBag size={16} />, label: 'Ventas' },
+                { id: 'products', icon: <Package size={16} />, label: 'Productos' },
+                { id: 'customers', icon: <Users size={16} />, label: 'Clientes' },
+                { id: 'discounts', icon: <Tag size={16} />, label: 'Descuentos', badge: 'Nuevo' },
+                { id: 'shipping', icon: <Truck size={16} />, label: 'Envíos' },
+                { id: 'payments', icon: <CreditCard size={16} />, label: 'Pagos' },
+            ]
+        },
+        {
+            id: 'canales',
+            label: 'CANALES DE VENTA',
+            items: [
+                { id: 'pos', icon: <Scan size={16} />, label: 'Punto de Venta', badge: 'Nuevo' },
+                { id: 'store', icon: <Monitor size={16} />, label: 'Tienda Online' },
+            ]
+        },
+        {
+            id: 'config',
+            label: 'CONFIGURACIÓN',
+            items: [
+                { id: 'settings', icon: <Palette size={16} />, label: 'Personalizar Tienda' },
+                { id: 'contact', icon: <Phone size={16} />, label: 'Datos de Contacto' },
+            ]
+        },
     ];
 
     // Dynamic setup checklist for e-commerce store
@@ -337,38 +376,49 @@ const AdminDashboard = ({ onBack }) => {
                     </div>
                 </div>
 
-                {/* Sidebar Navigation */}
-                <nav style={{ padding: '16px 8px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
-                    {navTabs.map(tab => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    width: '100%',
-                                    padding: '12px 16px',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    background: isActive ? colors.sidebarActive : 'transparent',
-                                    color: isActive ? colors.primary : colors.textSecondary,
-                                    fontWeight: isActive ? '700' : '500',
-                                    fontSize: '13px',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    transition: 'all 0.2s',
-                                    fontFamily: "'Inter', sans-serif"
-                                }}
-                            >
-                                {isActive && <div style={{ width: '4px', height: '18px', background: colors.primary, borderRadius: '4px', position: 'absolute', left: '4px' }}></div>}
-                                {React.cloneElement(tab.icon, { color: isActive ? colors.primary : colors.textSecondary })}
-                                {tab.label}
-                            </button>
-                        );
-                    })}
+                {/* Sidebar Navigation — Grouped like Tiendanube */}
+                <nav style={{ padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, overflowY: 'auto' }}>
+                    {navGroups.map(group => (
+                        <div key={group.id}>
+                            {/* Group Label */}
+                            {group.label && (
+                                <div style={{ padding: '12px 12px 4px', fontSize: '10px', fontWeight: '800', color: colors.textSecondary, letterSpacing: '0.08em' }}>
+                                    {group.label}
+                                </div>
+                            )}
+                            {group.items.map(tab => {
+                                const isActive = activeTab === tab.id;
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        style={{
+                                            position: 'relative',
+                                            display: 'flex', alignItems: 'center', gap: '10px',
+                                            width: '100%', padding: '10px 12px',
+                                            border: 'none', borderRadius: '8px',
+                                            background: isActive ? colors.sidebarActive : 'transparent',
+                                            color: isActive ? colors.primary : colors.textSecondary,
+                                            fontWeight: isActive ? '700' : '500',
+                                            fontSize: '13px', cursor: 'pointer',
+                                            textAlign: 'left', transition: 'all 0.15s',
+                                            fontFamily: "'Inter', sans-serif",
+                                        }}
+                                    >
+                                        {isActive && <div style={{ width: '3px', height: '16px', background: colors.primary, borderRadius: '4px', position: 'absolute', left: '2px' }} />}
+                                        {React.cloneElement(tab.icon, { color: isActive ? colors.primary : colors.textSecondary })}
+                                        <span style={{ flex: 1 }}>{tab.label}</span>
+                                        {tab.badge && (
+                                            <span style={{ fontSize: '9px', fontWeight: '800', background: '#5c2e9120', color: colors.primary, padding: '2px 6px', borderRadius: '9999px' }}>
+                                                {tab.badge}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                            {group.id !== 'config' && <div style={{ height: '8px' }} />}
+                        </div>
+                    ))}
                 </nav>
 
                 {/* User Session Footer */}
@@ -414,8 +464,15 @@ const AdminDashboard = ({ onBack }) => {
                         <div style={{ fontSize: '11px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px' }}>Olmo.indumentaria</div>
                         <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '4px 0 0 0', letterSpacing: '-0.5px' }}>
                             {activeTab === 'home' && 'Inicio'}
+                            {activeTab === 'statistics' && 'Estadísticas'}
                             {activeTab === 'products' && 'Catálogo de Productos'}
                             {activeTab === 'sales' && 'Gestión de Pedidos'}
+                            {activeTab === 'customers' && 'Clientes'}
+                            {activeTab === 'discounts' && 'Descuentos y Promociones'}
+                            {activeTab === 'shipping' && 'Configuración de Envíos'}
+                            {activeTab === 'payments' && 'Medios de Pago'}
+                            {activeTab === 'pos' && 'Punto de Venta'}
+                            {activeTab === 'store' && 'Tienda Online'}
                             {activeTab === 'settings' && 'Personalización de Tienda'}
                             {activeTab === 'contact' && 'Datos de Contacto'}
                         </h2>
@@ -538,6 +595,86 @@ const AdminDashboard = ({ onBack }) => {
                                     <span style={{ fontSize: '10px', color: colors.textSecondary }}>{m.desc}</span>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── ESTADÍSTICAS ── */}
+                {activeTab === 'statistics' && <StatisticsModule />}
+
+                {/* ── CLIENTES ── */}
+                {activeTab === 'customers' && <CustomersModule />}
+
+                {/* ── DESCUENTOS ── */}
+                {activeTab === 'discounts' && <DiscountsModule />}
+
+                {/* ── ENVÍOS ── */}
+                {activeTab === 'shipping' && <ShippingModule />}
+
+                {/* ── PUNTO DE VENTA ── */}
+                {activeTab === 'pos' && <PosModule />}
+
+                {/* ── PAGOS (simple config panel) ── */}
+                {activeTab === 'payments' && (
+                    <div>
+                        <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 8px 0' }}>Medios de Pago</h2>
+                        <p style={{ fontSize: '13px', color: colors.textSecondary, margin: '0 0 24px 0' }}>Configurá los métodos de pago aceptados en tu tienda</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                            {[
+                                { id: 'mp', icon: '💳', title: 'Mercado Pago', desc: 'Checkout Pro integrado. Acepta tarjetas, débito y QR.', color: '#00b1ea', status: 'Activo' },
+                                { id: 'transfer', icon: '🏦', title: 'Transferencia Bancaria', desc: 'Alias o CBU. El cliente paga antes del envío.', color: '#10b981', status: 'Activo' },
+                                { id: 'cash', icon: '💵', title: 'Efectivo', desc: 'Pago en el local o contra entrega.', color: '#f59e0b', status: 'Activo' },
+                                { id: 'posnet', icon: '🔲', title: 'Posnet / Tarjeta', desc: 'Terminal de tarjeta en el punto de venta.', color: '#8b5cf6', status: 'Manual' },
+                            ].map(pm => (
+                                <div key={pm.id} style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', borderTop: `4px solid ${pm.color}`, boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                                    <div style={{ fontSize: '28px', marginBottom: '12px' }}>{pm.icon}</div>
+                                    <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0 0 6px 0' }}>{pm.title}</h3>
+                                    <p style={{ fontSize: '12px', color: colors.textSecondary, margin: '0 0 16px 0', lineHeight: '1.5' }}>{pm.desc}</p>
+                                    <span style={{ fontSize: '11px', fontWeight: '700', background: `${pm.color}20`, color: pm.color, padding: '4px 10px', borderRadius: '9999px' }}>
+                                        ● {pm.status}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ marginTop: '24px', background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                            <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Datos para Transferencia</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                {[
+                                    { label: 'Alias', placeholder: 'Ej: OLMO.VENTAS.MP' },
+                                    { label: 'CBU', placeholder: 'Ej: 0000003100045678...' },
+                                    { label: 'Titular', placeholder: 'Nombre del titular de la cuenta' },
+                                    { label: 'Banco', placeholder: 'Ej: Banco Macro' },
+                                ].map(f => (
+                                    <div key={f.label}>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{f.label}</label>
+                                        <input placeholder={f.placeholder} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }} />
+                                    </div>
+                                ))}
+                            </div>
+                            <button style={{ marginTop: '16px', background: colors.primary, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}>
+                                Guardar datos bancarios
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── TIENDA ONLINE ── */}
+                {activeTab === 'store' && (
+                    <div>
+                        <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 8px 0' }}>Tienda Online</h2>
+                        <p style={{ fontSize: '13px', color: colors.textSecondary, margin: '0 0 24px 0' }}>Estado y acceso rápido a tu tienda pública</p>
+                        <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '32px', textAlign: 'center', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛍️</div>
+                            <h3 style={{ fontSize: '20px', fontWeight: '800', color: colors.text, margin: '0 0 8px 0' }}>Tu tienda está en línea</h3>
+                            <p style={{ fontSize: '14px', color: colors.textSecondary, margin: '0 0 24px 0' }}>Olmo Indumentaria está publicada y activa en Vercel</p>
+                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                                <a href="/" target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: colors.primary, color: '#fff', textDecoration: 'none', padding: '12px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', fontFamily: "'Inter', sans-serif" }}>
+                                    <ArrowUpRight size={16} /> Ver tienda
+                                </a>
+                                <button onClick={() => setActiveTab('settings')} style={{ background: '#f1f5f9', color: colors.text, border: 'none', padding: '12px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}>
+                                    Personalizar diseño
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

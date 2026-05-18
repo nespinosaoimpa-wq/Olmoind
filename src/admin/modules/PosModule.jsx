@@ -1,0 +1,256 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, DollarSign, Smartphone, Check, X } from 'lucide-react';
+import { useStockStore } from '../../store/useStockStore';
+
+const colors = {
+    primary: '#5c2e91', bg: '#f8fafc', text: '#1e293b',
+    textSecondary: '#64748b', border: '#e2e8f0', cardBg: '#ffffff',
+    success: '#10b981', warning: '#f59e0b', error: '#ef4444',
+};
+
+const PAYMENT_METHODS = [
+    { id: 'cash', label: 'Efectivo', icon: <DollarSign size={18} />, color: colors.success },
+    { id: 'transfer', label: 'Transferencia', icon: <CreditCard size={18} />, color: '#0ea5e9' },
+    { id: 'card', label: 'Tarjeta', icon: <CreditCard size={18} />, color: '#8b5cf6' },
+    { id: 'mp', label: 'Mercado Pago', icon: <Smartphone size={18} />, color: '#00b1ea' },
+];
+
+const PosModule = () => {
+    const { stock, registerSale } = useStockStore();
+    const [query, setQuery] = useState('');
+    const [cart, setCart] = useState([]);
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [saleComplete, setSaleComplete] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const searchRef = useRef(null);
+
+    // Focus search on mount (also works with barcode pistol scanner)
+    useEffect(() => {
+        if (searchRef.current) searchRef.current.focus();
+    }, []);
+
+    const filteredProducts = query.trim().length === 0 ? stock : stock.filter(p => {
+        const q = query.toLowerCase();
+        return (
+            p.name?.toLowerCase().includes(q) ||
+            p.category?.toLowerCase().includes(q) ||
+            p.id?.toLowerCase().startsWith(q)
+        );
+    });
+
+    const addToCart = (product, size) => {
+        const key = `${product.id}-${size}`;
+        const stock_for_size = (product.variants || {})[size] || 0;
+        setCart(prev => {
+            const existing = prev.find(i => i.key === key);
+            if (existing) {
+                if (existing.quantity >= stock_for_size) return prev;
+                return prev.map(i => i.key === key ? { ...i, quantity: i.quantity + 1 } : i);
+            }
+            return [...prev, { key, id: product.id, name: product.name, price: product.price, size, quantity: 1, maxStock: stock_for_size, image: product.images?.[0] || product.image }];
+        });
+        setQuery('');
+        if (searchRef.current) searchRef.current.focus();
+    };
+
+    const updateQty = (key, delta) => {
+        setCart(prev => prev.map(i => i.key === key ? { ...i, quantity: Math.max(1, Math.min(i.quantity + delta, i.maxStock)) } : i));
+    };
+
+    const removeItem = (key) => setCart(prev => prev.filter(i => i.key !== key));
+
+    const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
+
+    const handleSale = async () => {
+        if (cart.length === 0) return;
+        setProcessing(true);
+        try {
+            await registerSale(cart);
+            setSaleComplete(true);
+            setTimeout(() => {
+                setSaleComplete(false);
+                setCart([]);
+                setQuery('');
+                if (searchRef.current) searchRef.current.focus();
+            }, 2500);
+        } catch (e) {
+            alert('Error al registrar la venta: ' + e.message);
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px', height: 'calc(100vh - 160px)' }}>
+            {/* Left Panel: Product Search */}
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ marginBottom: '16px' }}>
+                    <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 4px 0' }}>Punto de Venta</h2>
+                    <p style={{ fontSize: '13px', color: colors.textSecondary, margin: 0 }}>
+                        Buscá por nombre, categoría, o escaneá el código de barras con la pistola láser / cámara del celular
+                    </p>
+                </div>
+
+                {/* Barcode / Search Input */}
+                <div style={{ position: 'relative', marginBottom: '16px' }}>
+                    <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: colors.textSecondary }} />
+                    <input
+                        ref={searchRef}
+                        type="text"
+                        placeholder="🔍 Escribí, escaneá código de barras o nombre del producto..."
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                        style={{
+                            width: '100%', boxSizing: 'border-box',
+                            background: '#fff', border: `2px solid ${colors.primary}`,
+                            borderRadius: '10px', padding: '14px 16px 14px 44px',
+                            fontSize: '15px', fontFamily: "'Inter', sans-serif",
+                            color: colors.text, outline: 'none',
+                        }}
+                        autoComplete="off"
+                    />
+                </div>
+
+                {/* Product Grid */}
+                <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', alignContent: 'start' }}>
+                    {filteredProducts.map(product => {
+                        const totalStock = Object.values(product.variants || {}).reduce((a, b) => a + b, 0);
+                        const sizes = Object.entries(product.variants || {}).filter(([, qty]) => qty > 0);
+                        return (
+                            <div key={product.id} style={{
+                                background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '10px',
+                                overflow: 'hidden', transition: 'all 0.2s',
+                                opacity: totalStock === 0 ? 0.5 : 1,
+                            }}>
+                                <div style={{ height: '120px', background: '#f8fafc', overflow: 'hidden', position: 'relative' }}>
+                                    {product.images?.[0] || product.image ? (
+                                        <img src={product.images?.[0] || product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '32px' }}>👕</div>
+                                    )}
+                                    {totalStock === 0 && (
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <span style={{ color: '#fff', fontSize: '11px', fontWeight: '800', letterSpacing: '1px' }}>AGOTADO</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ padding: '10px' }}>
+                                    <p style={{ fontSize: '12px', fontWeight: '700', color: colors.text, margin: '0 0 4px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</p>
+                                    <p style={{ fontSize: '14px', fontWeight: '800', color: colors.primary, margin: '0 0 8px 0' }}>${product.price?.toLocaleString()}</p>
+                                    {/* Size buttons */}
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                        {sizes.map(([size, qty]) => (
+                                            <button key={size} onClick={() => addToCart(product, size)} style={{
+                                                fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px',
+                                                border: `1px solid ${colors.border}`, background: '#fff', cursor: 'pointer',
+                                                color: colors.text, fontFamily: "'Inter', sans-serif",
+                                                transition: 'all 0.15s'
+                                            }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = colors.primary; e.currentTarget.style.color = '#fff'; e.currentTarget.style.border = `1px solid ${colors.primary}`; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = colors.text; e.currentTarget.style.border = `1px solid ${colors.border}`; }}
+                                                title={`Stock: ${qty}`}
+                                            >
+                                                <span translate="no">{size}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {filteredProducts.length === 0 && query && (
+                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: colors.textSecondary }}>
+                            <p style={{ fontSize: '14px', fontWeight: '600' }}>No se encontraron productos para "{query}"</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Right Panel: Cart */}
+            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                {/* Cart Header */}
+                <div style={{ padding: '20px', borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <ShoppingCart size={20} color={colors.primary} />
+                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: colors.text, margin: 0 }}>Carrito ({cart.length})</h3>
+                </div>
+
+                {/* Cart Items */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+                    {cart.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '48px 24px', color: colors.textSecondary }}>
+                            <ShoppingCart size={40} style={{ marginBottom: '12px', opacity: 0.2 }} />
+                            <p style={{ fontSize: '13px', fontWeight: '600' }}>El carrito está vacío</p>
+                            <p style={{ fontSize: '12px', marginTop: '4px' }}>Buscá y seleccioná un talle para agregar</p>
+                        </div>
+                    ) : cart.map(item => (
+                        <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: `1px solid ${colors.border}` }}>
+                            {item.image && <img src={item.image} alt={item.name} style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: '12px', fontWeight: '700', color: colors.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                                <p style={{ fontSize: '11px', color: colors.textSecondary, margin: '2px 0 0 0' }}>
+                                    <span translate="no">Talle {item.size}</span> • ${item.price?.toLocaleString()}
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                <button onClick={() => updateQty(item.key, -1)} style={{ width: '24px', height: '24px', border: `1px solid ${colors.border}`, borderRadius: '4px', background: '#f8fafc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Minus size={12} />
+                                </button>
+                                <span style={{ fontSize: '13px', fontWeight: '700', minWidth: '20px', textAlign: 'center' }}>{item.quantity}</span>
+                                <button onClick={() => updateQty(item.key, 1)} style={{ width: '24px', height: '24px', border: `1px solid ${colors.border}`, borderRadius: '4px', background: '#f8fafc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Plus size={12} />
+                                </button>
+                                <button onClick={() => removeItem(item.key)} style={{ width: '24px', height: '24px', border: 'none', borderRadius: '4px', background: '#fee2e2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.error, marginLeft: '4px' }}>
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Payment and Total */}
+                <div style={{ padding: '16px', borderTop: `1px solid ${colors.border}` }}>
+                    {/* Payment Method */}
+                    <p style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: '10px' }}>Medio de Pago</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+                        {PAYMENT_METHODS.map(pm => (
+                            <button key={pm.id} onClick={() => setPaymentMethod(pm.id)} style={{
+                                display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 12px',
+                                borderRadius: '8px', border: paymentMethod === pm.id ? `2px solid ${pm.color}` : `1px solid ${colors.border}`,
+                                background: paymentMethod === pm.id ? `${pm.color}10` : '#fff',
+                                cursor: 'pointer', fontSize: '12px', fontWeight: '700',
+                                color: paymentMethod === pm.id ? pm.color : colors.textSecondary,
+                                fontFamily: "'Inter', sans-serif", transition: 'all 0.15s'
+                            }}>
+                                {pm.icon} {pm.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Total */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: '700', color: colors.text }}>TOTAL</span>
+                        <span style={{ fontSize: '24px', fontWeight: '900', color: colors.primary }}>${total.toLocaleString()}</span>
+                    </div>
+
+                    {/* Confirm Button */}
+                    {saleComplete ? (
+                        <div style={{ background: '#d1fae5', color: '#065f46', padding: '16px', borderRadius: '10px', textAlign: 'center', fontSize: '15px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Check size={20} /> ¡Venta registrada con éxito!
+                        </div>
+                    ) : (
+                        <button onClick={handleSale} disabled={cart.length === 0 || processing} style={{
+                            width: '100%', padding: '16px', background: cart.length === 0 ? '#e2e8f0' : colors.primary,
+                            color: cart.length === 0 ? '#94a3b8' : '#fff', border: 'none', borderRadius: '10px',
+                            fontSize: '15px', fontWeight: '800', cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                            fontFamily: "'Inter', sans-serif", transition: 'all 0.2s'
+                        }}>
+                            {processing ? 'Procesando...' : `Cobrar $${total.toLocaleString()}`}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default PosModule;
