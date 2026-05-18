@@ -60,7 +60,6 @@ function App() {
       <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh', position: 'relative' }}>
         <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         <main style={{ paddingTop: '140px' }}>
-          <Hero />
           <ProductGrid searchQuery={searchQuery} />
         </main>
         <WhatsAppButton />
