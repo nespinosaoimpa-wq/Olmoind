@@ -107,7 +107,6 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 color: '#1A1A1A',
                 textDecoration: 'none',
                 lineHeight: '1',
-                fontStyle: 'italic'
               }}>
                 OLMO
               </a>

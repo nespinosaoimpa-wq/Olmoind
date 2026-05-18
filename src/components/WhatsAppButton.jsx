@@ -13,6 +13,7 @@ const WhatsAppButton = () => {
             className="whatsapp-btn"
             style={{
                 position: 'fixed',
+                bottom: '90px',
                 right: '30px',
                 width: '60px',
                 height: '60px',

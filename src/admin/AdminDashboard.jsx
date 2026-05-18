@@ -3,7 +3,7 @@ import {
     Package, BarChart2, Plus, Edit2,
     Trash2, X, ShoppingBag, Phone, Mail, MapPin, Instagram,
     Image, Palette, Tag, Save, Check, Upload, LogOut, Home, ArrowUpRight, CheckCircle2,
-    Users, Truck, CreditCard, Monitor, TrendingUp, Settings, ChevronDown, ChevronRight, Scan
+    Users, Truck, CreditCard, Monitor, TrendingUp, Settings, ChevronDown, ChevronRight, Scan, Loader
 } from 'lucide-react';
 import { useStockStore } from '../store/useStockStore';
 import { useSettingsStore } from '../store/useSettingsStore';
