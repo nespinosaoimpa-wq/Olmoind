@@ -10,9 +10,9 @@ const WhatsAppButton = () => {
             href={`https://wa.me/${phoneNumber}?text=${message}`}
             target="_blank"
             rel="noopener noreferrer"
+            className="whatsapp-btn"
             style={{
                 position: 'fixed',
-                bottom: '30px',
                 right: '30px',
                 width: '60px',
                 height: '60px',

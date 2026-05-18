@@ -155,3 +155,13 @@ body {
     display: flex;
   }
 }
+
+.whatsapp-btn {
+  bottom: 90px; /* Above mobile nav */
+}
+
+@media (min-width: 768px) {
+  .whatsapp-btn {
+    bottom: 30px; /* Standard desktop position */
+  }
+}

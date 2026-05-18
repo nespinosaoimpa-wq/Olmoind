@@ -13,54 +13,68 @@ const Hero = () => {
 
     const hero = settings.hero || {};
     const title = hero.title || 'OLMO';
-    const subtitle = hero.subtitle || 'INDUMENTARIA';
+    const subtitle = hero.subtitle || 'NUEVA COLECCIÓN';
     const cta = hero.cta || 'Ver Colección';
-    const bgColor = hero.bgColor || null;
 
     return (
         <section
             id="home"
             style={{
-                minHeight: '60vh',
+                height: '80vh',
+                minHeight: '600px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexDirection: 'column',
-                textAlign: 'center',
-                background: bgColor || 'linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)',
-                padding: '120px 24px 60px',
                 position: 'relative',
                 overflow: 'hidden',
+                backgroundColor: '#1A1A1A'
             }}
         >
-            {/* Subtle noise texture */}
+            {/* Background Image */}
             <div style={{
                 position: 'absolute', top: 0, left: 0,
                 width: '100%', height: '100%',
-                opacity: 0.3,
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+                backgroundImage: 'url("https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=2071&auto=format&fit=crop")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed',
                 zIndex: 0,
-                mixBlendMode: 'overlay',
-                pointerEvents: 'none',
             }} />
 
-            <div style={{ position: 'relative', zIndex: 1 }}>
-                <motion.p
-                    initial={{ opacity: 0, y: 10 }}
+            {/* Dark Overlay for readability */}
+            <div style={{
+                position: 'absolute', top: 0, left: 0,
+                width: '100%', height: '100%',
+                background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%)',
+                zIndex: 1,
+            }} />
+
+            {/* Content */}
+            <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px', width: '100%', maxWidth: '800px' }}>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1, duration: 0.8 }}
                     style={{
-                        fontSize: '11px',
-                        letterSpacing: '0.4em',
-                        textTransform: 'uppercase',
-                        color: '#6b7280',
-                        fontFamily: "'Inter', sans-serif",
-                        fontWeight: '600',
-                        marginBottom: '16px',
+                        display: 'inline-block',
+                        padding: '6px 16px',
+                        border: '1px solid rgba(255,255,255,0.4)',
+                        borderRadius: '9999px',
+                        marginBottom: '24px',
+                        backdropFilter: 'blur(4px)'
                     }}
                 >
-                    EST. 2025 // SANTA FE
-                </motion.p>
+                    <span style={{
+                        fontSize: '10px',
+                        letterSpacing: '0.3em',
+                        textTransform: 'uppercase',
+                        color: '#ffffff',
+                        fontFamily: "'Inter', sans-serif",
+                        fontWeight: '600',
+                    }}>
+                        {subtitle}
+                    </span>
+                </motion.div>
 
                 <motion.h1
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -68,13 +82,14 @@ const Hero = () => {
                     transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
                     style={{
                         fontFamily: "'Montserrat', sans-serif",
-                        fontSize: 'clamp(5rem, 22vw, 14rem)',
-                        fontWeight: '800',
-                        color: '#1A1A1A',
-                        lineHeight: '0.85',
-                        letterSpacing: '-4px',
+                        fontSize: 'clamp(4rem, 15vw, 10rem)',
+                        fontWeight: '900',
+                        color: '#ffffff',
+                        lineHeight: '0.9',
+                        letterSpacing: '-2px',
                         textTransform: 'uppercase',
-                        marginBottom: '12px',
+                        marginBottom: '24px',
+                        textShadow: '0 10px 30px rgba(0,0,0,0.3)'
                     }}
                 >
                     {title}
@@ -83,41 +98,48 @@ const Hero = () => {
                 <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.8 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
                     style={{
                         fontFamily: "'Inter', sans-serif",
-                        fontSize: 'clamp(0.7rem, 2vw, 1.1rem)',
-                        letterSpacing: '0.5em',
-                        textTransform: 'uppercase',
-                        color: '#1A1A1A',
-                        fontWeight: '300',
+                        fontSize: 'clamp(0.9rem, 2vw, 1.2rem)',
+                        color: 'rgba(255,255,255,0.9)',
+                        fontWeight: '400',
                         marginBottom: '48px',
+                        maxWidth: '500px',
+                        margin: '0 auto 48px'
                     }}
                 >
-                    {subtitle}
+                    Indumentaria masculina de diseño. Envíos a todo el país desde Santa Fe.
                 </motion.p>
 
                 <motion.button
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4, duration: 0.8 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
                     onClick={() => document.getElementById('shop').scrollIntoView({ behavior: 'smooth' })}
                     style={{
-                        padding: '14px 48px',
-                        background: '#1A1A1A',
-                        color: '#ffffff',
+                        padding: '16px 48px',
+                        background: '#ffffff',
+                        color: '#1A1A1A',
                         border: 'none',
-                        borderRadius: '9999px',
-                        fontSize: '11px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
                         fontWeight: '700',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.2em',
+                        letterSpacing: '0.15em',
                         cursor: 'pointer',
                         fontFamily: "'Inter', sans-serif",
-                        transition: 'all 0.2s ease',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#3f3f3f'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = '#1A1A1A'}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+                    }}
                 >
                     {cta}
                 </motion.button>

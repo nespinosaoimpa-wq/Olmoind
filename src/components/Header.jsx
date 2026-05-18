@@ -67,16 +67,17 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
   return (
     <>
-      {/* TOP HEADER (OneStreet Style) */}
+      {/* TOP HEADER (Olmo Style) */}
       <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
         width: '100%',
         zIndex: 1000,
-        background: '#0a1d47', // Deep blue
-        color: '#ffffff',
-        fontFamily: "'Inter', sans-serif"
+        background: '#ffffff', // Olmo white
+        color: '#1A1A1A',
+        fontFamily: "'Inter', sans-serif",
+        borderBottom: '1px solid #e5e7eb'
       }}>
         {/* Main Row */}
         <div style={{
@@ -93,7 +94,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="mobile-menu-btn"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A' }}
             >
               <Menu size={24} />
             </button>
@@ -103,7 +104,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 fontSize: '28px',
                 fontWeight: '900',
                 letterSpacing: '-1px',
-                color: '#ffffff',
+                color: '#1A1A1A',
                 textDecoration: 'none',
                 lineHeight: '1',
                 fontStyle: 'italic'
@@ -115,7 +116,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                 letterSpacing: '0.4em',
                 textTransform: 'uppercase',
                 fontWeight: '500',
-                color: '#ffffff',
+                color: '#1A1A1A',
                 marginTop: '4px',
               }}>
                 Indumentaria
@@ -132,7 +133,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                background: '#ffffff',
+                background: '#f3f4f6',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '12px 16px 12px 48px',
@@ -146,23 +147,23 @@ const Header = ({ searchQuery, setSearchQuery }) => {
               left: '16px',
               top: '50%',
               transform: 'translateY(-50%)',
-              color: '#1a1a1a',
+              color: '#6b7280',
             }} />
           </div>
 
           {/* Right: Icons (Desktop) */}
           <div style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
-            <a href="https://wa.me/543434559599" target="_blank" rel="noreferrer" className="desktop-menu-link" style={{ color: '#fff', textDecoration: 'none', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <a href="https://wa.me/543434559599" target="_blank" rel="noreferrer" className="desktop-menu-link" style={{ color: '#1A1A1A', textDecoration: 'none', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                <span style={{ fontSize: '11px', fontWeight: '500' }}>Ayuda</span>
             </a>
-            <a href="/?admin=true" className="desktop-menu-link" style={{ color: '#fff', textDecoration: 'none', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <a href="/?admin=true" className="desktop-menu-link" style={{ color: '#1A1A1A', textDecoration: 'none', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                <User size={22} />
                <span style={{ fontSize: '11px', fontWeight: '500' }}>Mi cuenta</span>
             </a>
             <button
               onClick={() => setIsCartOpen(true)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
             >
               <div style={{ position: 'relative' }}>
                   <ShoppingCart size={22} />
@@ -172,7 +173,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                       background: '#1A1A1A', color: '#fff', fontSize: '9px',
                       fontWeight: '800', width: '16px', height: '16px',
                       borderRadius: '50%', display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', border: '1px solid #0a1d47'
+                      justifyContent: 'center', border: '1px solid #ffffff'
                     }}>
                       {totalItems}
                     </span>
@@ -211,14 +212,14 @@ const Header = ({ searchQuery, setSearchQuery }) => {
         </div>
 
         {/* Bottom Nav Bar (Centered Links - Desktop) */}
-        <div className="desktop-menu-link" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: '#081738' }}>
+        <div className="desktop-menu-link" style={{ borderTop: '1px solid #e5e7eb', background: '#ffffff' }}>
             <nav style={{
                 display: 'flex', justifyContent: 'center', gap: '48px', padding: '14px 0',
                 maxWidth: '1400px', margin: '0 auto', width: '100%'
             }}>
-                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('home'); }} style={{ color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>Inicio</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('contact'); }} style={{ color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>Contacto</a>
-                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('shop'); }} style={{ color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>Productos</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('home'); }} style={{ color: '#1A1A1A', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>Inicio</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('contact'); }} style={{ color: '#1A1A1A', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>Contacto</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('shop'); }} style={{ color: '#1A1A1A', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>Productos</a>
             </nav>
         </div>
       </header>
