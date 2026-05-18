@@ -2,39 +2,79 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Package, BarChart2, ArrowLeft, Plus, Edit2,
     Trash2, X, ShoppingBag, Phone, Mail, MapPin, Instagram,
-    Image, Palette, Tag, LayoutGrid, Save, Check, Upload, Loader, LogOut
+    Image, Palette, Tag, LayoutGrid, Save, Check, Upload, Loader, LogOut, Home, ArrowUpRight, CheckCircle2, ChevronRight
 } from 'lucide-react';
 import { useStockStore } from '../store/useStockStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { supabase } from '../supabaseClient';
 import FileResizer from 'react-image-file-resizer';
 
-// ── Shared styles ─────────────────────────────────────────────────────────────
+// ── Tiendanube Theme Design System ─────────────────────────────────────────────
+const colors = {
+    primary: '#5c2e91',          // Violeta Tiendanube Corporativo
+    primaryHover: '#4c2378',     // Violeta Oscuro
+    bg: '#f8fafc',               // Fondo Gris Suave
+    sidebar: '#ffffff',          // Sidebar Blanco Premium
+    sidebarActive: '#f3e8ff',    // Fondo Violeta Suave Activo
+    text: '#1e293b',             // Slate 800 (Alta Legibilidad)
+    textSecondary: '#64748b',    // Slate 500
+    border: '#e2e8f0',           // Gris Slate 200
+    cardBg: '#ffffff',           // Blanco Puro
+    success: '#10b981',          // Verde Esmeralda
+    warning: '#f59e0b',          // Ámbar
+    error: '#ef4444',            // Rojo Coral
+    info: '#3b82f6'              // Azul
+};
+
 const inputStyle = {
-    background: '#1e293b', border: '1px solid #334155',
-    padding: '12px 16px', color: '#f1f5f9', outline: 'none',
-    borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif",
-    width: '100%', boxSizing: 'border-box',
+    background: '#ffffff',
+    border: '1px solid #cbd5e1',
+    padding: '10px 14px',
+    color: colors.text,
+    outline: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontFamily: "'Inter', sans-serif",
+    width: '100%',
+    boxSizing: 'border-box',
+    transition: 'all 0.2s',
 };
+
 const labelStyle = {
-    fontSize: '10px', fontWeight: '700', color: '#64748b',
-    textTransform: 'uppercase', letterSpacing: '0.1em',
-    fontFamily: "'Inter', sans-serif", display: 'block', marginBottom: '6px',
+    fontSize: '11px',
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    fontFamily: "'Inter', sans-serif",
+    display: 'block',
+    marginBottom: '6px',
 };
+
 const card = {
-    background: 'rgba(30,41,59,0.4)', border: '1px solid #1e293b',
-    borderRadius: '10px', padding: '20px', marginBottom: '12px',
+    background: colors.cardBg,
+    border: `1px solid ${colors.border}`,
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '20px',
+    boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.05)',
 };
+
 const sectionTitle = {
-    fontSize: '11px', fontWeight: '900', textTransform: 'uppercase',
-    letterSpacing: '0.15em', color: '#64748b', marginBottom: '16px',
+    fontSize: '14px',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    color: colors.text,
+    marginBottom: '16px',
+    fontFamily: "'Inter', sans-serif",
 };
 
 const AdminDashboard = ({ onBack }) => {
     const { stock, updateStock, addProduct, deleteProduct, fetchProducts } = useStockStore();
     const { settings, fetchSettings, updateSetting, subscribeToSettings, uploadImage } = useSettingsStore();
 
-    const [activeTab, setActiveTab] = useState('stock');
+    const [activeTab, setActiveTab] = useState('home'); // Tiendanube clones default to Home/Inicio
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [localSales, setLocalSales] = useState([]);
@@ -43,13 +83,14 @@ const AdminDashboard = ({ onBack }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [lastError, setLastError] = useState(null);
     const [debugLog, setDebugLog] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const fileInputRef = useRef(null);
 
     const addLog = (msg) => {
-        setDebugLog(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${msg}`]);
+        setDebugLog(prev => [...prev.slice(-3), `${new Date().toLocaleTimeString()}: ${msg}`]);
     };
 
-    // Global error listener to catch "White Screen" crashes
+    // Global error listener to prevent crashes
     useEffect(() => {
         const handleError = (event) => {
             console.error('Caught global error:', event.error);
@@ -74,7 +115,7 @@ const AdminDashboard = ({ onBack }) => {
     const [newBannerUrl, setNewBannerUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
 
-    // ── Stats (Safe calculations) ─────────────────────────────────────────────
+    // Stats calculations
     const totalRevenue = (localSales || []).reduce((acc, s) => acc + (s.total || 0), 0);
     const totalItemsSold = (localSales || []).reduce((acc, s) => acc + (s.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0), 0);
     const lowStockCount = (stock || []).filter(item => {
@@ -96,7 +137,7 @@ const AdminDashboard = ({ onBack }) => {
         return unsubscribe;
     }, []);
 
-    // Sync local editable state when settings load from Supabase
+    // Sync local editable state when settings load
     useEffect(() => {
         setContact(settings.contact || {});
         setHero(settings.hero || {});
@@ -104,18 +145,16 @@ const AdminDashboard = ({ onBack }) => {
         setCategories(Array.isArray(settings.categories) ? settings.categories : []);
     }, [settings]);
 
-    // ── Save helpers ──────────────────────────────────────────────────────────
     const showSaved = () => {
         setSavedMsg('¡Guardado!');
         setTimeout(() => setSavedMsg(''), 2500);
     };
 
-    // ── Image upload from device ──────────────────────────────────────────────
+    // ── Image upload from device with resizer ──────────────────────────────────────
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Basic file type check
         if (!file.type.startsWith('image/')) {
             alert('Por favor selecciona un archivo de imagen válido.');
             return;
@@ -123,7 +162,6 @@ const AdminDashboard = ({ onBack }) => {
 
         setUploadingImage(true);
         try {
-            // Determine the actual function safely
             const resizerFn = FileResizer?.imageFileResizer || (typeof FileResizer === 'function' ? FileResizer : null);
 
             if (!resizerFn) {
@@ -132,7 +170,6 @@ const AdminDashboard = ({ onBack }) => {
             }
 
             addLog('Redimensionando imagen...');
-            // Resize image before upload (Promise-wrapped)
             const resizedImage = await new Promise((resolve, reject) => {
                 try {
                     resizerFn(
@@ -154,7 +191,6 @@ const AdminDashboard = ({ onBack }) => {
 
             if (publicUrl) {
                 const cleanUrl = typeof publicUrl === 'string' ? publicUrl : String(publicUrl);
-                // Append instead of replace
                 setFormData(prev => ({
                     ...prev,
                     images: [...(prev.images || []), cleanUrl]
@@ -164,17 +200,10 @@ const AdminDashboard = ({ onBack }) => {
         } catch (err) {
             console.error('Resize/Upload error:', err);
             const errMsg = err.message || 'Error desconocido';
-
-            // Helpful tip for resizer errors
-            if (errMsg.includes('processors')) {
-                addLog('ERROR: Problema con la librería de imagen. Reintentando...');
-            }
-
             addLog('ERROR: ' + errMsg);
             alert('Error al procesar/subir imagen: ' + errMsg);
         } finally {
             setUploadingImage(false);
-            // Clear input value so same file can be selected again if needed
             if (e.target) e.target.value = '';
         }
     };
@@ -183,7 +212,6 @@ const AdminDashboard = ({ onBack }) => {
     const handleOpenModal = (item = null) => {
         if (item) {
             setEditingItem(item);
-            // Handle both legacy 'image' and new 'images'
             const initialImages = Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []);
             setFormData({
                 name: item.name || '',
@@ -209,7 +237,7 @@ const AdminDashboard = ({ onBack }) => {
                     name: formData.name,
                     price: formData.price,
                     images: formData.images,
-                    image: formData.images[0] || '', // Maintain legacy field too
+                    image: formData.images[0] || '', // Maintain legacy field
                     category: formData.category,
                     variants: formData.variants
                 }).eq('id', editingItem.id);
@@ -229,13 +257,8 @@ const AdminDashboard = ({ onBack }) => {
         } catch (error) {
             console.error('Error saving product:', error);
             addLog('ERROR CRÍTICO AL GUARDAR: ' + (error.message || 'Error desconocido'));
-
-            // Check for missing column error
-            if (error.message?.includes("column 'images' of relation 'products' does not exist") ||
-                error.message?.includes("Could not find the 'images' column")) {
-                alert('⚠️ ERROR DE BASE DE DATOS: Falta la columna "images". \n\nPor favor, ejecuta el primer comando SQL que te pasé en Supabase.');
-            } else if (error.message?.includes("row-level security policy") || error.code === '42501') {
-                alert('⚠️ ERROR DE PERMISOS (RLS): Supabase está bloqueando el guardado. \n\nPor favor, ejecuta el SEGUNDO comando SQL (DROP POLICY...) que te pasé para habilitar los permisos.');
+            if (error.message?.includes("column 'images' of relation 'products'")) {
+                alert('⚠️ ERROR DE BASE DE DATOS: Falta la columna "images" en la tabla "products". Revisa las tablas.');
             } else {
                 alert('No se pudo guardar el producto: ' + (error.message || 'Error de conexión'));
             }
@@ -245,7 +268,7 @@ const AdminDashboard = ({ onBack }) => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Eliminar este producto?')) {
+        if (window.confirm('¿Deseas eliminar este producto?')) {
             await deleteProduct(id);
             fetchProducts();
         }
@@ -256,67 +279,110 @@ const AdminDashboard = ({ onBack }) => {
         await supabase.from('sales').update({ status: newStatus }).eq('id', saleId);
     };
 
-    const getStatusColor = (status) => {
+    const getStatusStyles = (status) => {
         switch (status) {
-            case 'Enviado': return '#3b82f6';
-            case 'Entregado': return '#10b981';
-            case 'Cancelado': return '#ef4444';
-            default: return '#f59e0b';
+            case 'Enviado': return { bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' };
+            case 'Entregado': return { bg: '#d1fae5', color: '#047857', border: '#a7f3d0' };
+            case 'Cancelado': return { bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' };
+            default: return { bg: '#fef3c7', color: '#b45309', border: '#fde68a' }; // Pendiente
         }
     };
 
-    // ── Shared UI components ──────────────────────────────────────────────────
-    const SectionHeader = ({ title, action }) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={sectionTitle}>{title}</h3>
-            {action}
-        </div>
-    );
-
-    const SaveButton = ({ onClick, label = 'Guardar' }) => (
-        <button onClick={onClick} style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: '#ffffff', color: '#000', border: 'none',
-            padding: '12px 24px', borderRadius: '8px', fontSize: '11px',
-            fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.15em',
-            cursor: 'pointer', fontFamily: "'Inter', sans-serif", marginTop: '8px',
-        }}>
-            <Save size={14} /> {label}
-        </button>
-    );
-
     const navTabs = [
-        { id: 'stock', icon: <LayoutGrid size={20} />, label: 'Dashboard' },
-        { id: 'sales', icon: <ShoppingBag size={20} />, label: 'Pedidos' },
-        { id: 'stats', icon: <BarChart2 size={20} />, label: 'Métricas' },
-        { id: 'settings', icon: <Palette size={20} />, label: 'Tienda' },
+        { id: 'home', icon: <Home size={18} />, label: 'Inicio' },
+        { id: 'products', icon: <Package size={18} />, label: 'Productos' },
+        { id: 'sales', icon: <ShoppingBag size={18} />, label: 'Ventas y Pedidos' },
+        { id: 'settings', icon: <Palette size={18} />, label: 'Personalizar Tienda' },
+        { id: 'contact', icon: <Phone size={18} />, label: 'Datos de Contacto' },
     ];
 
-    return (
-        <div translate="no" className="admin-container" style={{ backgroundColor: '#0f172a', minHeight: '100vh', color: '#f1f5f9', fontFamily: "'Inter', sans-serif", paddingBottom: '96px' }}>
+    // Dynamic setup checklist for e-commerce store
+    const checklistItems = [
+        { text: 'Conectar base de datos de Olmo.indumentaria', done: true },
+        { text: 'Cargar tu primer producto al catálogo', done: stock.length > 0 },
+        { text: 'Configurar WhatsApp o datos de contacto', done: !!contact.whatsapp },
+        { text: 'Agregar categorías o personalizar el Hero', done: categories.length > 0 || !!hero.title },
+    ];
 
-            {/* TOP BAR */}
-            <header style={{
-                position: 'sticky', top: 0, zIndex: 100,
-                background: 'rgba(15,23,42,0.97)', backdropFilter: 'blur(12px)',
-                borderBottom: '1px solid #1e293b', padding: '12px 16px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    const filteredStock = stock.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    return (
+        <div translate="no" style={{ display: 'flex', background: colors.bg, minHeight: '100vh', color: colors.text, fontFamily: "'Inter', sans-serif" }}>
+
+            {/* ── BARRA LATERAL (SIDEBAR CLON TIENDANUBE) ────────────────────────────────── */}
+            <aside style={{
+                width: '260px',
+                background: colors.sidebar,
+                borderRight: `1px solid ${colors.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'fixed',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                zIndex: 100,
+                boxShadow: '2px 0 8px rgba(0,0,0,0.02)'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ color: '#000', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
+                {/* Brand Header */}
+                <div style={{ padding: '24px 20px', borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', background: colors.primary, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ color: '#fff', fontWeight: '900', fontSize: '18px', fontFamily: "'Montserrat', sans-serif" }}>O</span>
                     </div>
-                    <h1 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f1f5f9' }}>
-                        <span>Olmo Admin</span> <span style={{ opacity: 0.5, fontSize: '10px' }}>v3.0.0</span>
-                    </h1>
+                    <div>
+                        <h1 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: 0, letterSpacing: '0.2px' }}>Olmo Indumentaria</h1>
+                        <span style={{ fontSize: '10px', color: colors.primary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Administrador</span>
+                    </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ minWidth: '100px', textAlign: 'right' }}>
-                        {savedMsg && (
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                                <Check size={14} /> <span>{savedMsg}</span>
+
+                {/* Sidebar Navigation */}
+                <nav style={{ padding: '16px 8px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
+                    {navTabs.map(tab => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    background: isActive ? colors.sidebarActive : 'transparent',
+                                    color: isActive ? colors.primary : colors.textSecondary,
+                                    fontWeight: isActive ? '700' : '500',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'all 0.2s',
+                                    fontFamily: "'Inter', sans-serif"
+                                }}
+                            >
+                                {isActive && <div style={{ width: '4px', height: '18px', background: colors.primary, borderRadius: '4px', position: 'absolute', left: '4px' }}></div>}
+                                {React.cloneElement(tab.icon, { color: isActive ? colors.primary : colors.textSecondary })}
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* User Session Footer */}
+                <div style={{ padding: '16px', borderTop: `1px solid ${colors.border}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', color: colors.primary }}>
+                            AD
+                        </div>
+                        <div>
+                            <p style={{ fontSize: '12px', fontWeight: '700', color: colors.text, margin: 0 }}>Administrador</p>
+                            <span style={{ fontSize: '10px', color: colors.success, display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700' }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colors.success }}></span> En línea
                             </span>
-                        )}
+                        </div>
                     </div>
 
                     <button
@@ -324,380 +390,500 @@ const AdminDashboard = ({ onBack }) => {
                             await supabase.auth.signOut();
                         }}
                         style={{
-                            display: 'flex', alignItems: 'center', gap: '8px',
-                            background: '#ef4444', color: '#fff', border: 'none',
-                            padding: '8px 16px', borderRadius: '6px',
-                            fontSize: '11px', fontWeight: '800', cursor: 'pointer',
-                            textTransform: 'uppercase', letterSpacing: '0.1em'
+                            display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+                            background: '#fee2e2', color: colors.error, border: 'none',
+                            padding: '10px 16px', borderRadius: '8px', width: '100%',
+                            fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                            transition: 'background 0.2s', fontFamily: "'Inter', sans-serif"
                         }}
                     >
-                        <LogOut size={14} /> SALIR
-                    </button>
-                    <button onClick={onBack} style={{ padding: '8px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        <ArrowLeft size={18} />
+                        <LogOut size={14} /> Cerrar Sesión
                     </button>
                 </div>
-            </header>
+            </aside>
 
-            <div style={{ padding: '16px' }}>
+            {/* ── CONTENIDO PRINCIPAL (MAIN CANVAS) ────────────────────────────────────── */}
+            <main style={{ flex: 1, marginLeft: '260px', padding: '32px 40px', minWidth: 0 }}>
 
-                {/* DEBUG CONSOLE */}
-                <div style={{
-                    background: '#1e293b', padding: '10px', borderRadius: '8px',
-                    marginBottom: '16px', border: '1px solid #334155'
+                {/* TOP BREADCRUMB BAR */}
+                <header style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    marginBottom: '32px', borderBottom: `1px solid ${colors.border}`, paddingBottom: '16px'
                 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <p style={{ fontSize: '9px', color: '#64748b', fontWeight: '900', textTransform: 'uppercase' }}>
-                            <span>Log del Sistema</span>
-                        </p>
-                        <button onClick={() => setDebugLog([])} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '9px', cursor: 'pointer' }}>
-                            <span>LIMPIAR</span>
+                    <div>
+                        <div style={{ fontSize: '11px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px' }}>Olmo.indumentaria</div>
+                        <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '4px 0 0 0', letterSpacing: '-0.5px' }}>
+                            {activeTab === 'home' && 'Inicio'}
+                            {activeTab === 'products' && 'Catálogo de Productos'}
+                            {activeTab === 'sales' && 'Gestión de Pedidos'}
+                            {activeTab === 'settings' && 'Personalización de Tienda'}
+                            {activeTab === 'contact' && 'Datos de Contacto'}
+                        </h2>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {savedMsg && (
+                            <span style={{ fontSize: '12px', fontWeight: '700', color: colors.success, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Check size={16} /> <span>{savedMsg}</span>
+                            </span>
+                        )}
+                        <button
+                            onClick={onBack}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                background: '#ffffff', border: `1px solid ${colors.border}`,
+                                padding: '8px 16px', borderRadius: '8px', color: colors.primary,
+                                fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                                transition: 'all 0.2s', textDecoration: 'none'
+                            }}
+                        >
+                            <span>Ir a la Tienda</span> <ArrowUpRight size={14} />
                         </button>
                     </div>
-                    {debugLog.map((log, i) => (
-                        <p key={`log-${i}`} style={{ fontSize: '10px', color: '#94a3b8', margin: '2px 0', fontFamily: 'monospace' }}>
-                            <span>{`> ${log}`}</span>
-                        </p>
-                    ))}
-                    {debugLog.length === 0 && <p style={{ fontSize: '10px', color: '#475569' }}>Sin actividad reciente.</p>}
-                </div>
+                </header>
 
-                {/* ERROR DISPLAY */}
+                {/* ERROR GLOBAL DISPLAY */}
                 {lastError && (
                     <div style={{
-                        background: 'rgba(239,68,68,0.2)', color: '#f87171',
-                        padding: '16px', borderRadius: '8px', border: '1px solid #ef4444',
-                        marginBottom: '20px', fontSize: '12px'
+                        background: '#fef2f2', color: colors.error,
+                        padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}`,
+                        marginBottom: '24px', fontSize: '13px', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.05)'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
-                                <p style={{ fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase' }}>⚠️ Error Detectado</p>
+                                <p style={{ fontWeight: '800', marginBottom: '4px' }}>⚠️ Notificación de Error del Sistema</p>
                                 <p style={{ opacity: 0.9 }}>{lastError}</p>
                             </div>
-                            <button onClick={() => setLastError(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
+                            <button onClick={() => setLastError(null)} style={{ background: 'none', border: 'none', color: colors.error, cursor: 'pointer', fontWeight: '700' }}>✕</button>
                         </div>
-                        <p style={{ marginTop: '10px', fontSize: '10px', opacity: 0.7 }}>
-                            Este error causó la pantalla blanca. Por favor, saca una captura o cópialo.
-                        </p>
                     </div>
                 )}
 
-                {/* ── DASHBOARD ─────────────────────────────────────────────── */}
-                {activeTab === 'stock' && (
+                {/* ── 1. PESTAÑA: INICIO (DASHBOARD GENERAL) ────────────────────────────────── */}
+                {activeTab === 'home' && (
                     <div>
-                        {/* Revenue */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                        {/* Welcome Banner */}
+                        <div style={{
+                            background: `linear-gradient(135deg, ${colors.primary} 0%, #3e1b68 100%)`,
+                            borderRadius: '16px', padding: '32px', color: '#ffffff', marginBottom: '32px',
+                            boxShadow: '0 10px 15px -3px rgba(92, 46, 145, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}>
                             <div>
-                                <p style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '4px' }}>Reporte Mensual</p>
-                                <h2 style={{ fontSize: '30px', fontWeight: '700', letterSpacing: '-1px', color: '#fff' }}>${(totalRevenue || 0).toLocaleString()},00</h2>
+                                <h3 style={{ fontSize: '24px', fontWeight: '800', margin: 0, letterSpacing: '-0.5px' }}>¡Hola, Administrador!</h3>
+                                <p style={{ margin: '8px 0 0 0', opacity: 0.85, fontSize: '13px', fontWeight: '500' }}>
+                                    Gestioná tus ventas, productos y estética desde el panel oficial de tu marca.
+                                </p>
                             </div>
-                            <div style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', border: '1px solid rgba(16,185,129,0.2)' }}>
-                                ↑ {localSales.length} ventas
-                            </div>
-                        </div>
-
-                        {/* Chart */}
-                        <div style={{ ...card, marginBottom: '32px' }}>
-                            <div style={{ height: '100px' }}>
-                                <svg width="100%" height="100%" viewBox="0 0 400 100" preserveAspectRatio="none">
-                                    <defs>
-                                        <linearGradient id="cg" x1="0" x2="0" y1="0" y2="1">
-                                            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.08" />
-                                            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M0,80 Q50,70 80,40 T160,55 T240,25 T320,60 T400,20 L400,100 L0,100 Z" fill="url(#cg)" />
-                                    <path d="M0,80 Q50,70 80,40 T160,55 T240,25 T320,60 T400,20" fill="none" stroke="#475569" strokeWidth="1.5" />
-                                </svg>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', borderTop: '1px solid #1e293b', paddingTop: '10px' }}>
-                                {['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'].map(d => (
-                                    <span key={d} style={{ fontSize: '9px', color: '#475569', fontWeight: '700', textTransform: 'uppercase' }}>{d}</span>
-                                ))}
+                            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '12px 20px', borderRadius: '12px', textAlign: 'center' }}>
+                                <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: '800', opacity: 0.8 }}>Estatus de Servidor</span>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '14px', fontWeight: '800', color: '#4ade80' }}>Supabase Conectado</p>
                             </div>
                         </div>
 
-                        {/* Recent Orders */}
-                        <SectionHeader title="Pedidos Recientes" action={
-                            <button onClick={() => setActiveTab('sales')} style={{ color: '#fff', background: 'none', border: 'none', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', textDecoration: 'underline' }}>Ver todos</button>
-                        } />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '32px' }}>
-                            {(localSales || []).slice(0, 3).map(sale => (
-                                <div key={sale.id} style={{ ...card, padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #334155' }}>
-                                            <ShoppingBag size={16} color="#64748b" />
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+                            {/* Checklist Widget */}
+                            <div style={card}>
+                                <h3 style={sectionTitle}>Pasos sugeridos para tener tu tienda lista</h3>
+                                <p style={{ fontSize: '12px', color: colors.textSecondary, marginTop: '-10px', marginBottom: '24px' }}>
+                                    Completa esta lista de verificación rápida para asegurar el lanzamiento exitoso de tu catálogo.
+                                </p>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                    {checklistItems.map((item, idx) => (
+                                        <div key={idx} style={{
+                                            display: 'flex', alignItems: 'center', gap: '12px',
+                                            padding: '12px 16px', borderRadius: '8px',
+                                            background: item.done ? 'rgba(16, 185, 129, 0.04)' : '#f8fafc',
+                                            border: `1px solid ${item.done ? 'rgba(16, 185, 129, 0.15)' : colors.border}`
+                                        }}>
+                                            <CheckCircle2 size={20} color={item.done ? colors.success : '#cbd5e1'} style={{ flexShrink: 0 }} />
+                                            <span style={{
+                                                fontSize: '13px', fontWeight: '600',
+                                                color: item.done ? '#065f46' : colors.text,
+                                                textDecoration: item.done ? 'line-through' : 'none'
+                                            }}>{item.text}</span>
                                         </div>
-                                        <div>
-                                            <p style={{ fontWeight: '700', fontSize: '12px', color: '#fff' }}>#{sale.id.slice(0, 6).toUpperCase()}</p>
-                                            <p style={{ fontSize: '10px', color: '#64748b' }}>{sale.created_at ? new Date(sale.created_at).toLocaleDateString() : '—'}</p>
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <p style={{ fontWeight: '900', fontSize: '13px', color: '#fff' }}>${(sale.total || 0).toLocaleString()}</p>
-                                        <span style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', color: getStatusColor(sale.status) }}>{sale.status || 'Pendiente'}</span>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
-                            {localSales.length === 0 && <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '24px' }}>No hay pedidos todavía.</p>}
-                        </div>
+                            </div>
 
-                        {/* Stock */}
-                        <SectionHeader title="Gestión de Stock" action={
-                            <button onClick={() => handleOpenModal()} style={{ background: '#334155', border: 'none', color: '#f1f5f9', borderRadius: '6px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                <Plus size={16} />
-                            </button>
-                        } />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {(stock || []).map(item => (
-                                <div key={item.id} style={{ background: '#1e293b', borderRadius: '10px', overflow: 'hidden', border: '1px solid #334155' }}>
-                                    <div style={{ padding: '14px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                        <div style={{ width: '56px', height: '56px', borderRadius: '6px', background: '#0f172a', border: '1px solid #334155', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {item.image && <img src={item.image} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} alt={item.name} />}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <p style={{ fontSize: '13px', fontWeight: '700', color: '#fff', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</p>
-                                            <p style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>${(item.price || 0).toLocaleString()} {item.category && `· ${item.category}`}</p>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                                            <button onClick={() => handleOpenModal(item)} style={{ background: '#334155', border: 'none', color: '#94a3b8', borderRadius: '6px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Edit2 size={13} /></button>
-                                            <button onClick={() => handleDelete(item.id)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', color: '#ef4444', borderRadius: '6px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Trash2 size={13} /></button>
-                                        </div>
-                                    </div>
-                                    <div style={{ overflowX: 'auto', padding: '0 14px 14px', display: 'flex', gap: '8px' }}>
-                                        {Object.entries(item.variants || {}).map(([size, count]) => (
-                                            <div key={size} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                                                <span style={{ fontSize: '9px', fontWeight: '900', color: count === 0 ? '#ef4444' : '#64748b' }}>{size}</span>
-                                                <div style={{
-                                                    width: '40px', height: '40px', borderRadius: '6px',
-                                                    border: `1px solid ${count === 0 ? 'rgba(239,68,68,0.4)' : '#334155'}`,
-                                                    background: count === 0 ? 'rgba(239,68,68,0.08)' : 'rgba(30,41,59,0.5)',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '12px', fontWeight: '700',
-                                                    color: count === 0 ? '#ef4444' : '#f1f5f9',
-                                                }}>
-                                                    {count === 0 ? '—' : count}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                            {/* Analytics Quick Log */}
+                            <div style={card}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <h3 style={sectionTitle}>Logs Recientes</h3>
+                                    <button onClick={() => setDebugLog([])} style={{ background: 'none', border: 'none', color: colors.primary, fontSize: '10px', fontWeight: '700', cursor: 'pointer' }}>Limpiar</button>
                                 </div>
-                            ))}
-                            {stock.length === 0 && <p style={{ color: '#64748b', fontSize: '13px', textAlign: 'center', padding: '32px' }}>No hay productos. Usá el botón + para agregar.</p>}
-                        </div>
-                    </div>
-                )}
-
-                {/* ── PEDIDOS ───────────────────────────────────────────────── */}
-                {activeTab === 'sales' && (
-                    <div>
-                        <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '20px', letterSpacing: '-0.5px' }}>Órdenes</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {(localSales || []).length === 0 && <p style={{ color: '#64748b', textAlign: 'center', padding: '40px' }}>No hay ventas registradas.</p>}
-                            {(localSales || []).map(sale => (
-                                <div key={sale.id} style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                                        <div style={{ width: '40px', height: '40px', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', border: '1px solid #334155' }}>
-                                            <ShoppingBag size={16} color="#64748b" />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {debugLog.map((log, i) => (
+                                        <div key={`log-${i}`} style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', borderLeft: `3px solid ${colors.primary}` }}>
+                                            <span style={{ fontSize: '11px', color: colors.textSecondary, fontFamily: 'monospace' }}>{log}</span>
                                         </div>
-                                        <div>
-                                            <h4 style={{ fontSize: '13px', fontWeight: '900', color: '#fff' }}>ORDEN #{sale.id.slice(0, 6).toUpperCase()}</h4>
-                                            <p style={{ fontSize: '10px', color: '#64748b' }}>{sale.created_at ? `${new Date(sale.created_at).toLocaleDateString()} · ${new Date(sale.created_at).toLocaleTimeString()}` : '—'}</p>
-                                        </div>
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: '160px' }}>
-                                        {(sale.items || []).map((item, idx) => (
-                                            <p key={idx} style={{ fontSize: '11px', color: '#94a3b8' }}>
-                                                <span style={{ color: '#fff', fontWeight: '700' }}>{item.quantity}x</span> {item.name} ({item.size})
-                                            </p>
-                                        ))}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <p style={{ fontSize: '16px', fontWeight: '900', color: '#fff' }}>${(sale.total || 0).toLocaleString()}</p>
-                                        <select
-                                            value={sale.status || 'Pendiente'}
-                                            onChange={(e) => handleUpdateStatus(sale.id, e.target.value)}
-                                            style={{
-                                                background: 'transparent',
-                                                border: `1px solid ${getStatusColor(sale.status)}`,
-                                                color: getStatusColor(sale.status),
-                                                padding: '6px 12px', borderRadius: '20px',
-                                                fontSize: '10px', fontWeight: '700', cursor: 'pointer', outline: 'none',
-                                            }}
-                                        >
-                                            <option value="Pendiente" style={{ background: '#0f172a', color: '#f59e0b' }}>PENDIENTE</option>
-                                            <option value="Enviado" style={{ background: '#0f172a', color: '#3b82f6' }}>ENVIADO</option>
-                                            <option value="Entregado" style={{ background: '#0f172a', color: '#10b981' }}>ENTREGADO</option>
-                                            <option value="Cancelado" style={{ background: '#0f172a', color: '#ef4444' }}>CANCELADO</option>
-                                        </select>
-                                    </div>
+                                    ))}
+                                    {debugLog.length === 0 && <p style={{ fontSize: '12px', color: colors.textSecondary, textAlign: 'center', padding: '24px' }}>Sin actividad de sistema.</p>}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
-                )}
 
-                {/* ── MÉTRICAS ──────────────────────────────────────────────── */}
-                {activeTab === 'stats' && (
-                    <div>
-                        <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '20px', letterSpacing: '-0.5px' }}>Métricas</h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '24px' }}>
+                        {/* Metrics Summary cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '32px' }}>
                             {[
-                                { label: 'Ingresos Totales', value: `$${totalRevenue.toLocaleString()}`, color: '#10b981' },
-                                { label: 'Items Vendidos', value: totalItemsSold, color: '#3b82f6' },
-                                { label: 'Órdenes', value: localSales.length, color: '#a78bfa' },
-                                { label: 'Stock Bajo', value: lowStockCount, color: lowStockCount > 0 ? '#ef4444' : '#10b981' },
+                                { label: 'Ventas Totales', value: `$${totalRevenue.toLocaleString()}`, color: colors.success, desc: 'Acumulado histórico' },
+                                { label: 'Prendas Vendidas', value: totalItemsSold, color: colors.info, desc: 'Unidades entregadas' },
+                                { label: 'Órdenes Totales', value: localSales.length, color: '#8b5cf6', desc: 'Pedidos registrados' },
+                                { label: 'Stock Bajo', value: lowStockCount, color: lowStockCount > 0 ? colors.error : colors.success, desc: 'Menos de 10 unidades' },
                             ].map(m => (
                                 <div key={m.label} style={{ ...card, marginBottom: 0 }}>
-                                    <p style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{m.label}</p>
-                                    <h3 style={{ fontSize: '26px', fontWeight: '900', color: m.color, letterSpacing: '-1px' }}>{m.value === undefined ? '0' : m.value.toLocaleString()}</h3>
+                                    <span style={{ fontSize: '10px', color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>{m.label}</span>
+                                    <h4 style={{ fontSize: '28px', fontWeight: '800', color: m.color, margin: '8px 0 2px 0', letterSpacing: '-0.5px' }}>{m.value}</h4>
+                                    <span style={{ fontSize: '10px', color: colors.textSecondary }}>{m.desc}</span>
                                 </div>
                             ))}
-                        </div>
-                        <div style={card}>
-                            <p style={sectionTitle}>Productos con stock bajo (&lt;10 unidades)</p>
-                            {(stock || []).filter(item => {
-                                const totalStock = Object.values(item.variants || {}).reduce((a, b) => (a || 0) + (b || 0), 0);
-                                return totalStock < 10;
-                            }).map(item => (
-                                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #1e293b' }}>
-                                    <span style={{ fontSize: '13px', color: '#f1f5f9', fontWeight: '600' }}>{item.name}</span>
-                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: '900' }}>{Object.values(item.variants || {}).reduce((a, b) => (a || 0) + (b || 0), 0)} uds.</span>
-                                </div>
-                            ))}
-                            {lowStockCount === 0 && <p style={{ color: '#10b981', fontSize: '13px', textAlign: 'center', padding: '16px' }}>✓ Todo el stock está en buen nivel</p>}
                         </div>
                     </div>
                 )}
 
-                {/* ── TIENDA ────────────────────────────────────────────────── */}
-                {activeTab === 'settings' && (
+                {/* ── 2. PESTAÑA: PRODUCTOS (INVENTARIO Y STOCK) ────────────────────────────────── */}
+                {activeTab === 'products' && (
                     <div>
-                        <h2 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '20px', letterSpacing: '-0.5px' }}>Configuración de Tienda</h2>
-
-                        {/* CONTACTO */}
-                        <div style={card}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                                <div style={{ width: '32px', height: '32px', background: 'rgba(59,130,246,0.15)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Phone size={16} color="#3b82f6" />
-                                </div>
-                                <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>Datos de Contacto</h3>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {[
-                                    { key: 'whatsapp', label: 'WhatsApp (número)', placeholder: '543434559599' },
-                                    { key: 'instagram', label: 'Instagram (sin @)', placeholder: 'olmo.ind' },
-                                    { key: 'email', label: 'Email', placeholder: 'olmoshowroom@gmail.com' },
-                                    { key: 'address', label: 'Dirección', placeholder: 'Cervantes 35 local A' },
-                                ].map(f => (
-                                    <div key={f.key}>
-                                        <label style={labelStyle}>{f.label}</label>
-                                        <input
-                                            type="text"
-                                            value={contact[f.key] || ''}
-                                            onChange={e => setContact({ ...contact, [f.key]: e.target.value })}
-                                            placeholder={f.placeholder}
-                                            style={inputStyle}
-                                        />
-                                    </div>
-                                ))}
-                                <SaveButton onClick={async () => { await updateSetting('contact', contact); showSaved(); }} />
-                            </div>
-                        </div>
-
-                        {/* ESTÉTICA */}
-                        <div style={card}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                                <div style={{ width: '32px', height: '32px', background: 'rgba(167,139,250,0.15)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Palette size={16} color="#a78bfa" />
-                                </div>
-                                <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>Estética del Hero</h3>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {[
-                                    { key: 'title', label: 'Título principal', placeholder: 'OLMO' },
-                                    { key: 'subtitle', label: 'Subtítulo', placeholder: 'INDUMENTARIA' },
-                                    { key: 'cta', label: 'Texto del botón CTA', placeholder: 'Ver Colección' },
-                                    { key: 'bgColor', label: 'Color de fondo (CSS)', placeholder: 'linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)' },
-                                ].map(f => (
-                                    <div key={f.key}>
-                                        <label style={labelStyle}>{f.label}</label>
-                                        <input
-                                            type="text"
-                                            value={hero[f.key] || ''}
-                                            onChange={e => setHero({ ...hero, [f.key]: e.target.value })}
-                                            placeholder={f.placeholder}
-                                            style={inputStyle}
-                                        />
-                                    </div>
-                                ))}
-                                <SaveButton onClick={async () => { await updateSetting('hero', hero); showSaved(); }} />
-                            </div>
-                        </div>
-
-                        {/* BANNERS */}
-                        <div style={card}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                                <div style={{ width: '32px', height: '32px', background: 'rgba(16,185,129,0.15)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Image size={16} color="#10b981" />
-                                </div>
-                                <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>Banners</h3>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                        {/* Control actions */}
+                        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {/* Search bar */}
+                            <div style={{ position: 'relative', width: '300px' }}>
                                 <input
                                     type="text"
-                                    value={newBannerUrl}
-                                    onChange={e => setNewBannerUrl(e.target.value)}
-                                    placeholder="URL de imagen (https://...)"
-                                    style={{ ...inputStyle, flex: 1 }}
+                                    placeholder="Buscar producto o categoría..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    style={inputStyle}
                                 />
-                                <button
-                                    onClick={async () => {
-                                        if (newBannerUrl.trim()) {
-                                            const updated = [...banners, { url: newBannerUrl.trim(), alt: 'Banner' }];
-                                            setBanners(updated);
-                                            await updateSetting('banners', updated);
-                                            setNewBannerUrl('');
-                                            showSaved();
-                                        }
-                                    }}
-                                    style={{ background: '#334155', border: 'none', color: '#f1f5f9', borderRadius: '8px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-                                >
-                                    <Plus size={18} />
-                                </button>
                             </div>
-                            {banners.length === 0 && <p style={{ color: '#475569', fontSize: '12px', textAlign: 'center', padding: '16px' }}>No hay banners. Agregá una URL de imagen.</p>}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {banners.map((b, idx) => (
-                                    <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#0f172a', borderRadius: '8px', padding: '8px', border: '1px solid #334155' }}>
-                                        <img src={b.url} alt={b.alt} style={{ width: '56px', height: '40px', objectFit: 'cover', borderRadius: '4px', background: '#1e293b', flexShrink: 0 }} onError={e => e.target.style.display = 'none'} />
-                                        <p style={{ flex: 1, fontSize: '11px', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.url}</p>
-                                        <button
-                                            onClick={async () => {
-                                                const updated = banners.filter((_, i) => i !== idx);
+
+                            <button
+                                onClick={() => handleOpenModal()}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                    background: colors.primary, color: '#ffffff', border: 'none',
+                                    padding: '12px 20px', borderRadius: '8px', fontSize: '13px',
+                                    fontWeight: '700', cursor: 'pointer', transition: 'background 0.2s',
+                                    fontFamily: "'Inter', sans-serif"
+                                }}
+                            >
+                                <Plus size={16} /> Nuevo Producto
+                            </button>
+                        </div>
+
+                        {/* Products Catalog */}
+                        <div style={card}>
+                            <h3 style={sectionTitle}>Lista de Productos ({filteredStock.length})</h3>
+
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: `2px solid ${colors.border}`, paddingBottom: '12px' }}>
+                                            <th style={{ padding: '12px', fontSize: '11px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '750' }}>Detalle</th>
+                                            <th style={{ padding: '12px', fontSize: '11px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '750' }}>Categoría</th>
+                                            <th style={{ padding: '12px', fontSize: '11px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '750' }}>Precio</th>
+                                            <th style={{ padding: '12px', fontSize: '11px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '750' }}>Stock por Talle</th>
+                                            <th style={{ padding: '12px', fontSize: '11px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '750', textAlign: 'right' }}>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredStock.map(item => (
+                                            <tr key={item.id} style={{ borderBottom: `1px solid ${colors.border}`, transition: 'background 0.1s' }} className="table-row-hover">
+                                                {/* Thumbnail and Name */}
+                                                <td style={{ padding: '16px 12px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                                    <div style={{
+                                                        width: '50px', height: '50px', borderRadius: '6px',
+                                                        border: `1px solid ${colors.border}`, overflow: 'hidden', background: '#f8fafc',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                                    }}>
+                                                        {item.image ? (
+                                                            <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt={item.name} />
+                                                        ) : (
+                                                            <Image size={18} color="#94a3b8" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ fontSize: '13px', fontWeight: '700', color: colors.text, textTransform: 'uppercase', display: 'block' }}>{item.name}</span>
+                                                        <span style={{ fontSize: '10px', color: colors.textSecondary, fontFamily: 'monospace' }}>ID: {item.id.slice(0, 8).toUpperCase()}</span>
+                                                    </div>
+                                                </td>
+
+                                                {/* Category */}
+                                                <td style={{ padding: '16px 12px', fontSize: '13px', fontWeight: '600', color: colors.textSecondary }}>
+                                                    {item.category || <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Sin categoría</span>}
+                                                </td>
+
+                                                {/* Price */}
+                                                <td style={{ padding: '16px 12px', fontSize: '14px', fontWeight: '850', color: colors.text }}>
+                                                    ${(item.price || 0).toLocaleString()}
+                                                </td>
+
+                                                {/* Variants */}
+                                                <td style={{ padding: '16px 12px' }}>
+                                                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                        {Object.entries(item.variants || {}).map(([size, count]) => {
+                                                            const isZero = count === 0;
+                                                            return (
+                                                                <div key={size} style={{
+                                                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                                                    border: `1px solid ${isZero ? '#fee2e2' : colors.border}`,
+                                                                    borderRadius: '6px', padding: '4px 8px', minWidth: '32px',
+                                                                    background: isZero ? '#fef2f2' : '#ffffff'
+                                                                }}>
+                                                                    <span style={{ fontSize: '8px', fontWeight: '850', color: isZero ? colors.error : colors.textSecondary }}>{size}</span>
+                                                                    <span style={{ fontSize: '11px', fontWeight: '700', color: isZero ? colors.error : colors.text }}>{count}</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </td>
+
+                                                {/* Actions */}
+                                                <td style={{ padding: '16px 12px', textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            onClick={() => handleOpenModal(item)}
+                                                            style={{
+                                                                background: 'none', border: `1px solid ${colors.border}`,
+                                                                color: colors.primary, borderRadius: '6px', width: '32px', height: '32px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            title="Editar"
+                                                        >
+                                                            <Edit2 size={13} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(item.id)}
+                                                            style={{
+                                                                background: 'none', border: `1px solid #fee2e2`,
+                                                                color: colors.error, borderRadius: '6px', width: '32px', height: '32px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash2 size={13} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {filteredStock.length === 0 && (
+                                            <tr>
+                                                <td colSpan="5" style={{ padding: '40px', textAlign: 'center', color: colors.textSecondary }}>
+                                                    No se encontraron productos en el catálogo.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── 3. PESTAÑA: PEDIDOS (VENTAS REALIZADAS) ────────────────────────────────── */}
+                {activeTab === 'sales' && (
+                    <div>
+                        <div style={card}>
+                            <h3 style={sectionTitle}>Lista de Ventas y Pedidos ({localSales.length})</h3>
+                            <p style={{ fontSize: '12px', color: colors.textSecondary, marginTop: '-10px', marginBottom: '24px' }}>
+                                Administra los estatus de entrega para cada pedido. Esto ayuda al comprador a tener seguimiento de su orden.
+                            </p>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {localSales.map(sale => {
+                                    const status = sale.status || 'Pendiente';
+                                    const st = getStatusStyles(status);
+                                    return (
+                                        <div key={sale.id} style={{
+                                            border: `1px solid ${colors.border}`, borderRadius: '12px',
+                                            background: '#ffffff', padding: '20px', display: 'flex', flexWrap: 'wrap',
+                                            gap: '20px', alignItems: 'center', justifyContent: 'space-between',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                                        }}>
+                                            {/* Order code & Date */}
+                                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                                                <div style={{ width: '40px', height: '40px', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+                                                    <ShoppingBag size={18} color={colors.primary} />
+                                                </div>
+                                                <div>
+                                                    <h4 style={{ fontSize: '13px', fontWeight: '850', color: colors.text, margin: 0 }}>ORDEN #{sale.id.slice(0, 6).toUpperCase()}</h4>
+                                                    <span style={{ fontSize: '10px', color: colors.textSecondary }}>{sale.created_at ? `${new Date(sale.created_at).toLocaleDateString()} · ${new Date(sale.created_at).toLocaleTimeString()}` : '—'}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Cart items list */}
+                                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                                {(sale.items || []).map((item, idx) => (
+                                                    <p key={idx} style={{ fontSize: '11.5px', color: '#475569', margin: '2px 0' }}>
+                                                        <strong style={{ color: colors.text }}>{item.quantity}x</strong> {item.name} <span style={{ color: colors.primary, fontWeight: '700' }}>({item.size})</span>
+                                                    </p>
+                                                ))}
+                                            </div>
+
+                                            {/* Price Total and Status Selector */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <span style={{ fontSize: '10px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }}>Monto total</span>
+                                                    <p style={{ fontSize: '17px', fontWeight: '900', color: colors.text, margin: 0 }}>${(sale.total || 0).toLocaleString()}</p>
+                                                </div>
+
+                                                <select
+                                                    value={status}
+                                                    onChange={(e) => handleUpdateStatus(sale.id, e.target.value)}
+                                                    style={{
+                                                        background: st.bg,
+                                                        border: `1px solid ${st.border}`,
+                                                        color: st.color,
+                                                        padding: '8px 14px',
+                                                        borderRadius: '20px',
+                                                        fontSize: '11px',
+                                                        fontWeight: '800',
+                                                        cursor: 'pointer',
+                                                        outline: 'none',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.5px'
+                                                    }}
+                                                >
+                                                    <option value="Pendiente" style={{ background: '#ffffff', color: '#b45309' }}>PENDIENTE</option>
+                                                    <option value="Enviado" style={{ background: '#ffffff', color: '#0369a1' }}>ENVIADO</option>
+                                                    <option value="Entregado" style={{ background: '#ffffff', color: '#047857' }}>ENTREGADO</option>
+                                                    <option value="Cancelado" style={{ background: '#ffffff', color: '#b91c1c' }}>CANCELADO</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {localSales.length === 0 && (
+                                    <p style={{ color: colors.textSecondary, textAlign: 'center', padding: '40px' }}>No hay ventas registradas todavía.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── 4. PESTAÑA: PERSONALIZACIÓN (TIENDA ESTÉTICA Y CATEGORÍAS) ────────────────────────────────── */}
+                {activeTab === 'settings' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                        {/* HERO E BANNER SETTINGS */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            {/* Estética del Hero */}
+                            <div style={card}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                    <div style={{ width: '32px', height: '32px', background: 'rgba(92,46,145,0.06)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Palette size={16} color={colors.primary} />
+                                    </div>
+                                    <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: 0 }}>Texto de Portada (Hero)</h3>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                    {[
+                                        { key: 'title', label: 'Título principal', placeholder: 'OLMO' },
+                                        { key: 'subtitle', label: 'Subtítulo del Hero', placeholder: 'INDUMENTARIA' },
+                                        { key: 'cta', label: 'Texto del Botón (CTA)', placeholder: 'Ver Colección' },
+                                        { key: 'bgColor', label: 'Color o Gradiente de Fondo (CSS)', placeholder: 'linear-gradient(180deg, #F9F9F9 0%, #E2E2E2 100%)' },
+                                    ].map(f => (
+                                        <div key={f.key}>
+                                            <label style={labelStyle}>{f.label}</label>
+                                            <input
+                                                type="text"
+                                                value={hero[f.key] || ''}
+                                                onChange={e => setHero({ ...hero, [f.key]: e.target.value })}
+                                                placeholder={f.placeholder}
+                                                style={inputStyle}
+                                            />
+                                        </div>
+                                    ))}
+
+                                    <button onClick={async () => { await updateSetting('hero', hero); showSaved(); }} style={{
+                                        background: colors.primary, color: '#ffffff', border: 'none',
+                                        padding: '12px 20px', borderRadius: '8px', fontSize: '12px',
+                                        fontWeight: '700', cursor: 'pointer', marginTop: '10px',
+                                        transition: 'background 0.2s', alignSelf: 'flex-start',
+                                        fontFamily: "'Inter', sans-serif"
+                                    }}>
+                                        Guardar Estética
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Banners Promocionales */}
+                            <div style={card}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                    <div style={{ width: '32px', height: '32px', background: 'rgba(92,46,145,0.06)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Image size={16} color={colors.primary} />
+                                    </div>
+                                    <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: 0 }}>Banners de Carrusel</h3>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                                    <input
+                                        type="text"
+                                        value={newBannerUrl}
+                                        onChange={e => setNewBannerUrl(e.target.value)}
+                                        placeholder="Pegar enlace de imagen (https://...)"
+                                        style={{ ...inputStyle, flex: 1 }}
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            if (newBannerUrl.trim()) {
+                                                const updated = [...banners, { url: newBannerUrl.trim(), alt: 'Banner' }];
                                                 setBanners(updated);
                                                 await updateSetting('banners', updated);
+                                                setNewBannerUrl('');
                                                 showSaved();
-                                            }}
-                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                ))}
+                                            }
+                                        }}
+                                        style={{
+                                            background: colors.primary, border: 'none', color: '#fff',
+                                            borderRadius: '8px', width: '44px', height: '44px',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer', flexShrink: 0
+                                        }}
+                                    >
+                                        <Plus size={18} />
+                                    </button>
+                                </div>
+
+                                {banners.length === 0 && <p style={{ color: colors.textSecondary, fontSize: '12px', textAlign: 'center', padding: '16px' }}>No hay banners. Agrega enlaces de fotos.</p>}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {banners.map((b, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#f8fafc', borderRadius: '8px', padding: '8px', border: `1px solid ${colors.border}` }}>
+                                            <img src={b.url} alt={b.alt} style={{ width: '56px', height: '40px', objectFit: 'cover', borderRadius: '4px', background: '#e2e8f0', flexShrink: 0 }} onError={e => e.target.style.display = 'none'} />
+                                            <p style={{ flex: 1, fontSize: '11px', color: colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{b.url}</p>
+                                            <button
+                                                onClick={async () => {
+                                                    const updated = banners.filter((_, i) => i !== idx);
+                                                    setBanners(updated);
+                                                    await updateSetting('banners', updated);
+                                                    showSaved();
+                                                }}
+                                                style={{ background: 'none', border: 'none', color: colors.error, cursor: 'pointer', flexShrink: 0 }}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* CATEGORÍAS */}
+                        {/* CATEGORIES SETTINGS */}
                         <div style={card}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                                <div style={{ width: '32px', height: '32px', background: 'rgba(245,158,11,0.15)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Tag size={16} color="#f59e0b" />
+                                <div style={{ width: '32px', height: '32px', background: 'rgba(92,46,145,0.06)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Tag size={16} color={colors.primary} />
                                 </div>
-                                <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#fff' }}>Grupos de Prendas</h3>
+                                <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: 0 }}>Grupos y Categorías de Prendas</h3>
                             </div>
-                            <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '16px' }}>Estas categorías aparecen como filtros en la tienda y en el formulario de productos.</p>
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                            <p style={{ fontSize: '12px', color: colors.textSecondary, marginBottom: '20px', marginTop: '-10px' }}>
+                                Configura las categorías que aparecen como filtros de navegación en tu tienda Olmo.
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                                 <input
                                     type="text"
                                     value={newCategory}
@@ -711,7 +897,7 @@ const AdminDashboard = ({ onBack }) => {
                                             showSaved();
                                         }
                                     }}
-                                    placeholder="Ej: Buzos, Remeras, Gorras..."
+                                    placeholder="Ej: Buzos, Remeras, Accesorios..."
                                     style={{ ...inputStyle, flex: 1 }}
                                 />
                                 <button
@@ -724,15 +910,21 @@ const AdminDashboard = ({ onBack }) => {
                                             showSaved();
                                         }
                                     }}
-                                    style={{ background: '#334155', border: 'none', color: '#f1f5f9', borderRadius: '8px', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                                    style={{
+                                        background: colors.primary, border: 'none', color: '#fff',
+                                        borderRadius: '8px', width: '44px', height: '44px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        cursor: 'pointer', flexShrink: 0
+                                    }}
                                 >
                                     <Plus size={18} />
                                 </button>
                             </div>
+
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {categories.map((cat, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#1e293b', border: '1px solid #334155', borderRadius: '20px', padding: '6px 14px' }}>
-                                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#e2e8f0' }}>{cat}</span>
+                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '6px 14px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: '700', color: colors.text }}>{cat}</span>
                                         <button
                                             onClick={async () => {
                                                 const updated = categories.filter((_, i) => i !== idx);
@@ -740,139 +932,164 @@ const AdminDashboard = ({ onBack }) => {
                                                 await updateSetting('categories', updated);
                                                 showSaved();
                                             }}
-                                            style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                                            style={{ background: 'none', border: 'none', color: colors.textSecondary, cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                                         >
                                             <X size={12} />
                                         </button>
                                     </div>
                                 ))}
-                                {categories.length === 0 && <p style={{ color: '#475569', fontSize: '12px' }}>No hay categorías. Agregá una.</p>}
+                                {categories.length === 0 && <p style={{ color: colors.textSecondary, fontSize: '12px' }}>Aún no has creado categorías.</p>}
                             </div>
                         </div>
                     </div>
                 )}
-            </div>
 
-            {/* BOTTOM NAV */}
-            <nav style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0,
-                background: 'rgba(15,23,42,0.97)', backdropFilter: 'blur(20px)',
-                borderTop: '1px solid #1e293b', padding: '10px 24px 24px',
-                display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 100,
-            }}>
-                {navTabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        style={{
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                            color: activeTab === tab.id ? '#ffffff' : '#475569',
-                            background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
-                        }}
-                    >
-                        {tab.icon}
-                        <span style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: "'Inter', sans-serif" }}>{tab.label}</span>
-                    </button>
-                ))}
-            </nav>
+                {/* ── 5. PESTAÑA: CONTACTO (DATOS DE WHATSAPP, EMAIL, REDES) ────────────────────────────────── */}
+                {activeTab === 'contact' && (
+                    <div style={{ maxWidth: '600px' }}>
+                        <div style={card}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                <div style={{ width: '32px', height: '32px', background: 'rgba(92,46,145,0.06)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Phone size={16} color={colors.primary} />
+                                </div>
+                                <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: 0 }}>Datos de Contacto y Redes</h3>
+                            </div>
+                            <p style={{ fontSize: '12px', color: colors.textSecondary, marginBottom: '24px', marginTop: '-10px' }}>
+                                Estos datos vinculan los botones de WhatsApp de compras, correos de facturación y links de Instagram del footer de tu web.
+                            </p>
 
-            {/* PRODUCT MODAL */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {[
+                                    { key: 'whatsapp', label: 'Número de WhatsApp (Con código de país, ej: 543434559599)', placeholder: '543434559599' },
+                                    { key: 'instagram', label: 'Nombre de usuario de Instagram (Sin @)', placeholder: 'olmo.ind' },
+                                    { key: 'email', label: 'Correo electrónico de consultas', placeholder: 'olmoshowroom@gmail.com' },
+                                    { key: 'address', label: 'Dirección física o Local comercial', placeholder: 'Cervantes 35 local A' },
+                                ].map(f => (
+                                    <div key={f.key}>
+                                        <label style={labelStyle}>{f.label}</label>
+                                        <input
+                                            type="text"
+                                            value={contact[f.key] || ''}
+                                            onChange={e => setContact({ ...contact, [f.key]: e.target.value })}
+                                            placeholder={f.placeholder}
+                                            style={inputStyle}
+                                        />
+                                    </div>
+                                ))}
+
+                                <button onClick={async () => { await updateSetting('contact', contact); showSaved(); }} style={{
+                                    background: colors.primary, color: '#ffffff', border: 'none',
+                                    padding: '14px 24px', borderRadius: '8px', fontSize: '13px',
+                                    fontWeight: '700', cursor: 'pointer', marginTop: '12px',
+                                    transition: 'background 0.2s', alignSelf: 'flex-start',
+                                    fontFamily: "'Inter', sans-serif"
+                                }}>
+                                    Guardar Datos de Contacto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
+
+            {/* ── PRODUCT MODAL REDISEÑADO (SLIDE-UP PREMIUM) ────────────────────────────────────────── */}
             {isModalOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }} onClick={() => setIsModalOpen(false)}>
-                    <div style={{ width: '100%', maxWidth: '500px', background: '#0f172a', borderRadius: '16px 16px 0 0', padding: '28px 20px 48px', border: '1px solid #1e293b', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ fontSize: '14px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.15em', color: '#f1f5f9' }}>
-                                {editingItem ? 'Editar Producto' : 'Nuevo Producto'}
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(15, 23, 42, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(8px)' }} onClick={() => setIsModalOpen(false)}>
+                    <div style={{ width: '100%', maxWidth: '520px', background: '#ffffff', borderRadius: '16px', padding: '30px', border: `1px solid ${colors.border}`, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)' }} onClick={e => e.stopPropagation()}>
+                        {/* Modal Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: `1px solid ${colors.border}`, paddingBottom: '12px' }}>
+                            <h3 style={{ fontSize: '15px', fontWeight: '850', textTransform: 'uppercase', letterSpacing: '0.5px', color: colors.text, margin: 0 }}>
+                                {editingItem ? 'Editar Producto' : 'Crear Nuevo Producto'}
                             </h3>
-                            <button onClick={() => setIsModalOpen(false)} style={{ background: '#1e293b', border: 'none', color: '#f1f5f9', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={16} /></button>
+                            <button onClick={() => setIsModalOpen(false)} style={{ background: '#f1f5f9', border: 'none', color: colors.textSecondary, borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={16} /></button>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {/* Name */}
                             <div>
-                                <label style={labelStyle}>Nombre</label>
-                                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={inputStyle} />
+                                <label style={labelStyle}>Nombre del Artículo</label>
+                                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={inputStyle} placeholder="Ej: Remera Over Olmo" />
                             </div>
 
                             {/* Price */}
                             <div>
-                                <label style={labelStyle}>Precio</label>
-                                <input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })} style={inputStyle} />
+                                <label style={labelStyle}>Precio (ARS)</label>
+                                <input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })} style={inputStyle} placeholder="12500" />
                             </div>
 
                             {/* Category */}
                             <div>
                                 <label style={labelStyle}>Categoría</label>
-                                <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} style={inputStyle}>
+                                <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} style={{ ...inputStyle, cursor: 'pointer' }}>
                                     <option value="">Sin categoría</option>
                                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
 
-                            {/* Images — Gallery with Delete and Add */}
+                            {/* Images Gallery */}
                             <div>
-                                <label style={labelStyle}>Imágenes del Producto ({(formData.images || []).length})</label>
+                                <label style={labelStyle}>Galería de Fotos ({(formData.images || []).length})</label>
 
-                                {/* Gallery */}
+                                {/* Gallery Row */}
                                 <div style={{
                                     display: 'flex', gap: '10px', overflowX: 'auto',
-                                    padding: '10px 0', marginBottom: '14px',
+                                    padding: '8px 0', marginBottom: '12px',
                                     scrollbarWidth: 'none'
                                 }}>
                                     {(formData.images || []).map((url, idx) => (
                                         <div key={idx} style={{
-                                            position: 'relative', minWidth: '80px', height: '80px',
-                                            borderRadius: '8px', overflow: 'hidden', border: '1px solid #1e293b'
+                                            position: 'relative', minWidth: '76px', height: '76px',
+                                            borderRadius: '8px', overflow: 'hidden', border: `1px solid ${colors.border}`, background: '#f8fafc'
                                         }}>
-                                            <img src={url} alt={`img-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={url} alt={`img-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                             <button
                                                 onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
                                                 style={{
-                                                    position: 'absolute', top: '4px', right: '4px',
-                                                    background: 'rgba(239, 68, 68, 0.8)', border: 'none',
-                                                    borderRadius: '50%', width: '20px', height: '20px',
+                                                    position: 'absolute', top: '3px', right: '3px',
+                                                    background: colors.error, border: 'none',
+                                                    borderRadius: '50%', width: '18px', height: '18px',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    cursor: 'pointer', color: '#fff'
+                                                    cursor: 'pointer', color: '#fff', padding: 0
                                                 }}
                                             >
                                                 <X size={10} />
                                             </button>
                                             {idx === 0 && (
-                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(16,185,129,0.8)', color: '#fff', fontSize: '8px', textAlign: 'center', fontWeight: '900', padding: '2px 0' }}>PORTADA</div>
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(16,185,129,0.85)', color: '#fff', fontSize: '8px', textAlign: 'center', fontWeight: '800', padding: '2px 0' }}>PORTADA</div>
                                             )}
                                         </div>
                                     ))}
                                     {formData.images.length === 0 && (
-                                        <div style={{ width: '100%', height: '80px', background: 'rgba(30,41,59,0.3)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #1e293b' }}>
-                                            <span style={{ fontSize: '10px', color: '#475569' }}>Sin imágenes</span>
+                                        <div style={{ width: '100%', height: '76px', background: '#f8fafc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px dashed ${colors.border}` }}>
+                                            <span style={{ fontSize: '11px', color: colors.textSecondary }}>Sin fotos cargadas</span>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Upload from device */}
+                                {/* Upload Button */}
                                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} />
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={uploadingImage}
                                     style={{
                                         width: '100%', padding: '12px', marginBottom: '8px',
-                                        background: uploadingImage ? '#1e293b' : 'rgba(59,130,246,0.1)',
-                                        border: '1px dashed #3b82f6', borderRadius: '8px',
-                                        color: '#3b82f6', fontSize: '12px', fontWeight: '700',
+                                        background: uploadingImage ? '#f1f5f9' : 'rgba(92, 46, 145, 0.05)',
+                                        border: `1px dashed ${colors.primary}`, borderRadius: '8px',
+                                        color: colors.primary, fontSize: '12px', fontWeight: '700',
                                         cursor: uploadingImage ? 'not-allowed' : 'pointer',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                        fontFamily: "'Inter', sans-serif",
+                                        fontFamily: "'Inter', sans-serif", transition: 'background 0.2s'
                                     }}
                                 >
-                                    {uploadingImage ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo...</> : <><Upload size={14} /> Agregar Imagen</>}
+                                    {uploadingImage ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo...</> : <><Upload size={14} /> Subir Foto de Dispositivo</>}
                                 </button>
 
-                                {/* Or URL */}
+                                {/* Paste URL */}
                                 <div style={{ display: 'flex', gap: '6px' }}>
                                     <input
                                         type="text"
                                         id="manualUrl"
-                                        placeholder="Pegar URL de foto..."
+                                        placeholder="Pegar URL directa de foto..."
                                         style={{ ...inputStyle, flex: 1 }}
                                         onKeyDown={e => {
                                             if (e.key === 'Enter' && e.target.value.trim()) {
@@ -889,45 +1106,46 @@ const AdminDashboard = ({ onBack }) => {
                                                 inp.value = '';
                                             }
                                         }}
-                                        style={{ background: '#334155', border: 'none', color: '#fff', padding: '0 12px', borderRadius: '8px', cursor: 'pointer' }}
+                                        style={{ background: colors.primary, border: 'none', color: '#fff', padding: '0 14px', borderRadius: '8px', cursor: 'pointer' }}
                                     >
                                         <Check size={16} />
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Stock per size */}
+                            {/* Stock by size */}
                             <div>
                                 <label style={labelStyle}>Stock por Talle</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
                                     {SIZES.map(size => (
                                         <div key={size} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '10px', fontWeight: '700', color: '#64748b' }}>{size}</span>
+                                            <span style={{ fontSize: '10px', fontWeight: '800', color: colors.textSecondary }}>{size}</span>
                                             <input
                                                 type="number"
                                                 value={formData.variants[size]}
                                                 onChange={e => setFormData({ ...formData, variants: { ...formData.variants, [size]: parseInt(e.target.value) || 0 } })}
-                                                style={{ ...inputStyle, textAlign: 'center', padding: '10px 4px', fontSize: '15px', fontWeight: '700' }}
+                                                style={{ ...inputStyle, textAlign: 'center', padding: '8px 4px', fontSize: '14px', fontWeight: '700' }}
                                             />
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
+                            {/* Modal Save Button */}
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving || uploadingImage}
                                 style={{
-                                    width: '100%', marginTop: '4px',
-                                    background: (isSaving || uploadingImage) ? '#475569' : '#ffffff',
-                                    color: '#000000', border: 'none', padding: '16px',
-                                    fontSize: '11px', fontWeight: '900', textTransform: 'uppercase',
-                                    letterSpacing: '0.2em', cursor: (isSaving || uploadingImage) ? 'not-allowed' : 'pointer',
-                                    borderRadius: '10px', fontFamily: "'Inter', sans-serif",
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    width: '100%', marginTop: '8px',
+                                    background: (isSaving || uploadingImage) ? '#94a3b8' : colors.primary,
+                                    color: '#ffffff', border: 'none', padding: '16px',
+                                    fontSize: '13px', fontWeight: '700', cursor: (isSaving || uploadingImage) ? 'not-allowed' : 'pointer',
+                                    borderRadius: '8px', fontFamily: "'Inter', sans-serif",
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    transition: 'background 0.2s'
                                 }}
                             >
-                                {isSaving ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> GUARDANDO...</> : 'GUARDAR CAMBIOS'}
+                                {isSaving ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> GUARDANDO...</> : 'GUARDAR PRODUCTO'}
                             </button>
                         </div>
                     </div>
