@@ -398,34 +398,108 @@ const ProductGrid = ({ searchQuery = '' }) => {
                 </a>
             </section>
 
-            {/* Footer */}
+            {/* Footer (3-Column Layout) */}
             <footer id="contact" style={{
-                background: '#ffffff',
-                padding: '48px 32px',
-                borderTop: '1px solid #f3f4f6',
+                background: '#f9fafb',
+                padding: '60px 32px 40px',
+                borderTop: '1px solid #e5e7eb',
+                fontFamily: "'Inter', sans-serif",
             }}>
-                <div style={{ marginBottom: '40px' }}>
-                    <h4 style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '24px', opacity: 0.5, fontFamily: "'Inter', sans-serif" }}>Categorías</h4>
-                    <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {['Inicio', 'Contacto', 'Productos'].map(item => (
-                            <li key={item}>
-                                <a href="#" style={{ fontSize: '14px', fontWeight: '500', color: '#1A1A1A', textDecoration: 'none', fontFamily: "'Inter', sans-serif" }}>{item}</a>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '48px',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    marginBottom: '48px',
+                }}>
+                    {/* Col 1: Categorías */}
+                    <div>
+                        <h4 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', color: '#1A1A1A' }}>Categorías</h4>
+                        <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {['Inicio', 'Todos los productos', 'Contacto'].map(item => (
+                                <li key={item}>
+                                    <a href="#" onClick={(e) => { e.preventDefault(); }} style={{ fontSize: '14px', fontWeight: '400', color: '#6b7280', textDecoration: 'none', transition: 'color 0.2s' }}
+                                       onMouseEnter={(e) => e.currentTarget.style.color = '#1A1A1A'}
+                                       onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+                                    >{item}</a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Col 2: Contactános */}
+                    <div>
+                        <h4 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', color: '#1A1A1A' }}>Contactános</h4>
+                        <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            <li style={{ fontSize: '14px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25D366" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                {contact.whatsapp || '543434559599'}
                             </li>
-                        ))}
-                    </ul>
+                            <li style={{ fontSize: '14px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                {contact.phone || '03424551225'}
+                            </li>
+                            <li style={{ fontSize: '14px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                {contact.address || 'Cervantes 35 local A'}
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Col 3: Siganos conectados */}
+                    <div>
+                        <h4 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '20px', color: '#1A1A1A' }}>Sigamos conectados</h4>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <a href={`https://www.instagram.com/${contact.instagram || 'olmo.ind'}/`} target="_blank" rel="noreferrer"
+                               style={{
+                                   width: '40px', height: '40px', borderRadius: '50%',
+                                   background: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                   transition: 'background 0.2s ease'
+                               }}
+                               onMouseEnter={(e) => e.currentTarget.style.background = '#E1306C'}
+                               onMouseLeave={(e) => e.currentTarget.style.background = '#1A1A1A'}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                            </a>
+                            <a href="https://facebook.com" target="_blank" rel="noreferrer"
+                               style={{
+                                   width: '40px', height: '40px', borderRadius: '50%',
+                                   background: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                   transition: 'background 0.2s ease'
+                               }}
+                               onMouseEnter={(e) => e.currentTarget.style.background = '#1877F2'}
+                               onMouseLeave={(e) => e.currentTarget.style.background = '#1A1A1A'}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div style={{ marginBottom: '40px' }}>
-                    <h4 style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '24px', opacity: 0.5, fontFamily: "'Inter', sans-serif" }}>Contactános</h4>
-                    <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📱 {contact.whatsapp || '543434559599'}</li>
-                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>✉️ {contact.email || 'olmoshowroom@gmail.com'}</li>
-                        <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📍 {contact.address || 'Cervantes 35 local A'}</li>
-                        {contact.instagram && <li style={{ fontSize: '14px', fontFamily: "'Inter', sans-serif", display: 'flex', alignItems: 'center', gap: '12px' }}>📸 @{contact.instagram}</li>}
-                    </ul>
+
+                {/* Medios de pago y envío */}
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '16px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1A1A1A', minWidth: '120px' }}>Medios de pago</span>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {['💳 Visa', '💳 Mastercard', '💳 Mercado Pago', '🏦 Transferencia'].map(m => (
+                                <span key={m} style={{ fontSize: '11px', color: '#6b7280', background: '#ffffff', border: '1px solid #e5e7eb', padding: '4px 10px', borderRadius: '4px', fontWeight: '500' }}>{m}</span>
+                            ))}
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#1A1A1A', minWidth: '120px' }}>Medios de envío</span>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {['📦 Correo Argentino', '🚚 Envío local'].map(m => (
+                                <span key={m} style={{ fontSize: '11px', color: '#6b7280', background: '#ffffff', border: '1px solid #e5e7eb', padding: '4px 10px', borderRadius: '4px', fontWeight: '500' }}>{m}</span>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-                <div style={{ paddingTop: '40px', borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
-                    <h1 style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '20px', fontWeight: '800', letterSpacing: '-1px', opacity: 0.2, color: '#1A1A1A' }}>OLMO</h1>
-                    <p style={{ fontSize: '9px', marginTop: '16px', opacity: 0.4, fontFamily: "'Inter', sans-serif", color: '#1A1A1A' }}>Copyright Olmo Indumentaria - 2025. Todos los derechos reservados.</p>
+
+                {/* Copyright */}
+                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px', marginTop: '24px', textAlign: 'center', maxWidth: '1200px', margin: '24px auto 0' }}>
+                    <p style={{ fontSize: '12px', color: '#9ca3af' }}>© 2026 Olmo Indumentaria. Todos los derechos reservados.</p>
                 </div>
             </footer>
 
