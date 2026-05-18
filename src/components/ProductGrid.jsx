@@ -5,7 +5,7 @@ import { useCartStore } from '../store/cartStore';
 import { useStockStore } from '../store/useStockStore';
 import { useSettingsStore } from '../store/useSettingsStore';
 
-// ── Product Card (2-col grid style matching Stitch design) ──────────────────
+// ── Product Card (Clean style matching reference) ─────────────────────────────
 const ProductCard = ({ product, onOpen }) => {
     const totalStock = Object.values(product.variants || {}).reduce((a, b) => a + b, 0);
     const [hovered, setHovered] = useState(false);
@@ -21,17 +21,16 @@ const ProductCard = ({ product, onOpen }) => {
             <div style={{
                 aspectRatio: '3/4',
                 overflow: 'hidden',
-                background: '#e5e7eb',
-                marginBottom: '12px',
-                borderRadius: '2px',
+                background: '#f9fafb', // Light gray background in case image is transparent
+                marginBottom: '16px',
                 position: 'relative',
             }}>
                 {totalStock === 0 && (
                     <div style={{
                         position: 'absolute', top: '8px', left: '8px',
-                        background: '#ef4444', color: '#fff',
-                        padding: '3px 8px', fontSize: '9px', fontWeight: '900',
-                        letterSpacing: '1px', zIndex: 10, borderRadius: '2px',
+                        background: '#1A1A1A', color: '#fff',
+                        padding: '4px 8px', fontSize: '10px', fontWeight: '800',
+                        letterSpacing: '1px', zIndex: 10,
                     }}>AGOTADO</div>
                 )}
                 <img
@@ -40,68 +39,36 @@ const ProductCard = ({ product, onOpen }) => {
                     style={{
                         width: '100%',
                         height: '100%',
-                        objectFit: 'contain',
-                        padding: '10px',
-                        filter: hovered ? 'grayscale(0%)' : 'grayscale(100%)',
-                        transform: hovered ? 'scale(1.05)' : 'scale(1)',
-                        transition: 'all 0.5s ease',
+                        objectFit: 'cover',
+                        transform: hovered ? 'scale(1.03)' : 'scale(1)',
+                        transition: 'transform 0.4s ease',
                     }}
                 />
             </div>
 
             {/* Info */}
-            <p style={{
-                fontSize: '11px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: '#6b7280',
-                marginBottom: '4px',
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: '600',
-            }}>
-                {product.category || 'OLMO CORE'}
-            </p>
-            <h3 style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                marginBottom: '8px',
-                fontFamily: "'Inter', sans-serif",
-                color: '#1A1A1A',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-            }}>
-                {product.name}
-            </h3>
-            <p style={{
-                fontSize: '16px',
-                fontWeight: '700',
-                marginBottom: '12px',
-                fontFamily: "'Inter', sans-serif",
-                color: '#1A1A1A',
-            }}>
-                ${product.price ? product.price.toLocaleString() : '0'},00
-            </p>
-            <button
-                style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: '#1A1A1A',
-                    color: '#ffffff',
-                    border: 'none',
-                    fontSize: '10px',
+            <div style={{ padding: '0 4px' }}>
+                <h3 style={{
+                    fontSize: '15px',
                     fontWeight: '700',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.2em',
-                    cursor: 'pointer',
+                    marginBottom: '4px',
                     fontFamily: "'Inter', sans-serif",
-                    transition: 'background 0.2s ease',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#3f3f3f'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#1A1A1A'}
-            >
-                Comprar
-            </button>
+                    color: '#1A1A1A',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                }}>
+                    {product.name}
+                </h3>
+                <p style={{
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    fontFamily: "'Inter', sans-serif",
+                }}>
+                    ${product.price ? product.price.toLocaleString() : '0'}
+                </p>
+            </div>
         </div>
     );
 };
@@ -110,9 +77,15 @@ const ProductCard = ({ product, onOpen }) => {
 const ProductModal = ({ product, onClose }) => {
     const { addItem } = useCartStore();
     const [selectedSize, setSelectedSize] = useState(null);
+    const [currentImageIdx, setCurrentImageIdx] = useState(0);
     const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
     const getStockForSize = (size) => (product.variants || {})[size] || 0;
+    
+    // Safety check for images array
+    const images = Array.isArray(product.images) && product.images.length > 0 
+        ? product.images 
+        : (product.image ? [product.image] : ['/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg']);
 
     return (
         <motion.div
@@ -154,6 +127,7 @@ const ProductModal = ({ product, onClose }) => {
                         width: '32px', height: '32px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer', color: '#1A1A1A',
+                        zIndex: 10
                     }}
                 >
                     <X size={18} />
@@ -161,28 +135,37 @@ const ProductModal = ({ product, onClose }) => {
 
                 {/* Product Images Gallery */}
                 <div style={{ marginBottom: '24px' }}>
+                    {/* Main Image */}
                     <div style={{
                         aspectRatio: '3/4',
-                        background: '#e5e7eb',
+                        background: '#f9fafb',
                         borderRadius: '8px',
                         overflow: 'hidden',
-                        marginBottom: (Array.isArray(product.images) && product.images.length > 1) ? '12px' : '0',
+                        marginBottom: images.length > 1 ? '12px' : '0',
                     }}>
                         <img
-                            src={(Array.isArray(product.images) && product.images[0]) || product.image || '/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg'}
+                            src={images[currentImageIdx]}
                             alt={product.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '20px', filter: 'grayscale(100%)' }}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                         />
                     </div>
-                    {/* Basic horizontal scroll for multiple images */}
-                    {Array.isArray(product.images) && product.images.length > 1 && (
+                    {/* Thumbnails */}
+                    {images.length > 1 && (
                         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '10px' }}>
-                            {product.images.map((img, idx) => (
-                                <div key={idx} style={{
-                                    minWidth: '100px', height: '133px', flexShrink: 0,
-                                    borderRadius: '4px', overflow: 'hidden', border: '1px solid #f3f4f6'
-                                }}>
-                                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '5px', filter: 'grayscale(100%)' }} />
+                            {images.map((img, idx) => (
+                                <div 
+                                    key={idx} 
+                                    onClick={() => setCurrentImageIdx(idx)}
+                                    style={{
+                                        minWidth: '80px', height: '106px', flexShrink: 0,
+                                        borderRadius: '6px', overflow: 'hidden', 
+                                        border: currentImageIdx === idx ? '2px solid #1A1A1A' : '1px solid #e5e7eb',
+                                        cursor: 'pointer',
+                                        opacity: currentImageIdx === idx ? 1 : 0.6,
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
                             ))}
                         </div>
@@ -227,7 +210,7 @@ const ProductModal = ({ product, onClose }) => {
                                     transition: 'all 0.2s ease',
                                 }}
                             >
-                                <span style={{ fontFamily: "'Inter', sans-serif" }}>{size}</span>
+                                <span translate="no" className="notranslate" style={{ fontFamily: "'Inter', sans-serif" }}>{size}</span>
                             </button>
                         );
                     })}
@@ -360,12 +343,12 @@ const ProductGrid = ({ searchQuery = '' }) => {
                 </a>
             </div>
 
-            {/* 2-Column Product Grid */}
+            {/* Multi-Column Product Grid */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '16px',
-                padding: '0 16px',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                gap: '24px 16px',
+                padding: '0 24px',
             }}>
                 {filteredStock.length > 0 ? filteredStock.map(product => (
                     <ProductCard key={product.id} product={product} onOpen={setSelectedProduct} />
