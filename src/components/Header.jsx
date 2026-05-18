@@ -67,94 +67,124 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
   return (
     <>
-      {/* TOP HEADER */}
+      {/* TOP HEADER (OneStreet Style) */}
       <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
         width: '100%',
         zIndex: 1000,
-        background: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
+        background: '#0a1d47', // Deep blue
+        color: '#ffffff',
+        fontFamily: "'Inter', sans-serif"
       }}>
-        {/* Top Row: Menu | Logo | Cart */}
+        {/* Main Row */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '12px 24px 8px',
+          padding: '16px 24px',
+          maxWidth: '1400px',
+          margin: '0 auto',
+          gap: '24px'
         }}>
-          {/* Hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A', padding: '4px' }}
-          >
-            <Menu size={24} />
-          </button>
-
-          {/* Logo */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <a href="/" style={{
-              fontFamily: "'Montserrat', sans-serif",
-              fontSize: '1.5rem',
-              fontWeight: '800',
-              letterSpacing: '-2px',
-              color: '#1A1A1A',
-              textDecoration: 'none',
-              lineHeight: '1',
-            }}>
-              OLMO
-            </a>
-            <span style={{
-              fontSize: '8px',
-              letterSpacing: '0.4em',
-              textTransform: 'uppercase',
-              fontWeight: '300',
-              color: '#1A1A1A',
-              marginTop: '2px',
-              fontFamily: "'Inter', sans-serif",
-            }}>
-              Indumentaria
-            </span>
+          {/* Left: Hamburger (Mobile) + Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="mobile-menu-btn"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff' }}
+            >
+              <Menu size={24} />
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <a href="/" style={{
+                fontFamily: "'Montserrat', sans-serif",
+                fontSize: '28px',
+                fontWeight: '900',
+                letterSpacing: '-1px',
+                color: '#ffffff',
+                textDecoration: 'none',
+                lineHeight: '1',
+                fontStyle: 'italic'
+              }}>
+                OLMO
+              </a>
+              <span style={{
+                fontSize: '8px',
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                fontWeight: '500',
+                color: '#ffffff',
+                marginTop: '4px',
+              }}>
+                Indumentaria
+              </span>
+            </div>
           </div>
 
-          {/* Cart */}
-          <button
-            onClick={() => setIsCartOpen(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A1A1A', padding: '4px', position: 'relative' }}
-          >
-            <ShoppingBag size={24} />
-            {totalItems > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '-4px',
-                background: '#1A1A1A',
-                color: '#fff',
-                fontSize: '10px',
-                fontWeight: '900',
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                {totalItems}
-              </span>
-            )}
-          </button>
+          {/* Middle: Search Bar (Desktop) */}
+          <div className="desktop-search" style={{ flex: 1, maxWidth: '600px', position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="¿Qué estás buscando?"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                background: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px 16px 12px 48px',
+                fontSize: '14px',
+                outline: 'none',
+                color: '#1A1A1A',
+              }}
+            />
+            <Search size={18} style={{
+              position: 'absolute',
+              left: '16px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#1a1a1a',
+            }} />
+          </div>
+
+          {/* Right: Icons (Desktop) */}
+          <div style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
+            <a href="https://wa.me/543434559599" target="_blank" rel="noreferrer" className="desktop-menu-link" style={{ color: '#fff', textDecoration: 'none', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+               <span style={{ fontSize: '11px', fontWeight: '500' }}>Ayuda</span>
+            </a>
+            <a href="/?admin=true" className="desktop-menu-link" style={{ color: '#fff', textDecoration: 'none', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+               <User size={22} />
+               <span style={{ fontSize: '11px', fontWeight: '500' }}>Mi cuenta</span>
+            </a>
+            <button
+              onClick={() => setIsCartOpen(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
+            >
+              <div style={{ position: 'relative' }}>
+                  <ShoppingCart size={22} />
+                  {totalItems > 0 && (
+                    <span style={{
+                      position: 'absolute', top: '-6px', right: '-8px',
+                      background: '#1A1A1A', color: '#fff', fontSize: '9px',
+                      fontWeight: '800', width: '16px', height: '16px',
+                      borderRadius: '50%', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', border: '1px solid #0a1d47'
+                    }}>
+                      {totalItems}
+                    </span>
+                  )}
+              </div>
+              <span className="desktop-menu-link" style={{ fontSize: '11px', fontWeight: '500' }}>Mi carrito</span>
+            </button>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <div style={{ padding: '0 24px 12px', position: 'relative' }}>
-          <Search size={16} style={{
-            position: 'absolute',
-            left: '40px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#9ca3af',
-          }} />
+        {/* Mobile Search Bar */}
+        <div className="mobile-search" style={{ padding: '0 24px 16px', position: 'relative' }}>
           <input
             type="text"
             placeholder="¿Qué estás buscando?"
@@ -162,17 +192,34 @@ const Header = ({ searchQuery, setSearchQuery }) => {
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
-              background: '#f3f4f6',
+              background: '#ffffff',
               border: 'none',
-              borderRadius: '9999px',
-              padding: '10px 16px 10px 40px',
+              borderRadius: '8px',
+              padding: '12px 16px 12px 40px',
               fontSize: '14px',
-              fontFamily: "'Inter', sans-serif",
               outline: 'none',
-              color: '#1A1A1A',
-              boxSizing: 'border-box',
+              color: '#1A1A1A'
             }}
           />
+          <Search size={16} style={{
+            position: 'absolute',
+            left: '36px',
+            top: '32%',
+            transform: 'translateY(-50%)',
+            color: '#1A1A1A',
+          }} />
+        </div>
+
+        {/* Bottom Nav Bar (Centered Links - Desktop) */}
+        <div className="desktop-menu-link" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: '#081738' }}>
+            <nav style={{
+                display: 'flex', justifyContent: 'center', gap: '48px', padding: '14px 0',
+                maxWidth: '1400px', margin: '0 auto', width: '100%'
+            }}>
+                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('home'); }} style={{ color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>Inicio</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('contact'); }} style={{ color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>Contacto</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); scrollTo('shop'); }} style={{ color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>Productos</a>
+            </nav>
         </div>
       </header>
 
@@ -250,8 +297,8 @@ const Header = ({ searchQuery, setSearchQuery }) => {
         )}
       </AnimatePresence>
 
-      {/* BOTTOM NAVIGATION BAR */}
-      <nav style={{
+      {/* BOTTOM NAVIGATION BAR (Mobile Only) */}
+      <nav className="mobile-search" style={{
         position: 'fixed',
         bottom: 0,
         left: 0,

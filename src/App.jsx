@@ -5,6 +5,7 @@ import ProductGrid from './components/ProductGrid';
 import AdminDashboard from './admin/AdminDashboard';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
+import WhatsAppButton from './components/WhatsAppButton';
 
 import { useStockStore } from './store/useStockStore';
 
@@ -56,12 +57,13 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh' }}>
+      <div style={{ backgroundColor: '#F9F9F9', minHeight: '100vh', position: 'relative' }}>
         <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-        <main style={{ paddingTop: '100px' }}>
+        <main style={{ paddingTop: '140px' }}>
           <Hero />
           <ProductGrid searchQuery={searchQuery} />
         </main>
+        <WhatsAppButton />
       </div>
     </ErrorBoundary>
   );
