@@ -1156,15 +1156,18 @@ const AdminDashboard = ({ onBack }) => {
                                     </button>
                                 </div>
 
-                                <button onClick={async () => { await updateSetting('contact', contact); showSaved(); }} style={{
-                                    background: colors.primary, color: '#ffffff', border: 'none',
-                                    padding: '14px 24px', borderRadius: '8px', fontSize: '13px',
-                                    fontWeight: '700', cursor: 'pointer', marginTop: '12px',
-                                    transition: 'background 0.2s', alignSelf: 'flex-start',
-                                    fontFamily: "'Inter', sans-serif"
-                                }}>
-                                    Guardar Datos de Contacto
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+                                    <button onClick={async () => { await updateSetting('contact', contact); showSaved(); }} style={{
+                                        background: colors.primary, color: '#ffffff', border: 'none',
+                                        padding: '14px 24px', borderRadius: '8px', fontSize: '13px',
+                                        fontWeight: '700', cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                        fontFamily: "'Inter', sans-serif"
+                                    }}>
+                                        Guardar Datos de Contacto
+                                    </button>
+                                    {savedMsg && <span style={{ color: colors.success, fontSize: '13px', fontWeight: 'bold' }}>{savedMsg}</span>}
+                                </div>
                             </div>
                         </div>
                     </div>
