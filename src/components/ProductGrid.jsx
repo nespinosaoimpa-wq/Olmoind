@@ -266,7 +266,7 @@ const ProductGrid = ({ searchQuery = '' }) => {
     const categories = ['Todos', ...savedCategories];
     const contact = settings.contact || {};
 
-    // Filter: category + search query
+    // Filter: category + search query, then sort by best selling (sales_count)
     const filteredStock = stock
         .filter(p => activeCategory === 'Todos' || p.category === activeCategory)
         .filter(p => {
@@ -276,7 +276,8 @@ const ProductGrid = ({ searchQuery = '' }) => {
                 (p.name || '').toLowerCase().includes(q) ||
                 (p.category || '').toLowerCase().includes(q)
             );
-        });
+        })
+        .sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0));
 
     return (
         <section id="shop" style={{
@@ -287,7 +288,8 @@ const ProductGrid = ({ searchQuery = '' }) => {
             {/* Category Pills */}
             <div style={{
                 display: 'flex',
-                overflowX: 'auto',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
                 gap: '12px',
                 padding: '24px 24px 8px',
                 scrollbarWidth: 'none',
@@ -368,35 +370,7 @@ const ProductGrid = ({ searchQuery = '' }) => {
                 )}
             </div>
 
-            {/* Instagram CTA */}
-            <section style={{ padding: '48px 24px', borderTop: '1px solid #e5e7eb', marginTop: '48px', textAlign: 'center' }}>
-                <span className="material-icons-outlined" style={{ fontSize: '32px', marginBottom: '16px', display: 'block', color: '#1A1A1A' }}>photo_camera</span>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '4px', fontFamily: "'Inter', sans-serif", color: '#1A1A1A' }}>@olmo.ind</h3>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', fontFamily: "'Inter', sans-serif" }}>Estamos en Instagram</p>
-                <a
-                    href="https://www.instagram.com/olmo.ind/"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                        display: 'inline-block',
-                        padding: '12px 40px',
-                        border: '1px solid #1A1A1A',
-                        borderRadius: '9999px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.2em',
-                        color: '#1A1A1A',
-                        textDecoration: 'none',
-                        fontFamily: "'Inter', sans-serif",
-                        transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#1A1A1A'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#1A1A1A'; }}
-                >
-                    Seguinos
-                </a>
-            </section>
+            {/* Instagram CTA Removed */}
 
             {/* Footer (3-Column Layout) */}
             <footer id="contact" style={{
