@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, DollarSign, Smartphone, Check, X } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, DollarSign, Smartphone, Check, X, FileText } from 'lucide-react';
 import { useStockStore } from '../../store/useStockStore';
+import { supabase } from '../../supabaseClient';
 
 const colors = {
     primary: '#5c2e91', bg: '#f8fafc', text: '#1e293b',
@@ -25,6 +26,12 @@ const PosModule = () => {
     const [showCheckout, setShowCheckout] = useState(false);
     const [amountTendered, setAmountTendered] = useState('');
     const [paymentNotes, setPaymentNotes] = useState('');
+    
+    // Caja States
+    const [showCaja, setShowCaja] = useState(false);
+    const [dailySales, setDailySales] = useState([]);
+    const [cajaLoading, setCajaLoading] = useState(false);
+
     const searchRef = useRef(null);
 
     // Focus search on mount (also works with barcode pistol scanner)
@@ -96,15 +103,63 @@ const PosModule = () => {
         }
     };
 
+    const fetchDailyCaja = async () => {
+        setCajaLoading(true);
+        try {
+            // Get today's start and end timestamps in ISO
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            
+            const { data, error } = await supabase
+                .from('sales')
+                .select('*')
+                .gte('created_at', startOfDay.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setDailySales(data || []);
+        } catch (e) {
+            console.error('Error fetching caja:', e);
+            alert('Error al cargar la caja.');
+        } finally {
+            setCajaLoading(false);
+        }
+    };
+
+    const openCaja = () => {
+        fetchDailyCaja();
+        setShowCaja(true);
+    };
+
+    // Calculate Caja Totals
+    const cajaSummary = dailySales.reduce((acc, sale) => {
+        const method = sale.payment_method || 'Desconocido';
+        if (!acc[method]) acc[method] = 0;
+        acc[method] += sale.total || 0;
+        acc.total += sale.total || 0;
+        return acc;
+    }, { total: 0 });
+
     return (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px', height: 'calc(100vh - 160px)' }}>
             {/* Left Panel: Product Search */}
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ marginBottom: '16px' }}>
-                    <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 4px 0' }}>Punto de Venta</h2>
-                    <p style={{ fontSize: '13px', color: colors.textSecondary, margin: 0 }}>
-                        Buscá por nombre, categoría, o escaneá el código de barras con la pistola láser / cámara del celular
-                    </p>
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 4px 0' }}>Punto de Venta</h2>
+                        <p style={{ fontSize: '13px', color: colors.textSecondary, margin: 0 }}>
+                            Buscá por nombre, categoría, o escaneá el código de barras
+                        </p>
+                    </div>
+                    <button onClick={openCaja} style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '10px 16px', background: '#fff', border: `1px solid ${colors.border}`,
+                        borderRadius: '8px', fontSize: '12px', fontWeight: '700', color: colors.text,
+                        cursor: 'pointer', fontFamily: "'Inter', sans-serif", boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    }}>
+                        <FileText size={16} color={colors.primary} />
+                        Ver Caja / Historial
+                    </button>
                 </div>
 
                 {/* Barcode / Search Input */}
@@ -367,6 +422,93 @@ const PosModule = () => {
                                     {processing ? 'Confirmando...' : 'Confirmar Venta y Cerrar Caja'}
                                 </button>
                             </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Caja / Historial Modal */}
+            {showCaja && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '16px', padding: '32px',
+                        width: '90%', maxWidth: '700px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative'
+                    }}>
+                        <button onClick={() => setShowCaja(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: colors.textSecondary }}>
+                            <X size={20} />
+                        </button>
+                        
+                        <h2 style={{ fontSize: '20px', fontWeight: '800', color: colors.text, marginBottom: '24px' }}>
+                            Cierre de Caja - {new Date().toLocaleDateString('es-AR')}
+                        </h2>
+
+                        {cajaLoading ? (
+                            <div style={{ padding: '40px', textAlign: 'center', color: colors.textSecondary }}>Cargando datos de hoy...</div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+                                {/* Resumen Cards */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
+                                        <p style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Total del Día</p>
+                                        <p style={{ fontSize: '24px', fontWeight: '900', color: colors.primary, margin: 0 }}>${cajaSummary.total.toLocaleString()}</p>
+                                        <p style={{ fontSize: '11px', color: colors.textSecondary, margin: '4px 0 0 0' }}>{dailySales.length} ventas</p>
+                                    </div>
+                                    {Object.entries(cajaSummary).filter(([k]) => k !== 'total').map(([method, amount]) => (
+                                        <div key={method} style={{ background: '#fff', padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
+                                            <p style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 4px 0' }}>{method}</p>
+                                            <p style={{ fontSize: '18px', fontWeight: '800', color: colors.text, margin: 0 }}>${amount.toLocaleString()}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Historial List */}
+                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, marginBottom: '12px' }}>Historial de Hoy</h3>
+                                <div style={{ overflowY: 'auto', flex: 1, border: `1px solid ${colors.border}`, borderRadius: '12px', background: '#f8fafc' }}>
+                                    {dailySales.length === 0 ? (
+                                        <div style={{ padding: '32px', textAlign: 'center', color: colors.textSecondary, fontSize: '13px' }}>No hay ventas registradas el día de hoy.</div>
+                                    ) : (
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                                            <thead style={{ background: '#fff', position: 'sticky', top: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                                <tr>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Hora</th>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Método</th>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Total</th>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Detalles / Notas</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {dailySales.map(sale => (
+                                                    <tr key={sale.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                                        <td style={{ padding: '12px 16px', color: colors.text }}>{new Date(sale.created_at).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'})}</td>
+                                                        <td style={{ padding: '12px 16px', fontWeight: '600' }}>
+                                                            <span style={{ background: '#e2e8f0', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }}>{sale.payment_method || 'N/A'}</span>
+                                                        </td>
+                                                        <td style={{ padding: '12px 16px', fontWeight: '700', color: colors.primary }}>${sale.total?.toLocaleString()}</td>
+                                                        <td style={{ padding: '12px 16px', color: colors.textSecondary }}>
+                                                            {sale.notes ? sale.notes : (
+                                                                <span style={{ opacity: 0.5 }}>{(sale.items || []).length} art.</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+                                    <button onClick={() => window.print()} style={{
+                                        padding: '12px 24px', background: '#1e293b', color: '#fff', border: 'none',
+                                        borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif"
+                                    }}>
+                                        🖨️ Imprimir Resumen
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
