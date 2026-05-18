@@ -74,11 +74,16 @@ export const useStockStore = create((set, get) => ({
 
             // 2. Record the sale
             const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+            
+            // Si la base de datos no tiene la columna branch aún, guardamos la sucursal en las notas.
+            const branchText = paymentData.branch ? `[Sucursal: ${paymentData.branch}] ` : '';
+            const finalNotes = branchText + (paymentData.notes || '');
+
             await supabase.from('sales').insert([{
                 items: cartItems,
                 total: total,
                 payment_method: paymentData.method || 'cash',
-                notes: paymentData.notes || '',
+                notes: finalNotes,
                 status: 'Completada', // POS sales are completed instantly
             }]);
 

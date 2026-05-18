@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, DollarSign, Smartphone, Check, X, FileText } from 'lucide-react';
 import { useStockStore } from '../../store/useStockStore';
+import { useSettingsStore } from '../../store/useSettingsStore';
 import { supabase } from '../../supabaseClient';
 
 const colors = {
@@ -18,6 +19,7 @@ const PAYMENT_METHODS = [
 
 const PosModule = () => {
     const { stock, registerSale } = useStockStore();
+    const { settings, fetchSettings } = useSettingsStore();
     const [query, setQuery] = useState('');
     const [cart, setCart] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState('Efectivo');
@@ -31,13 +33,25 @@ const PosModule = () => {
     const [showCaja, setShowCaja] = useState(false);
     const [dailySales, setDailySales] = useState([]);
     const [cajaLoading, setCajaLoading] = useState(false);
+    
+    // Multi-branch
+    const branches = settings?.contact?.addresses?.map(a => a.name).filter(Boolean) || [];
+    const [selectedBranch, setSelectedBranch] = useState('');
 
     const searchRef = useRef(null);
 
-    // Focus search on mount (also works with barcode pistol scanner)
+    // Focus search on mount & load settings
     useEffect(() => {
+        fetchSettings();
         if (searchRef.current) searchRef.current.focus();
     }, []);
+
+    // Set default branch when loaded
+    useEffect(() => {
+        if (branches.length > 0 && !selectedBranch) {
+            setSelectedBranch(branches[0]);
+        }
+    }, [branches]);
 
     const filteredProducts = query.trim().length === 0 ? stock : stock.filter(p => {
         const q = query.toLowerCase();
@@ -83,7 +97,8 @@ const PosModule = () => {
 
             await registerSale(cart, {
                 method: paymentMethod,
-                notes: finalNotes
+                notes: finalNotes,
+                branch: selectedBranch || 'Central'
             });
 
             setSaleComplete(true);
@@ -131,8 +146,14 @@ const PosModule = () => {
         setShowCaja(true);
     };
 
+    // Filter by branch
+    const branchSales = dailySales.filter(sale => {
+        if (!selectedBranch) return true; // If no branches exist, show all
+        return sale.notes?.includes(`[Sucursal: ${selectedBranch}]`);
+    });
+
     // Calculate Caja Totals
-    const cajaSummary = dailySales.reduce((acc, sale) => {
+    const cajaSummary = branchSales.reduce((acc, sale) => {
         const method = sale.payment_method || 'Desconocido';
         if (!acc[method]) acc[method] = 0;
         acc[method] += sale.total || 0;
@@ -146,7 +167,18 @@ const PosModule = () => {
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 4px 0' }}>Punto de Venta</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 4px 0' }}>Punto de Venta</h2>
+                            {branches.length > 0 && (
+                                <select 
+                                    value={selectedBranch} 
+                                    onChange={e => setSelectedBranch(e.target.value)}
+                                    style={{ padding: '4px 8px', borderRadius: '6px', border: `1px solid ${colors.border}`, fontSize: '12px', fontWeight: '700', outline: 'none' }}
+                                >
+                                    {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
+                            )}
+                        </div>
                         <p style={{ fontSize: '13px', color: colors.textSecondary, margin: 0 }}>
                             Buscá por nombre, categoría, o escaneá el código de barras
                         </p>
@@ -444,7 +476,7 @@ const PosModule = () => {
                         </button>
                         
                         <h2 style={{ fontSize: '20px', fontWeight: '800', color: colors.text, marginBottom: '24px' }}>
-                            Cierre de Caja - {new Date().toLocaleDateString('es-AR')}
+                            Cierre de Caja - {selectedBranch ? `${selectedBranch} - ` : ''}{new Date().toLocaleDateString('es-AR')}
                         </h2>
 
                         {cajaLoading ? (
@@ -456,7 +488,7 @@ const PosModule = () => {
                                     <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
                                         <p style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Total del Día</p>
                                         <p style={{ fontSize: '24px', fontWeight: '900', color: colors.primary, margin: 0 }}>${cajaSummary.total.toLocaleString()}</p>
-                                        <p style={{ fontSize: '11px', color: colors.textSecondary, margin: '4px 0 0 0' }}>{dailySales.length} ventas</p>
+                                        <p style={{ fontSize: '11px', color: colors.textSecondary, margin: '4px 0 0 0' }}>{branchSales.length} ventas</p>
                                     </div>
                                     {Object.entries(cajaSummary).filter(([k]) => k !== 'total').map(([method, amount]) => (
                                         <div key={method} style={{ background: '#fff', padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
@@ -469,8 +501,8 @@ const PosModule = () => {
                                 {/* Historial List */}
                                 <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, marginBottom: '12px' }}>Historial de Hoy</h3>
                                 <div style={{ overflowY: 'auto', flex: 1, border: `1px solid ${colors.border}`, borderRadius: '12px', background: '#f8fafc' }}>
-                                    {dailySales.length === 0 ? (
-                                        <div style={{ padding: '32px', textAlign: 'center', color: colors.textSecondary, fontSize: '13px' }}>No hay ventas registradas el día de hoy.</div>
+                                    {branchSales.length === 0 ? (
+                                        <div style={{ padding: '32px', textAlign: 'center', color: colors.textSecondary, fontSize: '13px' }}>No hay ventas registradas el día de hoy en esta sucursal.</div>
                                     ) : (
                                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                                             <thead style={{ background: '#fff', position: 'sticky', top: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
@@ -482,7 +514,7 @@ const PosModule = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {dailySales.map(sale => (
+                                                {branchSales.map(sale => (
                                                     <tr key={sale.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
                                                         <td style={{ padding: '12px 16px', color: colors.text }}>{new Date(sale.created_at).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'})}</td>
                                                         <td style={{ padding: '12px 16px', fontWeight: '600' }}>

@@ -1098,21 +1098,63 @@ const AdminDashboard = ({ onBack }) => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 {[
                                     { key: 'whatsapp', label: 'Número de WhatsApp (Con código de país, ej: 543434559599)', placeholder: '543434559599' },
-                                    { key: 'instagram', label: 'Nombre de usuario de Instagram (Sin @)', placeholder: 'olmo.ind' },
+                                    { key: 'instagram', label: 'Nombre de usuario de Instagram (Sin @ ni URL)', placeholder: 'olmo.ind' },
                                     { key: 'email', label: 'Correo electrónico de consultas', placeholder: 'olmoshowroom@gmail.com' },
-                                    { key: 'address', label: 'Dirección física o Local comercial', placeholder: 'Cervantes 35 local A' },
                                 ].map(f => (
                                     <div key={f.key}>
                                         <label style={labelStyle}>{f.label}</label>
                                         <input
                                             type="text"
                                             value={contact[f.key] || ''}
-                                            onChange={e => setContact({ ...contact, [f.key]: e.target.value })}
+                                            onChange={e => {
+                                                let val = e.target.value;
+                                                if (f.key === 'instagram') val = val.replace('@', '').replace('https://www.instagram.com/', '').replace('/', '');
+                                                setContact({ ...contact, [f.key]: val });
+                                            }}
                                             placeholder={f.placeholder}
                                             style={inputStyle}
                                         />
                                     </div>
                                 ))}
+
+                                {/* GESTIÓN DE LOCALES / SUCURSALES */}
+                                <div style={{ marginTop: '16px', borderTop: `1px solid ${colors.border}`, paddingTop: '16px' }}>
+                                    <label style={{ ...labelStyle, fontSize: '13px', color: colors.primary, marginBottom: '12px', display: 'block' }}>Locales / Sucursales</label>
+                                    
+                                    {(contact.addresses || []).map((addr, idx) => (
+                                        <div key={idx} style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: `1px solid ${colors.border}`, marginBottom: '12px', position: 'relative' }}>
+                                            <button onClick={() => {
+                                                const updated = (contact.addresses || []).filter((_, i) => i !== idx);
+                                                setContact({ ...contact, addresses: updated });
+                                            }} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: colors.error, cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                            
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '24px' }}>
+                                                <input type="text" placeholder="Nombre de Sucursal (Ej: Local Centro)" value={addr.name || ''} onChange={e => {
+                                                    const updated = [...(contact.addresses || [])];
+                                                    updated[idx].name = e.target.value;
+                                                    setContact({ ...contact, addresses: updated });
+                                                }} style={{ ...inputStyle, padding: '8px 12px' }} />
+                                                <input type="text" placeholder="Dirección Física (Ej: Cervantes 35)" value={addr.address || ''} onChange={e => {
+                                                    const updated = [...(contact.addresses || [])];
+                                                    updated[idx].address = e.target.value;
+                                                    setContact({ ...contact, addresses: updated });
+                                                }} style={{ ...inputStyle, padding: '8px 12px' }} />
+                                                <input type="text" placeholder="Enlace de Google Maps (Ej: https://maps.app.goo.gl/...)" value={addr.mapUrl || ''} onChange={e => {
+                                                    const updated = [...(contact.addresses || [])];
+                                                    updated[idx].mapUrl = e.target.value;
+                                                    setContact({ ...contact, addresses: updated });
+                                                }} style={{ ...inputStyle, padding: '8px 12px' }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    <button onClick={() => {
+                                        const updated = [...(contact.addresses || []), { name: '', address: '', mapUrl: '' }];
+                                        setContact({ ...contact, addresses: updated });
+                                    }} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: `1px dashed ${colors.primary}`, color: colors.primary, padding: '10px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', width: '100%', justifyContent: 'center' }}>
+                                        <Plus size={16} /> Agregar Nueva Sucursal
+                                    </button>
+                                </div>
 
                                 <button onClick={async () => { await updateSetting('contact', contact); showSaved(); }} style={{
                                     background: colors.primary, color: '#ffffff', border: 'none',

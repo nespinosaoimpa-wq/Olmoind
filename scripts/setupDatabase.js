@@ -141,6 +141,7 @@ ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_city TEXT;
 ALTER TABLE sales ADD COLUMN IF NOT EXISTS payment_method TEXT;
 ALTER TABLE sales ADD COLUMN IF NOT EXISTS shipping_method TEXT;
 ALTER TABLE sales ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Pendiente';
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT 'Central';
 
 -- ══════════════════════════════════════════════════
 -- DATOS DE EJEMPLO PARA ENVÍOS (opcionales)
