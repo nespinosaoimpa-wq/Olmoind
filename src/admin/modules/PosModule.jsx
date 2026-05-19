@@ -28,6 +28,175 @@ const PosModule = () => {
     const [showCheckout, setShowCheckout] = useState(false);
     const [amountTendered, setAmountTendered] = useState('');
     const [paymentNotes, setPaymentNotes] = useState('');
+    const [lastSale, setLastSale] = useState(null);
+
+    const printTicket = (sale) => {
+        if (!sale || !sale.items || sale.items.length === 0) return;
+        const dateStr = new Date().toLocaleString('es-AR');
+        const itemsHtml = sale.items.map(item => `
+            <tr>
+                <td>${item.name}</td>
+                <td>${item.size}</td>
+                <td style="text-align: right;">x${item.quantity}</td>
+                <td style="text-align: right;">$${(item.price * item.quantity).toLocaleString('es-AR')}</td>
+            </tr>
+        `).join('');
+
+        let vueltoHtml = '';
+        if (sale.paymentMethod === 'Efectivo' && sale.amountTendered) {
+            const vuelto = parseFloat(sale.amountTendered) - sale.total;
+            vueltoHtml = `
+                <div style="margin-top: 4px;"><strong>PAGO CON:</strong> $${parseFloat(sale.amountTendered).toLocaleString('es-AR')}</div>
+                <div><strong>VUELTO:</strong> $${vuelto >= 0 ? vuelto.toLocaleString('es-AR') : '0'}</div>
+            `;
+        }
+
+        const win = window.open('', '_blank', 'width=350,height=600');
+        if (!win) {
+            alert('El bloqueador de ventanas emergentes impidió abrir el ticket. Por favor, permití las ventanas emergentes en tu navegador.');
+            return;
+        }
+
+        win.document.write(`
+            <html>
+            <head>
+                <title>Ticket de Venta</title>
+                <style>
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        font-size: 12px;
+                        color: #000;
+                        margin: 0;
+                        padding: 15px;
+                        width: 280px;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 15px;
+                    }
+                    .logo {
+                        font-size: 15px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                    }
+                    .separator {
+                        border-top: 1px dashed #000;
+                        margin: 8px 0;
+                    }
+                    .info {
+                        font-size: 11px;
+                        margin-bottom: 8px;
+                        line-height: 1.4;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 8px 0;
+                    }
+                    .table th, .table td {
+                        text-align: left;
+                        font-size: 11px;
+                        padding: 3px 0;
+                        vertical-align: top;
+                    }
+                    .total-section {
+                        margin-top: 8px;
+                        font-size: 13px;
+                        font-weight: bold;
+                    }
+                    .footer {
+                        text-align: center;
+                        font-size: 10px;
+                        margin-top: 15px;
+                        color: #555;
+                    }
+                    .non-fiscal {
+                        border: 1px solid #000;
+                        padding: 6px;
+                        margin: 12px 0;
+                        font-weight: bold;
+                        text-align: center;
+                        font-size: 9px;
+                        line-height: 1.3;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="logo">OLMO INDUMENTARIA</div>
+                    <div>Cervantes 35, Local A</div>
+                    <div>Paraná, Entre Ríos</div>
+                </div>
+                <div class="info">
+                    <div><strong>FECHA:</strong> ${dateStr}</div>
+                    <div><strong>SUCURSAL:</strong> ${sale.branch}</div>
+                    <div><strong>ORIGEN:</strong> Punto de Venta</div>
+                </div>
+                <div class="separator"></div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ARTICULO</th>
+                            <th>TALLE</th>
+                            <th style="text-align: right;">CANT</th>
+                            <th style="text-align: right;">SUBT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+                <div class="separator"></div>
+                <div class="total-section">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>TOTAL:</span>
+                        <span>$${sale.total.toLocaleString('es-AR')}</span>
+                    </div>
+                </div>
+                <div class="info" style="margin-top: 8px;">
+                    <div><strong>METODO DE PAGO:</strong> ${sale.paymentMethod}</div>
+                    ${vueltoHtml}
+                    ${sale.paymentNotes ? `<div style="margin-top: 4px;"><strong>NOTAS:</strong> ${sale.paymentNotes}</div>` : ''}
+                </div>
+                <div class="separator"></div>
+                <div class="non-fiscal">
+                    DOCUMENTO NO VÁLIDO COMO FACTURA
+                    <br/>
+                    (TICKET DE CONTROL INTERNO)
+                </div>
+                <div class="footer">
+                    ¡Gracias por tu compra!
+                    <br/>
+                    olmoind.com
+                </div>
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() { window.close(); }, 800);
+                    }
+                </script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    };
+
+    const handleReprint = () => {
+        if (lastSale) {
+            printTicket(lastSale);
+        }
+    };
+
+    const handleResetPos = () => {
+        setSaleComplete(false);
+        setShowCheckout(false);
+        setCart([]);
+        setQuery('');
+        setAmountTendered('');
+        setPaymentNotes('');
+        setLastSale(null);
+        if (searchRef.current) searchRef.current.focus();
+    };
     
     // Caja States
     const [showCaja, setShowCaja] = useState(false);
@@ -98,19 +267,26 @@ const PosModule = () => {
             await registerSale(cart, {
                 method: paymentMethod,
                 notes: finalNotes,
-                branch: selectedBranch || 'Central'
+                branch: selectedBranch || 'Central',
+                source: 'Punto de Venta',
+                status: 'Completada'
             });
 
+            const saleData = {
+                items: [...cart],
+                total,
+                branch: selectedBranch || 'Central',
+                paymentMethod,
+                amountTendered,
+                paymentNotes,
+                finalNotes
+            };
+
+            setLastSale(saleData);
             setSaleComplete(true);
-            setTimeout(() => {
-                setSaleComplete(false);
-                setShowCheckout(false);
-                setCart([]);
-                setQuery('');
-                setAmountTendered('');
-                setPaymentNotes('');
-                if (searchRef.current) searchRef.current.focus();
-            }, 2500);
+
+            // Auto-trigger printing the non-fiscal ticket
+            printTicket(saleData);
         } catch (e) {
             alert('Error al registrar la venta: ' + e.message);
         } finally {
@@ -146,9 +322,12 @@ const PosModule = () => {
         setShowCaja(true);
     };
 
-    // Filter by branch
+    // Filter by branch and exclude online orders
     const branchSales = dailySales.filter(sale => {
-        if (!selectedBranch) return true; // If no branches exist, show all
+        // Exclude virtual store sales from physical POS cash register
+        if (sale.notes?.includes('[Origen: Tienda Online]')) return false;
+
+        if (!selectedBranch) return true; // If no branches exist, show all physical sales
         return sale.notes?.includes(`[Sucursal: ${selectedBranch}]`);
     });
 
@@ -360,12 +539,30 @@ const PosModule = () => {
                         position: 'relative'
                     }}>
                         {saleComplete ? (
-                            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                            <div style={{ textAlign: 'center', padding: '24px 0' }}>
                                 <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#d1fae5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                                     <Check size={32} />
                                 </div>
                                 <h3 style={{ fontSize: '24px', fontWeight: '800', color: colors.text, margin: '0 0 8px 0' }}>¡Venta Registrada!</h3>
-                                <p style={{ color: colors.textSecondary }}>La caja ha sido actualizada.</p>
+                                <p style={{ color: colors.textSecondary, marginBottom: '24px' }}>El historial de ventas y la caja se han actualizado.</p>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <button onClick={handleReprint} style={{
+                                        width: '100%', padding: '14px', background: '#f1f5f9', color: '#334155',
+                                        border: `1px solid ${colors.border}`, borderRadius: '8px', fontSize: '14px',
+                                        fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}>
+                                        🖨️ Reimprimir Ticket No Fiscal
+                                    </button>
+                                    <button onClick={handleResetPos} style={{
+                                        width: '100%', padding: '14px', background: colors.primary, color: '#fff',
+                                        border: 'none', borderRadius: '8px', fontSize: '14px',
+                                        fontWeight: '800', cursor: 'pointer', fontFamily: "'Inter', sans-serif"
+                                    }}>
+                                        Iniciar Nueva Venta
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <>

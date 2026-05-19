@@ -75,16 +75,17 @@ export const useStockStore = create((set, get) => ({
             // 2. Record the sale
             const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
             
-            // Si la base de datos no tiene la columna branch aún, guardamos la sucursal en las notas.
+            // Si la base de datos no tiene la columna branch ni origen aún, los guardamos en las notas.
             const branchText = paymentData.branch ? `[Sucursal: ${paymentData.branch}] ` : '';
-            const finalNotes = branchText + (paymentData.notes || '');
+            const sourceText = paymentData.source ? `[Origen: ${paymentData.source}] ` : '';
+            const finalNotes = sourceText + branchText + (paymentData.notes || '');
 
             await supabase.from('sales').insert([{
                 items: cartItems,
                 total: total,
                 payment_method: paymentData.method || 'cash',
                 notes: finalNotes,
-                status: 'Completada', // POS sales are completed instantly
+                status: paymentData.status || 'Completada', // POS sales are completed instantly, online defaults to status or 'Completada'
             }]);
 
             // 2.5. Enviar Notificación Push (Telegram)

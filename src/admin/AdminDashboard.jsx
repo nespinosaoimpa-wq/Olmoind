@@ -84,6 +84,7 @@ const AdminDashboard = ({ onBack }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [localSales, setLocalSales] = useState([]);
+    const [salesFilter, setSalesFilter] = useState('all'); // 'all' | 'online' | 'pos'
     const [savedMsg, setSavedMsg] = useState('');
     const [uploadingImage, setUploadingImage] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -120,6 +121,44 @@ const AdminDashboard = ({ onBack }) => {
     const [categories, setCategories] = useState([]);
     const [newBannerUrl, setNewBannerUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
+    const [paymentsConfig, setPaymentsConfig] = useState({
+        mp: { active: true, publicKey: '', accessToken: '' },
+        transfer: { active: true, alias: '', cbu: '', titular: '', banco: '' },
+        cash: { active: true, instructions: '' },
+        posnet: { active: true },
+        modo: { active: false, clientId: '', clientSecret: '', apiKey: '' },
+        gocuotas: { active: false, apiKey: '', email: '' }
+    });
+
+    const handleTogglePaymentMethod = (methodId) => {
+        setPaymentsConfig(prev => ({
+            ...prev,
+            [methodId]: {
+                ...prev[methodId],
+                active: !prev[methodId]?.active
+            }
+        }));
+    };
+
+    const handleUpdateConfig = (methodId, field, val) => {
+        setPaymentsConfig(prev => ({
+            ...prev,
+            [methodId]: {
+                ...prev[methodId],
+                [field]: val
+            }
+        }));
+    };
+
+    const handleSavePaymentsConfig = async () => {
+        try {
+            await updateSetting('payments', paymentsConfig);
+            showSaved();
+        } catch (err) {
+            console.error('Error saving payment config:', err);
+            alert('Error al guardar la configuración de pagos.');
+        }
+    };
 
     // Stats calculations
     const totalRevenue = (localSales || []).reduce((acc, s) => acc + (s.total || 0), 0);
@@ -149,6 +188,14 @@ const AdminDashboard = ({ onBack }) => {
         setHero(settings.hero || {});
         setBanners(Array.isArray(settings.banners) ? settings.banners : []);
         setCategories(Array.isArray(settings.categories) ? settings.categories : []);
+        setPaymentsConfig(settings.payments || {
+            mp: { active: true, publicKey: '', accessToken: '' },
+            transfer: { active: true, alias: '', cbu: '', titular: '', banco: '' },
+            cash: { active: true, instructions: '' },
+            posnet: { active: true },
+            modo: { active: false, clientId: '', clientSecret: '', apiKey: '' },
+            gocuotas: { active: false, apiKey: '', email: '' }
+        });
     }, [settings]);
 
     const showSaved = () => {
@@ -292,6 +339,31 @@ const AdminDashboard = ({ onBack }) => {
             case 'Cancelado': return { bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' };
             default: return { bg: '#fef3c7', color: '#b45309', border: '#fde68a' }; // Pendiente
         }
+    };
+
+    const parseSaleMetadata = (notes) => {
+        let source = 'Tienda Online'; // default if not specified
+        let branch = null;
+        let cleanNotes = notes || '';
+
+        if (notes) {
+            const sourceMatch = notes.match(/\[Origen: ([^\]]+)\]/);
+            if (sourceMatch) {
+                source = sourceMatch[1];
+                cleanNotes = cleanNotes.replace(/\[Origen: [^\]]+\]\s*/, '');
+            } else if (notes.includes('[Sucursal:')) {
+                // If it has a branch but no origin, it's a physical POS sale
+                source = 'Punto de Venta';
+            }
+            
+            const branchMatch = notes.match(/\[Sucursal: ([^\]]+)\]/);
+            if (branchMatch) {
+                branch = branchMatch[1];
+                cleanNotes = cleanNotes.replace(/\[Sucursal: [^\]]+\]\s*/, '');
+            }
+        }
+        
+        return { source, branch, cleanNotes };
     };
 
     const [openGroups, setOpenGroups] = useState({ gestion: true, canales: true });
@@ -614,46 +686,229 @@ const AdminDashboard = ({ onBack }) => {
                 {/* ── PUNTO DE VENTA ── */}
                 {activeTab === 'pos' && <PosModule />}
 
-                {/* ── PAGOS (simple config panel) ── */}
+                {/* ── PAGOS (configuración dinámica de medios de pago) ── */}
                 {activeTab === 'payments' && (
                     <div>
                         <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 8px 0' }}>Medios de Pago</h2>
-                        <p style={{ fontSize: '13px', color: colors.textSecondary, margin: '0 0 24px 0' }}>Configurá los métodos de pago aceptados en tu tienda</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                        <p style={{ fontSize: '13px', color: colors.textSecondary, margin: '0 0 24px 0' }}>Habilitá y configurá las credenciales o datos necesarios de los métodos de pago aceptados en tu tienda</p>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                             {[
-                                { id: 'mp', icon: '💳', title: 'Mercado Pago', desc: 'Checkout Pro integrado. Acepta tarjetas, débito y QR.', color: '#00b1ea', status: 'Activo' },
-                                { id: 'transfer', icon: '🏦', title: 'Transferencia Bancaria', desc: 'Alias o CBU. El cliente paga antes del envío.', color: '#10b981', status: 'Activo' },
-                                { id: 'cash', icon: '💵', title: 'Efectivo', desc: 'Pago en el local o contra entrega.', color: '#f59e0b', status: 'Activo' },
-                                { id: 'posnet', icon: '🔲', title: 'Posnet / Tarjeta', desc: 'Terminal de tarjeta en el punto de venta.', color: '#8b5cf6', status: 'Manual' },
-                            ].map(pm => (
-                                <div key={pm.id} style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', borderTop: `4px solid ${pm.color}`, boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
-                                    <div style={{ fontSize: '28px', marginBottom: '12px' }}>{pm.icon}</div>
-                                    <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0 0 6px 0' }}>{pm.title}</h3>
-                                    <p style={{ fontSize: '12px', color: colors.textSecondary, margin: '0 0 16px 0', lineHeight: '1.5' }}>{pm.desc}</p>
-                                    <span style={{ fontSize: '11px', fontWeight: '700', background: `${pm.color}20`, color: pm.color, padding: '4px 10px', borderRadius: '9999px' }}>
-                                        ● {pm.status}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                        <div style={{ marginTop: '24px', background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
-                            <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Datos para Transferencia</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                {[
-                                    { label: 'Alias', placeholder: 'Ej: OLMO.VENTAS.MP' },
-                                    { label: 'CBU', placeholder: 'Ej: 0000003100045678...' },
-                                    { label: 'Titular', placeholder: 'Nombre del titular de la cuenta' },
-                                    { label: 'Banco', placeholder: 'Ej: Banco Macro' },
-                                ].map(f => (
-                                    <div key={f.label}>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{f.label}</label>
-                                        <input placeholder={f.placeholder} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }} />
+                                { id: 'mp', icon: '💳', title: 'Mercado Pago', desc: 'Checkout Pro integrado. Acepta tarjetas, débito y QR.', color: '#00b1ea' },
+                                { id: 'transfer', icon: '🏦', title: 'Transferencia Bancaria', desc: 'Alias o CBU. El cliente paga antes del envío.', color: '#10b981' },
+                                { id: 'cash', icon: '💵', title: 'Efectivo', desc: 'Pago en el local o contra entrega.', color: '#f59e0b' },
+                                { id: 'posnet', icon: '🔲', title: 'Posnet / Tarjeta', desc: 'Terminal de tarjeta en el punto de venta.', color: '#8b5cf6' },
+                                { id: 'modo', icon: '🔴', title: 'MODO', desc: 'Billetera digital argentina. Pagos con QR y transferencia.', color: '#ff003c' },
+                                { id: 'gocuotas', icon: '⚡', title: 'Go Cuotas', desc: 'Pago en cuotas sin tarjeta de crédito, con débito.', color: '#4ade80' }
+                            ].map(pm => {
+                                const isActive = !!paymentsConfig[pm.id]?.active;
+                                return (
+                                    <div key={pm.id} style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', borderTop: `4px solid ${pm.color}`, boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                        <div>
+                                            <div style={{ fontSize: '28px', marginBottom: '12px' }}>{pm.icon}</div>
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0 0 6px 0' }}>{pm.title}</h3>
+                                            <p style={{ fontSize: '12px', color: colors.textSecondary, margin: '0 0 16px 0', lineHeight: '1.5' }}>{pm.desc}</p>
+                                        </div>
+                                        <div style={{ marginTop: '12px' }}>
+                                            <button
+                                                onClick={() => handleTogglePaymentMethod(pm.id)}
+                                                style={{
+                                                    padding: '6px 14px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '11px',
+                                                    fontWeight: '700',
+                                                    cursor: 'pointer',
+                                                    border: 'none',
+                                                    background: isActive ? '#dcfce7' : '#fee2e2',
+                                                    color: isActive ? '#15803d' : '#b91c1c',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    fontFamily: "'Inter', sans-serif"
+                                                }}
+                                            >
+                                                ● {isActive ? 'Activo' : 'Inactivo'}
+                                            </button>
+                                        </div>
                                     </div>
-                                ))}
+                                );
+                            })}
+                        </div>
+
+                        {/* Formularios de Configuración de Credenciales */}
+                        <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            {/* Mercado Pago */}
+                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>💳</span> Credenciales de Mercado Pago
+                                </h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Public Key</label>
+                                        <input
+                                            value={paymentsConfig.mp?.publicKey || ''}
+                                            onChange={e => handleUpdateConfig('mp', 'publicKey', e.target.value)}
+                                            placeholder="Ej: APP_USR-876a3b..."
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Access Token</label>
+                                        <input
+                                            type="password"
+                                            value={paymentsConfig.mp?.accessToken || ''}
+                                            onChange={e => handleUpdateConfig('mp', 'accessToken', e.target.value)}
+                                            placeholder="Ej: APP_USR-..."
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <button style={{ marginTop: '16px', background: colors.primary, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}>
-                                Guardar datos bancarios
-                            </button>
+
+                            {/* Transferencia Bancaria */}
+                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>🏦</span> Datos para Transferencia Bancaria
+                                </h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Alias</label>
+                                        <input
+                                            value={paymentsConfig.transfer?.alias || ''}
+                                            onChange={e => handleUpdateConfig('transfer', 'alias', e.target.value)}
+                                            placeholder="Ej: OLMO.VENTAS.MP"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>CBU</label>
+                                        <input
+                                            value={paymentsConfig.transfer?.cbu || ''}
+                                            onChange={e => handleUpdateConfig('transfer', 'cbu', e.target.value)}
+                                            placeholder="Ej: 0000003100045678..."
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Titular</label>
+                                        <input
+                                            value={paymentsConfig.transfer?.titular || ''}
+                                            onChange={e => handleUpdateConfig('transfer', 'titular', e.target.value)}
+                                            placeholder="Nombre del titular de la cuenta"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Banco</label>
+                                        <input
+                                            value={paymentsConfig.transfer?.banco || ''}
+                                            onChange={e => handleUpdateConfig('transfer', 'banco', e.target.value)}
+                                            placeholder="Ej: Banco Macro"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* MODO */}
+                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>🔴</span> Credenciales de MODO
+                                </h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Client ID</label>
+                                        <input
+                                            value={paymentsConfig.modo?.clientId || ''}
+                                            onChange={e => handleUpdateConfig('modo', 'clientId', e.target.value)}
+                                            placeholder="Client ID para producción"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Client Secret</label>
+                                        <input
+                                            type="password"
+                                            value={paymentsConfig.modo?.clientSecret || ''}
+                                            onChange={e => handleUpdateConfig('modo', 'clientSecret', e.target.value)}
+                                            placeholder="Client Secret de MODO"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div style={{ gridColumn: 'span 2' }}>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>API Key / Token de Tienda</label>
+                                        <input
+                                            value={paymentsConfig.modo?.apiKey || ''}
+                                            onChange={e => handleUpdateConfig('modo', 'apiKey', e.target.value)}
+                                            placeholder="API Key asignada"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Go Cuotas */}
+                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>⚡</span> Credenciales de Go Cuotas
+                                </h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Email de Comercio</label>
+                                        <input
+                                            value={paymentsConfig.gocuotas?.email || ''}
+                                            onChange={e => handleUpdateConfig('gocuotas', 'email', e.target.value)}
+                                            placeholder="email@comercio.com"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>API Key (Token de Comercio)</label>
+                                        <input
+                                            type="password"
+                                            value={paymentsConfig.gocuotas?.apiKey || ''}
+                                            onChange={e => handleUpdateConfig('gocuotas', 'apiKey', e.target.value)}
+                                            placeholder="Token o API Key asignada"
+                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Efectivo */}
+                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>💵</span> Instrucciones para Pago en Efectivo
+                                </h3>
+                                <div>
+                                    <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Texto explicativo para el cliente</label>
+                                    <textarea
+                                        value={paymentsConfig.cash?.instructions || ''}
+                                        onChange={e => handleUpdateConfig('cash', 'instructions', e.target.value)}
+                                        placeholder="Ej: Retiro en local Cervantes 35 con 10% de descuento. Pago contra entrega."
+                                        rows={3}
+                                        style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Guardar todo Button */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                                <button
+                                    onClick={handleSavePaymentsConfig}
+                                    style={{
+                                        background: colors.primary, color: '#fff', border: 'none',
+                                        padding: '14px 28px', borderRadius: '8px', fontSize: '14px',
+                                        fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                                        transition: 'opacity 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                >
+                                    Guardar Configuración de Pagos
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -822,85 +1077,150 @@ const AdminDashboard = ({ onBack }) => {
                 )}
 
                 {/* ── 3. PESTAÑA: PEDIDOS (VENTAS REALIZADAS) ────────────────────────────────── */}
-                {activeTab === 'sales' && (
-                    <div>
-                        <div style={card}>
-                            <h3 style={sectionTitle}>Lista de Ventas y Pedidos ({localSales.length})</h3>
-                            <p style={{ fontSize: '12px', color: colors.textSecondary, marginTop: '-10px', marginBottom: '24px' }}>
-                                Administra los estatus de entrega para cada pedido. Esto ayuda al comprador a tener seguimiento de su orden.
-                            </p>
+                {activeTab === 'sales' && (() => {
+                    const filteredSales = localSales.filter(sale => {
+                        const { source } = parseSaleMetadata(sale.notes);
+                        if (salesFilter === 'online') {
+                            return source === 'Tienda Online';
+                        } else if (salesFilter === 'pos') {
+                            return source === 'Punto de Venta';
+                        }
+                        return true;
+                    });
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {localSales.map(sale => {
-                                    const status = sale.status || 'Pendiente';
-                                    const st = getStatusStyles(status);
-                                    return (
-                                        <div key={sale.id} style={{
-                                            border: `1px solid ${colors.border}`, borderRadius: '12px',
-                                            background: '#ffffff', padding: '20px', display: 'flex', flexWrap: 'wrap',
-                                            gap: '20px', alignItems: 'center', justifyContent: 'space-between',
-                                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                                        }}>
-                                            {/* Order code & Date */}
-                                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                                                <div style={{ width: '40px', height: '40px', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
-                                                    <ShoppingBag size={18} color={colors.primary} />
+                    return (
+                        <div>
+                            <div style={card}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+                                    <div>
+                                        <h3 style={{ ...sectionTitle, marginBottom: '4px' }}>Lista de Ventas y Pedidos ({filteredSales.length})</h3>
+                                        <p style={{ fontSize: '12px', color: colors.textSecondary, margin: 0 }}>
+                                            Administra los estatus de entrega para cada pedido. Esto ayuda al comprador a tener seguimiento de su orden.
+                                        </p>
+                                    </div>
+                                    
+                                    {/* Selector de Origen / Canal */}
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        {[
+                                            { id: 'all', label: 'Todos' },
+                                            { id: 'online', label: '🛒 Tienda Online' },
+                                            { id: 'pos', label: '🏪 Punto de Venta' }
+                                        ].map(f => (
+                                            <button
+                                                key={f.id}
+                                                onClick={() => setSalesFilter(f.id)}
+                                                style={{
+                                                    padding: '8px 14px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '11.5px',
+                                                    fontWeight: '700',
+                                                    cursor: 'pointer',
+                                                    fontFamily: "'Inter', sans-serif",
+                                                    border: `1px solid ${salesFilter === f.id ? colors.primary : colors.border}`,
+                                                    background: salesFilter === f.id ? colors.primary : '#f8fafc',
+                                                    color: salesFilter === f.id ? '#ffffff' : colors.textSecondary,
+                                                    transition: 'all 0.2s',
+                                                }}
+                                            >
+                                                {f.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {filteredSales.map(sale => {
+                                        const status = sale.status || 'Pendiente';
+                                        const st = getStatusStyles(status);
+                                        const { source, branch, cleanNotes } = parseSaleMetadata(sale.notes);
+
+                                        return (
+                                            <div key={sale.id} style={{
+                                                border: `1px solid ${colors.border}`, borderRadius: '12px',
+                                                background: '#ffffff', padding: '20px', display: 'flex', flexWrap: 'wrap',
+                                                gap: '20px', alignItems: 'center', justifyContent: 'space-between',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                                            }}>
+                                                {/* Order code & Date */}
+                                                <div style={{ display: 'flex', gap: '14px', alignItems: 'center', minWidth: '220px' }}>
+                                                    <div style={{ width: '40px', height: '40px', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
+                                                        <ShoppingBag size={18} color={colors.primary} />
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                            <h4 style={{ fontSize: '13px', fontWeight: '850', color: colors.text, margin: 0 }}>ORDEN #{sale.id.slice(0, 6).toUpperCase()}</h4>
+                                                            <span style={{
+                                                                fontSize: '9px',
+                                                                fontWeight: '800',
+                                                                padding: '2px 8px',
+                                                                borderRadius: '12px',
+                                                                textTransform: 'uppercase',
+                                                                background: source === 'Tienda Online' ? '#f3e8ff' : '#dcfce7',
+                                                                color: source === 'Tienda Online' ? '#6b21a8' : '#15803d',
+                                                                border: `1px solid ${source === 'Tienda Online' ? '#e9d5ff' : '#bbf7d0'}`
+                                                            }}>
+                                                                {source === 'Tienda Online' ? '🛒 Online' : `🏪 POS${branch ? ` · ${branch}` : ''}`}
+                                                            </span>
+                                                        </div>
+                                                        <span style={{ fontSize: '10px', color: colors.textSecondary }}>{sale.created_at ? `${new Date(sale.created_at).toLocaleDateString()} · ${new Date(sale.created_at).toLocaleTimeString()}` : '—'}</span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h4 style={{ fontSize: '13px', fontWeight: '850', color: colors.text, margin: 0 }}>ORDEN #{sale.id.slice(0, 6).toUpperCase()}</h4>
-                                                    <span style={{ fontSize: '10px', color: colors.textSecondary }}>{sale.created_at ? `${new Date(sale.created_at).toLocaleDateString()} · ${new Date(sale.created_at).toLocaleTimeString()}` : '—'}</span>
+
+                                                {/* Cart items list */}
+                                                <div style={{ flex: 1, minWidth: '200px' }}>
+                                                    {(sale.items || []).map((item, idx) => (
+                                                        <p key={idx} style={{ fontSize: '11.5px', color: '#475569', margin: '2px 0' }}>
+                                                            <strong style={{ color: colors.text }}>{item.quantity}x</strong> {item.name} <span style={{ color: colors.primary, fontWeight: '700' }}>({item.size})</span>
+                                                        </p>
+                                                    ))}
+                                                    {cleanNotes && (
+                                                        <p style={{ fontSize: '11px', color: colors.textSecondary, fontStyle: 'italic', marginTop: '6px', borderTop: `1px dashed ${colors.border}`, paddingTop: '4px' }}>
+                                                            📝 {cleanNotes}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {/* Price Total and Status Selector */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <span style={{ fontSize: '10px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }}>Monto total</span>
+                                                        <p style={{ fontSize: '17px', fontWeight: '900', color: colors.text, margin: 0 }}>${(sale.total || 0).toLocaleString()}</p>
+                                                    </div>
+
+                                                    <select
+                                                        value={status}
+                                                        onChange={(e) => handleUpdateStatus(sale.id, e.target.value)}
+                                                        style={{
+                                                            background: st.bg,
+                                                            border: `1px solid ${st.border}`,
+                                                            color: st.color,
+                                                            padding: '8px 14px',
+                                                            borderRadius: '20px',
+                                                            fontSize: '11px',
+                                                            fontWeight: '800',
+                                                            cursor: 'pointer',
+                                                            outline: 'none',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.5px'
+                                                        }}
+                                                    >
+                                                        <option value="Pendiente" style={{ background: '#ffffff', color: '#b45309' }}>PENDIENTE</option>
+                                                        <option value="Enviado" style={{ background: '#ffffff', color: '#0369a1' }}>ENVIADO</option>
+                                                        <option value="Entregado" style={{ background: '#ffffff', color: '#047857' }}>ENTREGADO</option>
+                                                        <option value="Cancelado" style={{ background: '#ffffff', color: '#b91c1c' }}>CANCELADO</option>
+                                                    </select>
                                                 </div>
                                             </div>
-
-                                            {/* Cart items list */}
-                                            <div style={{ flex: 1, minWidth: '200px' }}>
-                                                {(sale.items || []).map((item, idx) => (
-                                                    <p key={idx} style={{ fontSize: '11.5px', color: '#475569', margin: '2px 0' }}>
-                                                        <strong style={{ color: colors.text }}>{item.quantity}x</strong> {item.name} <span style={{ color: colors.primary, fontWeight: '700' }}>({item.size})</span>
-                                                    </p>
-                                                ))}
-                                            </div>
-
-                                            {/* Price Total and Status Selector */}
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                <div style={{ textAlign: 'right' }}>
-                                                    <span style={{ fontSize: '10px', color: colors.textSecondary, textTransform: 'uppercase', fontWeight: '700' }}>Monto total</span>
-                                                    <p style={{ fontSize: '17px', fontWeight: '900', color: colors.text, margin: 0 }}>${(sale.total || 0).toLocaleString()}</p>
-                                                </div>
-
-                                                <select
-                                                    value={status}
-                                                    onChange={(e) => handleUpdateStatus(sale.id, e.target.value)}
-                                                    style={{
-                                                        background: st.bg,
-                                                        border: `1px solid ${st.border}`,
-                                                        color: st.color,
-                                                        padding: '8px 14px',
-                                                        borderRadius: '20px',
-                                                        fontSize: '11px',
-                                                        fontWeight: '800',
-                                                        cursor: 'pointer',
-                                                        outline: 'none',
-                                                        textTransform: 'uppercase',
-                                                        letterSpacing: '0.5px'
-                                                    }}
-                                                >
-                                                    <option value="Pendiente" style={{ background: '#ffffff', color: '#b45309' }}>PENDIENTE</option>
-                                                    <option value="Enviado" style={{ background: '#ffffff', color: '#0369a1' }}>ENVIADO</option>
-                                                    <option value="Entregado" style={{ background: '#ffffff', color: '#047857' }}>ENTREGADO</option>
-                                                    <option value="Cancelado" style={{ background: '#ffffff', color: '#b91c1c' }}>CANCELADO</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                {localSales.length === 0 && (
-                                    <p style={{ color: colors.textSecondary, textAlign: 'center', padding: '40px' }}>No hay ventas registradas todavía.</p>
-                                )}
+                                        );
+                                    })}
+                                    {filteredSales.length === 0 && (
+                                        <p style={{ color: colors.textSecondary, textAlign: 'center', padding: '40px' }}>No se encontraron ventas con este filtro.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
 
                 {/* ── 4. PESTAÑA: PERSONALIZACIÓN (TIENDA ESTÉTICA Y CATEGORÍAS) ────────────────────────────────── */}
                 {activeTab === 'settings' && (

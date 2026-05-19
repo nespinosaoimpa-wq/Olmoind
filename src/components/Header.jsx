@@ -3,13 +3,29 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ShoppingBag, Search, Menu, X, Home, Grid, ShoppingCart, User, Trash2 } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useStockStore } from '../store/useStockStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 
 const Header = ({ searchQuery, setSearchQuery }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('mp'); // 'mp' | 'whatsapp'
+  const [paymentMethod, setPaymentMethod] = useState('mp');
   const { cart, removeItem, clearCart, totalItems } = useCartStore();
   const { registerSale } = useStockStore();
+  const { settings, fetchSettings } = useSettingsStore();
+
+  React.useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  React.useEffect(() => {
+    if (settings?.payments) {
+      // Pick first active payment method
+      const activeMethod = Object.entries(settings.payments).find(([k, v]) => v.active)?.[0];
+      if (activeMethod) {
+        setPaymentMethod(activeMethod);
+      }
+    }
+  }, [settings]);
 
   const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -21,6 +37,15 @@ const Header = ({ searchQuery, setSearchQuery }) => {
       // Fallback: scroll to top for 'home'
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const payments = settings?.payments || {
+    mp: { active: true, publicKey: '', accessToken: '' },
+    transfer: { active: true, alias: 'OLMO.VENTAS.MP', cbu: '0000003100045678901234', titular: 'Olmo S.R.L.', banco: 'Banco Macro' },
+    cash: { active: true, instructions: 'Retiro en showroom o coordinando contra entrega en efectivo.' },
+    posnet: { active: true },
+    modo: { active: false },
+    gocuotas: { active: false }
   };
 
   const [isProcessingMP, setIsProcessingMP] = useState(false);
@@ -39,7 +64,11 @@ const Header = ({ searchQuery, setSearchQuery }) => {
       
       if (response.ok && data.init_point) {
         // Register the sale in the database before redirecting
-        await registerSale(cart);
+        await registerSale(cart, {
+          method: 'Mercado Pago',
+          source: 'Tienda Online',
+          status: 'Pendiente'
+        });
         clearCart();
         setIsCartOpen(false);
         // Redirect the user to Mercado Pago official checkout
@@ -55,14 +84,69 @@ const Header = ({ searchQuery, setSearchQuery }) => {
     }
   };
 
-  const handleWhatsApp = async () => {
-    const itemsList = cart.map(i => `• ${i.name} (${i.size}) x${i.quantity} = $${(i.price * i.quantity).toLocaleString()}`).join('%0A');
-    const msg = `Hola! Quiero hacer un pedido:%0A${itemsList}%0A%0ATOTAL: $${cartTotal.toLocaleString()}%0A%0APago: Efectivo / Transferencia`;
-    const phone = '543434559599';
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-    await registerSale(cart);
-    clearCart();
-    setIsCartOpen(false);
+  const handleCheckout = async () => {
+    if (paymentMethod === 'mp') {
+      await handleMercadoPago();
+    } else {
+      let methodLabel = '';
+      let additionalInfo = '';
+      
+      switch (paymentMethod) {
+        case 'transfer':
+          methodLabel = 'Transferencia Bancaria';
+          additionalInfo = `%0ADatos del Pago:%0A• CBU: ${payments.transfer?.cbu || ''}%0A• Alias: ${payments.transfer?.alias || ''}%0A• Titular: ${payments.transfer?.titular || ''}%0A• Banco: ${payments.transfer?.banco || ''}`;
+          break;
+        case 'cash':
+          methodLabel = 'Efectivo';
+          break;
+        case 'modo':
+          methodLabel = 'MODO';
+          break;
+        case 'gocuotas':
+          methodLabel = 'Go Cuotas';
+          break;
+        default:
+          methodLabel = 'WhatsApp';
+      }
+
+      const itemsList = cart.map(i => `• ${i.name} (${i.size}) x${i.quantity} = $${(i.price * i.quantity).toLocaleString()}`).join('%0A');
+      const msg = `Hola! Quiero hacer un pedido:%0A${itemsList}%0A%0ATOTAL: $${cartTotal.toLocaleString()}%0A%0AMedio de Pago: ${methodLabel}${additionalInfo}`;
+      const phone = settings.contact?.whatsapp || '543434559599';
+      
+      window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+      
+      await registerSale(cart, {
+        method: methodLabel,
+        source: 'Tienda Online',
+        status: 'Pendiente'
+      });
+      
+      clearCart();
+      setIsCartOpen(false);
+    }
+  };
+
+  const getButtonBg = () => {
+    switch (paymentMethod) {
+      case 'mp': return '#009ee3';
+      case 'transfer': return '#10b981';
+      case 'cash': return '#f59e0b';
+      case 'modo': return '#ff003c';
+      case 'gocuotas': return '#4ade80';
+      default: return '#25d366';
+    }
+  };
+
+  const getButtonText = () => {
+    if (isProcessingMP) return '⌛ PROCESANDO PAGO...';
+    switch (paymentMethod) {
+      case 'mp': return '💳 PAGAR CON MERCADO PAGO';
+      case 'transfer': return '🏦 CONFIRMAR TRANSFERENCIA';
+      case 'cash': return '💵 PEDIR EN EFECTIVO';
+      case 'modo': return '🔴 PAGAR CON MODO';
+      case 'gocuotas': return '⚡ PAGAR CON GO CUOTAS';
+      default: return '💬 PEDIR POR WHATSAPP';
+    }
   };
 
   return (
@@ -426,48 +510,111 @@ const Header = ({ searchQuery, setSearchQuery }) => {
 
                   {/* Payment method selector */}
                   <p style={{ fontSize: '10px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px', fontFamily: "'Inter', sans-serif" }}>Método de pago</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-                    <button
-                      onClick={() => setPaymentMethod('mp')}
-                      style={{
-                        padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'mp' ? '#009ee3' : '#e5e7eb'}`,
-                        background: paymentMethod === 'mp' ? '#f0f9ff' : '#fff',
-                        cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                      }}
-                    >
-                      <span style={{ fontSize: '18px' }}>💳</span>
-                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#009ee3', fontFamily: "'Inter', sans-serif" }}>Mercado Pago</span>
-                    </button>
-                    <button
-                      onClick={() => setPaymentMethod('whatsapp')}
-                      style={{
-                        padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'whatsapp' ? '#25d366' : '#e5e7eb'}`,
-                        background: paymentMethod === 'whatsapp' ? '#f0fdf4' : '#fff',
-                        cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                      }}
-                    >
-                      <span style={{ fontSize: '18px' }}>💬</span>
-                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#25d366', fontFamily: "'Inter', sans-serif" }}>WhatsApp</span>
-                    </button>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '8px', marginBottom: '16px' }}>
+                    {payments.mp?.active && (
+                      <button
+                        onClick={() => setPaymentMethod('mp')}
+                        style={{
+                          padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'mp' ? '#009ee3' : '#e5e7eb'}`,
+                          background: paymentMethod === 'mp' ? '#f0f9ff' : '#fff',
+                          cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>💳</span>
+                        <span style={{ fontSize: '10px', fontWeight: '700', color: '#009ee3', fontFamily: "'Inter', sans-serif" }}>Mercado Pago</span>
+                      </button>
+                    )}
+                    {payments.transfer?.active && (
+                      <button
+                        onClick={() => setPaymentMethod('transfer')}
+                        style={{
+                          padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'transfer' ? '#10b981' : '#e5e7eb'}`,
+                          background: paymentMethod === 'transfer' ? '#f0fdf4' : '#fff',
+                          cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>🏦</span>
+                        <span style={{ fontSize: '10px', fontWeight: '700', color: '#10b981', fontFamily: "'Inter', sans-serif" }}>Transferencia</span>
+                      </button>
+                    )}
+                    {payments.cash?.active && (
+                      <button
+                        onClick={() => setPaymentMethod('cash')}
+                        style={{
+                          padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'cash' ? '#f59e0b' : '#e5e7eb'}`,
+                          background: paymentMethod === 'cash' ? '#fffbeb' : '#fff',
+                          cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>💵</span>
+                        <span style={{ fontSize: '10px', fontWeight: '700', color: '#f59e0b', fontFamily: "'Inter', sans-serif" }}>Efectivo</span>
+                      </button>
+                    )}
+                    {payments.modo?.active && (
+                      <button
+                        onClick={() => setPaymentMethod('modo')}
+                        style={{
+                          padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'modo' ? '#ff003c' : '#e5e7eb'}`,
+                          background: paymentMethod === 'modo' ? '#fff1f2' : '#fff',
+                          cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>🔴</span>
+                        <span style={{ fontSize: '10px', fontWeight: '700', color: '#ff003c', fontFamily: "'Inter', sans-serif" }}>MODO</span>
+                      </button>
+                    )}
+                    {payments.gocuotas?.active && (
+                      <button
+                        onClick={() => setPaymentMethod('gocuotas')}
+                        style={{
+                          padding: '12px 8px', borderRadius: '8px', border: `2px solid ${paymentMethod === 'gocuotas' ? '#4ade80' : '#e5e7eb'}`,
+                          background: paymentMethod === 'gocuotas' ? '#f0fdf4' : '#fff',
+                          cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>⚡</span>
+                        <span style={{ fontSize: '10px', fontWeight: '700', color: '#15803d', fontFamily: "'Inter', sans-serif" }}>Go Cuotas</span>
+                      </button>
+                    )}
                   </div>
 
                   {paymentMethod === 'mp' && (
                     <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif", marginBottom: '12px', textAlign: 'center' }}>
-                      Te vamos a contactar por WhatsApp para enviarte el link de pago de Mercado Pago.
+                      Te vamos a contactar por WhatsApp para enviarte el link de pago de Mercado Pago o coordinarlo.
                     </p>
                   )}
-                  {paymentMethod === 'whatsapp' && (
+                  {paymentMethod === 'transfer' && (
+                    <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px', fontSize: '11px', color: '#334155' }}>
+                      <p style={{ fontWeight: '700', margin: '0 0 6px 0', textTransform: 'uppercase', fontSize: '10px', color: '#10b981' }}>Datos bancarios para transferencia:</p>
+                      <p style={{ margin: '2px 0' }}><strong>Banco:</strong> {payments.transfer?.banco || 'Banco Macro'}</p>
+                      <p style={{ margin: '2px 0' }}><strong>Titular:</strong> {payments.transfer?.titular || 'Olmo S.R.L.'}</p>
+                      <p style={{ margin: '2px 0' }}><strong>CBU:</strong> {payments.transfer?.cbu || '0000003100045678901234'}</p>
+                      <p style={{ margin: '2px 0' }}><strong>Alias:</strong> {payments.transfer?.alias || 'OLMO.VENTAS.MP'}</p>
+                      <p style={{ marginTop: '6px', fontSize: '9.5px', color: '#64748b', fontStyle: 'italic' }}>Enviá el comprobante de transferencia al finalizar por WhatsApp.</p>
+                    </div>
+                  )}
+                  {paymentMethod === 'cash' && (
                     <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif", marginBottom: '12px', textAlign: 'center' }}>
-                      Coordinamos el pago por transferencia o efectivo vía WhatsApp.
+                      {payments.cash?.instructions || 'Retiro en showroom o coordinando contra entrega en efectivo.'}
+                    </p>
+                  )}
+                  {paymentMethod === 'modo' && (
+                    <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif", marginBottom: '12px', textAlign: 'center' }}>
+                      Pagar de forma rápida y segura con tu billetera M Modo. Te enviaremos el link/QR por WhatsApp.
+                    </p>
+                  )}
+                  {paymentMethod === 'gocuotas' && (
+                    <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif", marginBottom: '12px', textAlign: 'center' }}>
+                      Pagá en cuotas con tu tarjeta de débito a través de Go Cuotas.
                     </p>
                   )}
 
                   <button
-                    onClick={paymentMethod === 'mp' ? handleMercadoPago : handleWhatsApp}
+                    onClick={handleCheckout}
                     disabled={isProcessingMP}
                     style={{
                       width: '100%',
-                      background: paymentMethod === 'mp' ? '#009ee3' : '#25d366',
+                      background: getButtonBg(),
                       color: '#ffffff',
                       border: 'none',
                       padding: '16px',
@@ -485,9 +632,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                       opacity: isProcessingMP ? 0.7 : 1
                     }}
                   >
-                    {paymentMethod === 'mp' 
-                      ? (isProcessingMP ? '⌛ PROCESANDO PAGO...' : '💳 PAGAR CON MERCADO PAGO') 
-                      : '💬 PEDIR POR WHATSAPP'}
+                    {getButtonText()}
                   </button>
                 </div>
               )}

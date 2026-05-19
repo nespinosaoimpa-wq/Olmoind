@@ -266,6 +266,26 @@ const ProductGrid = ({ searchQuery = '' }) => {
     const categories = ['Todos', ...savedCategories];
     const contact = settings.contact || {};
 
+    const payments = settings?.payments || {
+        mp: { active: true },
+        transfer: { active: true },
+        cash: { active: true },
+        posnet: { active: true },
+        modo: { active: false },
+        gocuotas: { active: false }
+    };
+
+    const activePaymentBadges = [];
+    if (payments.mp?.active) activePaymentBadges.push('💳 Mercado Pago');
+    if (payments.transfer?.active) activePaymentBadges.push('🏦 Transferencia');
+    if (payments.cash?.active) activePaymentBadges.push('💵 Efectivo');
+    if (payments.posnet?.active) activePaymentBadges.push('🔲 Posnet / Tarjeta');
+    if (payments.modo?.active) activePaymentBadges.push('🔴 MODO');
+    if (payments.gocuotas?.active) activePaymentBadges.push('⚡ Go Cuotas');
+    if (activePaymentBadges.length === 0) {
+        activePaymentBadges.push('💬 Coordinar pago');
+    }
+
     // Filter: category + search query, then sort by best selling (sales_count)
     const filteredStock = stock
         .filter(p => activeCategory === 'Todos' || p.category === activeCategory)
@@ -474,7 +494,7 @@ const ProductGrid = ({ searchQuery = '' }) => {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '16px', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', fontWeight: '700', color: '#1A1A1A', minWidth: '120px' }}>Medios de pago</span>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                            {['💳 Visa', '💳 Mastercard', '💳 Mercado Pago', '🏦 Transferencia'].map(m => (
+                            {activePaymentBadges.map(m => (
                                 <span key={m} style={{ fontSize: '11px', color: '#6b7280', background: '#ffffff', border: '1px solid #e5e7eb', padding: '4px 10px', borderRadius: '4px', fontWeight: '500' }}>{m}</span>
                             ))}
                         </div>

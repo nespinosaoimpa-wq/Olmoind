@@ -7,6 +7,14 @@ const DEFAULTS = {
     hero: { title: 'OLMO', subtitle: 'INDUMENTARIA', cta: 'Ver Colección', bgColor: '' },
     banners: [],
     categories: ['Remeras', 'Pantalones', 'Sudaderas', 'Accesorios'],
+    payments: {
+        mp: { active: true, publicKey: '', accessToken: '' },
+        transfer: { active: true, alias: 'OLMO.VENTAS.MP', cbu: '0000003100045678901234', titular: 'Olmo S.R.L.', banco: 'Banco Macro' },
+        cash: { active: true, instructions: 'Retiro en showroom o coordinando contra entrega en efectivo.' },
+        posnet: { active: true },
+        modo: { active: false, clientId: '', clientSecret: '', apiKey: '' },
+        gocuotas: { active: false, apiKey: '', email: '' }
+    }
 };
 
 export const useSettingsStore = create((set, get) => ({
