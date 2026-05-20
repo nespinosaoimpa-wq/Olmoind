@@ -394,7 +394,10 @@ const PosModule = () => {
 
         const colorName = selectedColor ? selectedColor.name : '';
         const key = `${product.id}-${size}-${colorName}`;
-        const stock_for_size = (product.variants || {})[size] || 0;
+        
+        // Use colorKey stock if color exists, otherwise fallback to size stock
+        const colorKey = colorName ? `${size}-${colorName}` : size;
+        const stock_for_size = (product.variants || {})[colorKey] ?? (product.variants || {})[size] ?? 0;
 
         setCart(prev => {
             const existing = prev.find(i => i.key === key);
@@ -785,8 +788,12 @@ const PosModule = () => {
                 {/* Product Grid */}
                 <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', alignContent: 'start' }}>
                     {filteredProducts.map(product => {
-                        const totalStock = Object.values(product.variants || {}).reduce((a, b) => a + b, 0);
-                        const sizes = Object.entries(product.variants || {}).filter(([, qty]) => qty > 0);
+                        const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+                        const totalStock = Object.entries(product.variants || {})
+                            .filter(([key]) => SIZES.includes(key))
+                            .reduce((acc, [, qty]) => acc + qty, 0);
+                        const sizes = Object.entries(product.variants || {})
+                            .filter(([key, qty]) => SIZES.includes(key) && qty > 0);
                         return (
                             <div key={product.id} style={{
                                 background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '10px',
@@ -1594,28 +1601,34 @@ const PosModule = () => {
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '24px' }}>
                             {colorSelectionPending.product.colors?.map((col, idx) => {
                                 const isLight = col.hex === '#FFFFFF' || col.hex === '#ffffff' || col.hex === '#F5F0E1' || col.hex === '#f5f0e1';
+                                const size = colorSelectionPending.size;
+                                const colorStock = (colorSelectionPending.product.variants || {})[`${size}-${col.name}`] ?? 0;
+                                const isOutOfStock = colorStock <= 0;
                                 return (
                                     <button
                                         key={idx}
                                         onClick={() => {
-                                            addToCart(colorSelectionPending.product, colorSelectionPending.size, col);
+                                            if (isOutOfStock) return;
+                                            addToCart(colorSelectionPending.product, size, col);
                                             setColorSelectionPending(null);
                                         }}
+                                        disabled={isOutOfStock}
                                         style={{
                                             width: '44px', height: '44px', borderRadius: '50%', background: col.hex,
                                             border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(0,0,0,0.15)',
-                                            cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                            cursor: isOutOfStock ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
                                             justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', transition: 'transform 0.2s',
+                                            opacity: isOutOfStock ? 0.35 : 1,
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                                        title={col.name}
+                                        onMouseEnter={e => { if (!isOutOfStock) e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                        onMouseLeave={e => { if (!isOutOfStock) e.currentTarget.style.transform = 'scale(1)'; }}
+                                        title={`${col.name} - Stock: ${colorStock}`}
                                     >
                                         <span style={{ 
                                             fontSize: '8px', color: isLight ? '#000' : '#fff', fontWeight: '700', marginTop: '2px',
                                             background: isLight ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.4)', padding: '1px 3px',
                                             borderRadius: '3px', maxWidth: '38px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                                        }}>{col.name}</span>
+                                        }}>{col.name} ({colorStock})</span>
                                     </button>
                                 );
                             })}

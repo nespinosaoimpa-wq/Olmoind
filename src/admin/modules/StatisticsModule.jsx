@@ -114,8 +114,11 @@ const StatisticsModule = () => {
     const topProducts = Object.values(productSales).sort((a, b) => b.units - a.units).slice(0, 5);
 
     // Low stock
+    const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
     const lowStock = products.filter(p => {
-        const total = Object.values(p.variants || {}).reduce((a, b) => a + b, 0);
+        const total = Object.entries(p.variants || {})
+            .filter(([key]) => SIZES.includes(key))
+            .reduce((a, [, b]) => a + b, 0);
         return total < 10;
     });
 
@@ -190,7 +193,9 @@ const StatisticsModule = () => {
                     </h3>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {lowStock.map(p => {
-                            const total = Object.values(p.variants || {}).reduce((a, b) => a + b, 0);
+                            const total = Object.entries(p.variants || {})
+                                .filter(([key]) => SIZES.includes(key))
+                                .reduce((a, [, b]) => a + b, 0);
                             return (
                                 <span key={p.id} style={{ fontSize: '12px', fontWeight: '700', background: '#fef3c7', color: '#92400e', padding: '4px 12px', borderRadius: '9999px', border: '1px solid #fde68a' }}>
                                     {p.name} ({total} u.)

@@ -7,7 +7,10 @@ import { useSettingsStore } from '../store/useSettingsStore';
 
 // ── Product Card (Clean style matching reference) ─────────────────────────────
 const ProductCard = ({ product, onOpen }) => {
-    const totalStock = Object.values(product.variants || {}).reduce((a, b) => a + b, 0);
+    const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+    const totalStock = Object.entries(product.variants || {})
+        .filter(([key]) => SIZES.includes(key))
+        .reduce((acc, [, qty]) => acc + qty, 0);
     const [hovered, setHovered] = useState(false);
 
     return (
@@ -111,6 +114,12 @@ const ProductModal = ({ product, onClose }) => {
     const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
     const getStockForSize = (size) => (product.variants || {})[size] || 0;
+
+    const getStockForColorSize = (size, colorName) => {
+        const vars = product.variants || {};
+        const key = `${size}-${colorName}`;
+        return vars[key] ?? vars[size] ?? 0;
+    };
     
     // Safety check for images array
     const images = Array.isArray(product.images) && product.images.length > 0 
@@ -118,7 +127,20 @@ const ProductModal = ({ product, onClose }) => {
         : (product.image ? [product.image] : ['/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg']);
 
     const hasColors = Array.isArray(product.colors) && product.colors.length > 0;
-    const isAddDisabled = !selectedSize || (hasColors && !selectedColor);
+
+    const handleSizeSelect = (size) => {
+        setSelectedSize(size);
+        if (selectedColor) {
+            const stock = getStockForColorSize(size, selectedColor.name);
+            if (stock <= 0) {
+                setSelectedColor(null);
+            }
+        }
+    };
+
+    const isAddDisabled = !selectedSize || 
+        (hasColors && !selectedColor) || 
+        (selectedSize && hasColors && selectedColor && getStockForColorSize(selectedSize, selectedColor.name) <= 0);
 
     return (
         <motion.div
@@ -229,7 +251,7 @@ const ProductModal = ({ product, onClose }) => {
                             <button
                                 key={size}
                                 disabled={isOut}
-                                onClick={() => setSelectedSize(size)}
+                                onClick={() => handleSizeSelect(size)}
                                 style={{
                                     width: '48px', height: '48px',
                                     border: `1px solid ${isSelected ? '#1A1A1A' : '#e5e7eb'}`,
@@ -259,9 +281,12 @@ const ProductModal = ({ product, onClose }) => {
                             {product.colors.map((col, idx) => {
                                 const isSelected = selectedColor?.name === col.name;
                                 const isLight = col.hex === '#FFFFFF' || col.hex === '#ffffff' || col.hex === '#F5F0E1' || col.hex === '#f5f0e1';
+                                const colorStock = selectedSize ? getStockForColorSize(selectedSize, col.name) : 0;
+                                const isColorOut = selectedSize ? colorStock <= 0 : false;
                                 return (
                                     <button
                                         key={idx}
+                                        disabled={isColorOut}
                                         onClick={() => setSelectedColor(col)}
                                         style={{
                                             width: '32px',
@@ -271,7 +296,7 @@ const ProductModal = ({ product, onClose }) => {
                                             border: isSelected 
                                                 ? '2px solid #1A1A1A' 
                                                 : (isLight ? '1px solid #cbd5e1' : '1px solid rgba(0,0,0,0.15)'),
-                                            cursor: 'pointer',
+                                            cursor: isColorOut ? 'not-allowed' : 'pointer',
                                             position: 'relative',
                                             padding: 0,
                                             boxShadow: isSelected ? '0 0 0 2px #ffffff, 0 0 0 4px #1a1a1a' : 'none',
@@ -280,8 +305,9 @@ const ProductModal = ({ product, onClose }) => {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
+                                            opacity: isColorOut ? 0.3 : 1,
                                         }}
-                                        title={col.name}
+                                        title={isColorOut ? `${col.name} (Sin Stock)` : col.name}
                                     >
                                         {isSelected && (
                                             <span style={{ 
@@ -334,7 +360,9 @@ const ProductModal = ({ product, onClose }) => {
                         ? 'SELECCIONÁ UN TALLE' 
                         : (hasColors && !selectedColor 
                             ? 'SELECCIONÁ UN COLOR' 
-                            : 'AGREGAR AL CARRITO')}
+                            : (selectedSize && hasColors && selectedColor && getStockForColorSize(selectedSize, selectedColor.name) <= 0
+                                ? 'SIN STOCK EN ESTA COMBINACIÓN'
+                                : 'AGREGAR AL CARRITO'))}
                 </button>
             </motion.div>
         </motion.div>

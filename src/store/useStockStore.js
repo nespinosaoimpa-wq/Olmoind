@@ -58,16 +58,23 @@ export const useStockStore = create((set, get) => ({
                     .single();
 
                 if (product) {
-                    const currentVariants = product.variants;
-                    const newStock = (currentVariants[item.size] || 0) - item.quantity;
+                    const currentVariants = { ...product.variants };
+                    const hasColorStock = item.color && currentVariants[`${item.size}-${item.color}`] !== undefined;
 
-                    if (newStock < 0) throw new Error(`Not enough stock for ${item.name}`);
+                    if (hasColorStock) {
+                        const newColorStock = (currentVariants[`${item.size}-${item.color}`] || 0) - item.quantity;
+                        if (newColorStock < 0) throw new Error(`Sin stock para ${item.name} (${item.size} - ${item.color})`);
+                        currentVariants[`${item.size}-${item.color}`] = newColorStock;
+                    }
 
-                    const newVariants = { ...currentVariants, [item.size]: newStock };
+                    // Deduct from total size stock
+                    const newSizeStock = (currentVariants[item.size] || 0) - item.quantity;
+                    if (newSizeStock < 0) throw new Error(`Sin stock suficiente para ${item.name} (Talle ${item.size})`);
+                    currentVariants[item.size] = newSizeStock;
 
                     await supabase
                         .from('products')
-                        .update({ variants: newVariants })
+                        .update({ variants: currentVariants })
                         .eq('id', item.id);
                 }
             }

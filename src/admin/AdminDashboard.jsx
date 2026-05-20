@@ -256,7 +256,10 @@ const AdminDashboard = ({ onBack }) => {
     const totalItemsSold = (localSales || []).reduce((acc, s) => acc + (s.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0), 0);
     const lowStockCount = (stock || []).filter(item => {
         if (!item || !item.variants) return false;
-        return Object.values(item.variants).reduce((a, b) => (a || 0) + (b || 0), 0) < 10;
+        const total = Object.entries(item.variants)
+            .filter(([size]) => SIZES.includes(size))
+            .reduce((a, b) => (a || 0) + (b[1] || 0), 0);
+        return total < 10;
     }).length;
 
     useEffect(() => {
@@ -1739,8 +1742,11 @@ const AdminDashboard = ({ onBack }) => {
                                                 {/* Variants */}
                                                 <td style={{ padding: '16px 12px' }}>
                                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                                        {Object.entries(item.variants || {}).map(([size, count]) => {
-                                                            const isZero = count === 0;
+                                                        {Object.entries(item.variants || {})
+                                                            .filter(([size]) => SIZES.includes(size))
+                                                            .sort((a, b) => SIZES.indexOf(a[0]) - SIZES.indexOf(b[0]))
+                                                            .map(([size, count]) => {
+                                                                const isZero = count === 0;
                                                             return (
                                                                 <div key={size} style={{
                                                                     display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -2441,7 +2447,22 @@ const AdminDashboard = ({ onBack }) => {
                                                     <span style={{ fontSize: '11px', fontWeight: '600', color: colors.text }}>{col.name}</span>
                                                     <button
                                                         type="button"
-                                                        onClick={() => setFormData(prev => ({ ...prev, colors: prev.colors.filter(item => item.name !== col.name) }))}
+                                                        onClick={() => {
+                                                            const nextColors = formData.colors.filter(item => item.name !== col.name);
+                                                            const nextVariants = { ...formData.variants };
+                                                            // Delete specific color keys and re-calculate sizes
+                                                            SIZES.forEach(size => {
+                                                                const key = `${size}-${col.name}`;
+                                                                delete nextVariants[key];
+                                                                // Recalculate size total from remaining colors
+                                                                if (nextColors.length > 0) {
+                                                                    nextVariants[size] = nextColors.reduce((acc, c) => acc + (nextVariants[`${size}-${c.name}`] || 0), 0);
+                                                                } else {
+                                                                    nextVariants[size] = 0;
+                                                                }
+                                                            });
+                                                            setFormData({ ...formData, colors: nextColors, variants: nextVariants });
+                                                        }}
                                                         style={{ background: 'none', border: 'none', padding: 0, color: colors.textSecondary, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                                                     >
                                                         <X size={10} />
@@ -2455,20 +2476,63 @@ const AdminDashboard = ({ onBack }) => {
 
                             {/* Stock by size */}
                             <div>
-                                <label style={labelStyle}>Stock por Talle</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
-                                    {SIZES.map(size => (
-                                        <div key={size} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '10px', fontWeight: '800', color: colors.textSecondary }}>{size}</span>
-                                            <input
-                                                type="number"
-                                                value={formData.variants[size]}
-                                                onChange={e => setFormData({ ...formData, variants: { ...formData.variants, [size]: parseInt(e.target.value) || 0 } })}
-                                                style={{ ...inputStyle, textAlign: 'center', padding: '8px 4px', fontSize: '14px', fontWeight: '700' }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                <label style={labelStyle}>Stock por Talle {formData.colors?.length > 0 ? 'y Color' : ''}</label>
+                                {formData.colors?.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: `1px solid ${colors.border}` }}>
+                                        {SIZES.map(size => (
+                                            <div key={size} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${colors.border}`, paddingBottom: '8px', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '12px', fontWeight: '800', color: colors.primary, minWidth: '55px' }}>Talle {size}</span>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'flex-end', flex: 1, alignItems: 'center' }}>
+                                                    {formData.colors.map(col => {
+                                                        const colorKey = `${size}-${col.name}`;
+                                                        const colorValue = formData.variants[colorKey] || 0;
+                                                        return (
+                                                            <div key={col.name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.hex, border: col.hex === '#ffffff' ? '1px solid #94a3b8' : 'none' }}></span>
+                                                                <span style={{ fontSize: '11px', fontWeight: '600', color: colors.textSecondary }}>{col.name}:</span>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={colorValue}
+                                                                    onChange={e => {
+                                                                        const val = Math.max(0, parseInt(e.target.value) || 0);
+                                                                        const nextVariants = { ...formData.variants, [colorKey]: val };
+                                                                        // Calculate the sum of all colors for this size
+                                                                        const totalForSize = formData.colors.reduce((acc, c) => {
+                                                                            const k = `${size}-${c.name}`;
+                                                                            return acc + (k === colorKey ? val : (nextVariants[k] || 0));
+                                                                        }, 0);
+                                                                        nextVariants[size] = totalForSize;
+                                                                        setFormData({ ...formData, variants: nextVariants });
+                                                                    }}
+                                                                    style={{ ...inputStyle, width: '45px', textAlign: 'center', padding: '4px', fontSize: '12px', fontWeight: '700', marginBottom: 0 }}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px', paddingLeft: '8px', borderLeft: `1px solid ${colors.border}` }}>
+                                                        <span style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary }}>Total:</span>
+                                                        <span style={{ fontSize: '12px', fontWeight: '800', color: colors.text }}>{formData.variants[size] || 0}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+                                        {SIZES.map(size => (
+                                            <div key={size} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '10px', fontWeight: '800', color: colors.textSecondary }}>{size}</span>
+                                                <input
+                                                    type="number"
+                                                    value={formData.variants[size]}
+                                                    onChange={e => setFormData({ ...formData, variants: { ...formData.variants, [size]: parseInt(e.target.value) || 0 } })}
+                                                    style={{ ...inputStyle, textAlign: 'center', padding: '8px 4px', fontSize: '14px', fontWeight: '700' }}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Modal Save Button */}
