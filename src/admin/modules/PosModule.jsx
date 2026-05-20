@@ -483,11 +483,11 @@ const PosModule = () => {
             setLastSale(saleData);
             setSaleComplete(true);
 
+            // Refresh caja list first (await to avoid network callback interrupt by print dialog)
+            await fetchDailyCaja();
+
             // Auto-trigger printing the non-fiscal ticket
             printTicket(saleData);
-            
-            // Refresh caja list
-            fetchDailyCaja();
         } catch (e) {
             alert('Error al registrar la venta: ' + e.message);
         } finally {
@@ -516,6 +516,10 @@ const PosModule = () => {
             setDailySales(data || []);
         } catch (e) {
             console.error('Error fetching sales history:', e);
+            if (e.message && e.message.includes('callback is no longer runnable')) {
+                // Ignore chromium paused state warning from print dialog
+                return;
+            }
             alert('Error al cargar el historial de ventas: ' + e.message);
         } finally {
             setCajaLoading(false);
