@@ -390,7 +390,7 @@ const AdminDashboard = ({ onBack }) => {
                 };
                 let { error } = await supabase.from('products').update(updateData).eq('id', editingItem.id);
 
-                if (error && (error.message?.includes("column 'colors' of relation 'products'") || error.message?.includes('column "colors"'))) {
+                if (error && (error.message?.toLowerCase().includes('colors') || error.message?.includes("column 'colors' of relation 'products'") || error.message?.includes('column "colors"'))) {
                     console.warn('Colors column missing in products, retrying update without it...');
                     delete updateData.colors;
                     const retry = await supabase.from('products').update(updateData).eq('id', editingItem.id);
@@ -405,7 +405,7 @@ const AdminDashboard = ({ onBack }) => {
                 try {
                     await addProduct(formData);
                 } catch (err) {
-                    if (err.message?.includes("column 'colors' of relation 'products'") || err.message?.includes('column "colors"')) {
+                    if (err.message?.toLowerCase().includes('colors') || err.message?.includes("column 'colors' of relation 'products'") || err.message?.includes('column "colors"')) {
                         console.warn('Colors column missing in products, retrying insert without it...');
                         const { colors: _, ...formDataWithoutColors } = formData;
                         await addProduct(formDataWithoutColors);
