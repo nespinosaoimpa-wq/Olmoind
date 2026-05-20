@@ -87,7 +87,8 @@ export const useStockStore = create((set, get) => ({
                 source: paymentData.source || 'Punto de Venta',
                 ticket_number: ticketNumber,
                 paymentNotes: paymentData.notes || '',
-                amountTendered: paymentData.amountTendered || ''
+                amountTendered: paymentData.amountTendered || '',
+                creditPlan: paymentData.creditPlan || null
             };
 
             try {

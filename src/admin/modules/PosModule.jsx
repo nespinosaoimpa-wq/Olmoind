@@ -28,6 +28,13 @@ const PosModule = () => {
     const [showCheckout, setShowCheckout] = useState(false);
     const [amountTendered, setAmountTendered] = useState('');
     const [paymentNotes, setPaymentNotes] = useState('');
+    
+    // House credit states
+    const [creditEntrega, setCreditEntrega] = useState('0');
+    const [creditInteres, setCreditInteres] = useState('0');
+    const [creditFrecuencia, setCreditFrecuencia] = useState('Libre');
+    const [creditProximoPago, setCreditProximoPago] = useState('');
+
     const [lastSale, setLastSale] = useState(null);
 
     const generateTicketNumber = () => {
@@ -49,10 +56,14 @@ const PosModule = () => {
 
         const itemsHtml = sale.items.map(item => `
             <tr>
-                <td style="padding:4px 0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}${item.color ? ` <span style="color:#888;">(${item.color})</span>` : ''}</td>
-                <td style="padding:4px 4px;text-align:center;">${item.size}</td>
-                <td style="padding:4px 4px;text-align:center;">x${item.quantity}</td>
-                <td style="padding:4px 0;text-align:right;white-space:nowrap;">$${(item.price * item.quantity).toLocaleString('es-AR')}</td>
+                <td style="padding: 6px 0; vertical-align: top; font-weight: bold; width: 30px; font-family: 'Courier New', monospace; font-size: 11px;">${item.quantity}</td>
+                <td style="padding: 6px 0; vertical-align: top; font-family: 'Courier New', monospace; font-size: 11px;">
+                    ${item.name}
+                    ${(item.size || item.color) ? `<div style="font-size: 9px; color: #555; font-family: sans-serif; margin-top: 2px;">&nbsp;&nbsp;&nbsp;- Talle ${item.size || 'N/A'}${item.color ? ` / ${item.color}` : ''}</div>` : ''}
+                </td>
+                <td style="padding: 6px 0; text-align: right; vertical-align: top; font-weight: bold; white-space: nowrap; font-family: 'Courier New', monospace; font-size: 11px;">
+                    $${(item.price * item.quantity).toLocaleString('es-AR')}
+                </td>
             </tr>
         `).join('');
 
@@ -61,7 +72,22 @@ const PosModule = () => {
             const vuelto = parseFloat(sale.amountTendered) - sale.total;
             paymentDetailHtml = `
                 <div class="pay-row"><span>PAGÓ CON:</span><span>$${parseFloat(sale.amountTendered).toLocaleString('es-AR')}</span></div>
-                <div class="pay-row" style="font-size:13px;font-weight:900;"><span>VUELTO:</span><span>$${vuelto >= 0 ? vuelto.toLocaleString('es-AR') : '0'}</span></div>
+                <div class="pay-row" style="font-size:12px;font-weight:900;"><span>VUELTO:</span><span>$${vuelto >= 0 ? vuelto.toLocaleString('es-AR') : '0'}</span></div>
+            `;
+        } else if (sale.paymentMethod === 'Crédito de la casa' && sale.creditPlan) {
+            const plan = sale.creditPlan;
+            paymentDetailHtml = `
+                <div style="margin-top: 10px; padding: 10px; border: 1px dashed #000; border-radius: 6px; background: #fafafa; font-size: 10px; line-height: 1.6;">
+                    <div style="font-weight: bold; text-align: center; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #000; padding-bottom: 4px; letter-spacing: 0.5px;">Planificación de Crédito</div>
+                    <div class="pay-row"><span>ENTREGA INICIAL:</span><span>$${parseFloat(plan.entrega || 0).toLocaleString('es-AR')}</span></div>
+                    <div class="pay-row"><span>% INTERÉS:</span><span>${plan.interes || 0}%</span></div>
+                    <div class="pay-row"><span>FRECUENCIA:</span><span>${plan.frecuencia}</span></div>
+                    ${plan.proximoPago ? `<div class="pay-row"><span>PRÓXIMO PAGO:</span><span>${new Date(plan.proximoPago + 'T00:00:00').toLocaleDateString('es-AR')}</span></div>` : ''}
+                    <div class="pay-row" style="font-weight: bold; font-size: 11px; margin-top: 4px; border-top: 1px dashed #000; padding-top: 4px; color: #000;">
+                        <span>SALDO A DEBER:</span>
+                        <span>$${parseFloat(plan.saldo || 0).toLocaleString('es-AR')}</span>
+                    </div>
+                </div>
             `;
         }
 
@@ -87,12 +113,12 @@ const PosModule = () => {
                     }
                     .thick-sep {
                         border: none;
-                        border-top: 2px solid #000;
+                        border-top: 1px solid #000;
                         margin: 10px 0;
                     }
                     .thin-sep {
                         border: none;
-                        border-top: 1px dashed #999;
+                        border-top: 1px dashed #000;
                         margin: 8px 0;
                     }
                     .header {
@@ -100,49 +126,25 @@ const PosModule = () => {
                         padding: 8px 0 4px;
                     }
                     .logo-text {
-                        font-size: 28px;
+                        font-size: 26px;
                         font-weight: 900;
-                        letter-spacing: 10px;
+                        letter-spacing: 6px;
                         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
                         margin-bottom: 2px;
                     }
                     .logo-sub {
                         font-size: 9px;
                         font-weight: 600;
-                        letter-spacing: 6px;
+                        letter-spacing: 4px;
                         text-transform: uppercase;
                         color: #333;
                     }
                     .store-info {
                         text-align: center;
                         font-size: 10px;
-                        color: #444;
+                        color: #333;
                         line-height: 1.5;
                         margin: 6px 0;
-                    }
-                    .ticket-meta {
-                        background: #f5f5f5;
-                        border: 1px solid #ddd;
-                        border-radius: 4px;
-                        padding: 8px 10px;
-                        margin: 8px 0;
-                        font-size: 10px;
-                    }
-                    .ticket-meta .ticket-label {
-                        font-size: 8px;
-                        font-weight: 700;
-                        letter-spacing: 2px;
-                        text-transform: uppercase;
-                        color: #888;
-                        text-align: center;
-                        margin-bottom: 4px;
-                    }
-                    .ticket-meta .ticket-id {
-                        font-size: 12px;
-                        font-weight: 800;
-                        text-align: center;
-                        font-family: 'Courier New', monospace;
-                        letter-spacing: 1px;
                     }
                     .meta-row {
                         display: flex;
@@ -150,7 +152,7 @@ const PosModule = () => {
                         font-size: 10px;
                         margin-top: 4px;
                     }
-                    .meta-row span:first-child { color: #666; font-weight: 600; }
+                    .meta-row span:first-child { color: #555; font-weight: 700; }
                     .items-table {
                         width: 100%;
                         border-collapse: collapse;
@@ -161,49 +163,36 @@ const PosModule = () => {
                         font-weight: 800;
                         text-transform: uppercase;
                         letter-spacing: 0.5px;
-                        color: #555;
-                        border-bottom: 1px solid #ccc;
-                        padding: 4px 0;
-                        text-align: left;
+                        color: #000;
+                        border-bottom: 1px solid #000;
+                        padding: 6px 0;
                     }
                     .items-table td {
-                        font-size: 11px;
-                        font-family: 'Courier New', monospace;
                         vertical-align: top;
                     }
                     .total-box {
-                        background: #000;
-                        color: #fff;
-                        padding: 10px 12px;
-                        border-radius: 4px;
-                        margin: 8px 0;
                         display: flex;
                         justify-content: space-between;
-                        align-items: center;
-                    }
-                    .total-box .total-label {
-                        font-size: 13px;
-                        font-weight: 800;
-                        letter-spacing: 2px;
-                    }
-                    .total-box .total-amount {
-                        font-size: 18px;
+                        font-size: 14px;
                         font-weight: 900;
-                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                        margin: 12px 0;
+                        border-top: 1px dashed #000;
+                        border-bottom: 1px dashed #000;
+                        padding: 8px 0;
                     }
                     .pay-section {
                         font-size: 11px;
-                        margin: 6px 0;
+                        margin: 8px 0;
                     }
                     .pay-row {
                         display: flex;
                         justify-content: space-between;
-                        padding: 2px 0;
+                        padding: 3px 0;
                     }
-                    .pay-row span:first-child { font-weight: 700; color: #333; }
+                    .pay-row span:first-child { font-weight: 700; color: #000; }
                     .non-fiscal-box {
-                        border: 2px solid #000;
-                        padding: 8px;
+                        border: 1px solid #000;
+                        padding: 6px;
                         margin: 12px 0;
                         text-align: center;
                     }
@@ -215,22 +204,22 @@ const PosModule = () => {
                     }
                     .non-fiscal-box .nf-sub {
                         font-size: 8px;
-                        color: #555;
+                        color: #333;
                         margin-top: 2px;
                     }
                     .footer {
                         text-align: center;
-                        margin-top: 12px;
+                        margin-top: 16px;
                         padding-top: 8px;
                     }
                     .footer .thanks {
-                        font-size: 12px;
+                        font-size: 11px;
                         font-weight: 700;
                         margin-bottom: 4px;
                     }
                     .footer .social {
                         font-size: 9px;
-                        color: #777;
+                        color: #444;
                         letter-spacing: 0.5px;
                     }
                     @media print {
@@ -253,23 +242,23 @@ const PosModule = () => {
                     Tel: 343-4559599<br/>
                     <strong>@olmo.ind</strong>
                 </div>
+                <hr class="thin-sep" />
 
-                <div class="ticket-meta">
-                    <div class="ticket-label">Ticket No Fiscal</div>
-                    <div class="ticket-id">${ticketNum}</div>
-                    <div class="meta-row"><span>Fecha:</span><span>${dateStr}</span></div>
-                    <div class="meta-row"><span>Sucursal:</span><span>${sale.branch || 'Central'}</span></div>
-                    <div class="meta-row"><span>Origen:</span><span>Punto de Venta</span></div>
+                <div style="font-size: 10px; line-height: 1.5; margin: 10px 0; font-family: 'Courier New', monospace;">
+                    <strong>Ticket Interno Nº:</strong> ${ticketNum}<br/>
+                    <span style="font-size: 8px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase;">Documento no válido como factura</span><br/>
+                    <strong>Fecha:</strong> ${dateStr}<br/>
+                    ${sale.paymentNotes ? `<strong>Cliente:</strong> ${sale.paymentNotes}<br/>` : ''}
+                    <strong>Sucursal:</strong> ${sale.branch || 'Central'}<br/>
                 </div>
 
                 <hr class="thin-sep" />
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th>Artículo</th>
-                            <th style="text-align:center;">Talle</th>
-                            <th style="text-align:center;">Cant</th>
-                            <th style="text-align:right;">Subt.</th>
+                            <th style="text-align:left; width: 30px;">CANT</th>
+                            <th style="text-align:left;">DESCRIPCIÓN</th>
+                            <th style="text-align:right;">IMPORTE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -279,14 +268,13 @@ const PosModule = () => {
                 <hr class="thin-sep" />
 
                 <div class="total-box">
-                    <span class="total-label">TOTAL</span>
-                    <span class="total-amount">$${sale.total.toLocaleString('es-AR')}</span>
+                    <span>TOTAL:</span>
+                    <span>$${sale.total.toLocaleString('es-AR')}</span>
                 </div>
 
                 <div class="pay-section">
-                    <div class="pay-row"><span>MÉTODO DE PAGO:</span><span>${sale.paymentMethod}</span></div>
+                    <div class="pay-row"><span>MÉTODO DE PAGO:</span><span>${sale.paymentMethod.toUpperCase()}</span></div>
                     ${paymentDetailHtml}
-                    ${sale.paymentNotes ? `<div class="pay-row" style="margin-top:4px;"><span>NOTAS:</span><span style="max-width:140px;text-align:right;">${sale.paymentNotes}</span></div>` : ''}
                 </div>
 
                 <div class="non-fiscal-box">
@@ -295,8 +283,9 @@ const PosModule = () => {
                 </div>
 
                 <div class="footer">
-                    <div class="thanks">¡Gracias por tu compra!</div>
-                    <div class="social">olmoind.vercel.app · @olmo.ind</div>
+                    <div class="thanks">¡Gracias por confiar en nosotros!</div>
+                    <div style="font-size: 8px; margin-top: 4px; color: #555;">Los cambios se aceptan dentro de los 15 días con este comprobante.</div>
+                    <div class="social" style="margin-top:8px;">olmoind.vercel.app · @olmo.ind</div>
                 </div>
 
                 <script>
@@ -324,6 +313,10 @@ const PosModule = () => {
         setQuery('');
         setAmountTendered('');
         setPaymentNotes('');
+        setCreditEntrega('0');
+        setCreditInteres('0');
+        setCreditFrecuencia('Libre');
+        setCreditProximoPago('');
         setLastSale(null);
         if (searchRef.current) searchRef.current.focus();
     };
@@ -417,6 +410,12 @@ const PosModule = () => {
 
     const total = cart.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
+    // Reactive calculations for house credit
+    const entrega = parseFloat(creditEntrega) || 0;
+    const pctInteres = parseFloat(creditInteres) || 0;
+    const saldoBase = Math.max(0, total - entrega);
+    const saldoDeber = saldoBase + (saldoBase * (pctInteres / 100));
+
     const handleSale = async () => {
         if (cart.length === 0) return;
         setProcessing(true);
@@ -427,12 +426,26 @@ const PosModule = () => {
                 finalNotes = `Pagó con: $${amountTendered} | Vuelto: $${vuelto >= 0 ? vuelto : 0}`;
             }
 
+            const isHouseCredit = paymentMethod === 'Crédito de la casa';
+            const creditPlanData = isHouseCredit ? {
+                entrega,
+                interes: pctInteres,
+                frecuencia: creditFrecuencia,
+                proximoPago: creditProximoPago,
+                saldo: saldoDeber
+            } : null;
+
+            if (isHouseCredit) {
+                finalNotes = `Crédito de la casa - Cliente: ${paymentNotes} | Entrega: $${entrega} | Interés: ${pctInteres}% | Frecuencia: ${creditFrecuencia} | Próximo pago: ${creditProximoPago || 'N/A'} | Saldo: $${saldoDeber}`;
+            }
+
             await registerSale(cart, {
                 method: paymentMethod,
                 notes: finalNotes,
                 branch: selectedBranch || 'Central',
                 source: 'Punto de Venta',
-                status: 'Completada'
+                status: 'Completada',
+                creditPlan: creditPlanData
             });
 
             const ticketNum = generateTicketNumber();
@@ -444,7 +457,8 @@ const PosModule = () => {
                 amountTendered,
                 paymentNotes,
                 finalNotes,
-                ticketNumber: ticketNum
+                ticketNumber: ticketNum,
+                creditPlan: creditPlanData
             };
 
             setLastSale(saleData);
@@ -499,7 +513,8 @@ const PosModule = () => {
             paymentMethod: sale.payment_method || meta.method || 'cash',
             amountTendered: meta.amountTendered || '',
             paymentNotes: meta.paymentNotes || sale.notes || '',
-            ticketNumber: meta.ticket_number || `OLMO-${new Date(sale.created_at).getTime()}`
+            ticketNumber: meta.ticket_number || `OLMO-${new Date(sale.created_at).getTime()}`,
+            creditPlan: meta.creditPlan || null
         };
         printTicket(saleData);
     };
@@ -830,10 +845,10 @@ const PosModule = () => {
                                     </div>
                                 )}
 
-                                {(paymentMethod === 'Mixto' || paymentMethod === 'Crédito de la casa') && (
+                                {paymentMethod === 'Mixto' && (
                                     <div style={{ marginBottom: '24px' }}>
                                         <label style={{ fontSize: '12px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
-                                            {paymentMethod === 'Mixto' ? 'Detalle del pago (Ej: 10000 efvo, resto débito)' : 'Nombre del cliente / Detalles'}
+                                            Detalle del pago (Ej: 10000 efvo, resto débito)
                                         </label>
                                         <input
                                             type="text"
@@ -846,6 +861,146 @@ const PosModule = () => {
                                                 color: colors.text, outline: 'none', fontFamily: "'Inter', sans-serif"
                                             }}
                                         />
+                                    </div>
+                                )}
+
+                                {paymentMethod === 'Crédito de la casa' && (
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ fontSize: '12px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>
+                                            Nombre del cliente
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={paymentNotes}
+                                            onChange={e => setPaymentNotes(e.target.value)}
+                                            placeholder="Ej: German / Nico / Cliente Frecuente"
+                                            style={{
+                                                width: '100%', boxSizing: 'border-box', background: '#fff', border: `1px solid ${colors.border}`,
+                                                borderRadius: '8px', padding: '12px 16px', fontSize: '14px',
+                                                color: colors.text, outline: 'none', fontFamily: "'Inter', sans-serif",
+                                                marginBottom: '16px'
+                                            }}
+                                        />
+
+                                        {/* Credit Planning Slate Container */}
+                                        <div style={{
+                                            background: '#0f172a',
+                                            border: '1px solid #1e293b',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            color: '#f8fafc',
+                                            fontFamily: "'Inter', sans-serif"
+                                        }}>
+                                            <div style={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: '8px', 
+                                                fontSize: '12px', 
+                                                fontWeight: '800', 
+                                                textTransform: 'uppercase', 
+                                                color: '#38bdf8',
+                                                letterSpacing: '0.05em',
+                                                marginBottom: '16px',
+                                                borderBottom: '1px solid #1e293b',
+                                                paddingBottom: '8px'
+                                            }}>
+                                                📅 Planificación de Crédito
+                                            </div>
+
+                                            {/* Row 1: Entrega Inicial and % Interes */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                                                        Entrega Inicial ($)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={creditEntrega}
+                                                        onChange={e => setCreditEntrega(e.target.value)}
+                                                        style={{
+                                                            width: '100%', boxSizing: 'border-box',
+                                                            background: '#1e293b', border: '1px solid #334155',
+                                                            borderRadius: '6px', padding: '10px 12px', fontSize: '14px', fontWeight: '600',
+                                                            color: '#fff', outline: 'none'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                                                        % Interés
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={creditInteres}
+                                                        onChange={e => setCreditInteres(e.target.value)}
+                                                        style={{
+                                                            width: '100%', boxSizing: 'border-box',
+                                                            background: '#1e293b', border: '1px solid #334155',
+                                                            borderRadius: '6px', padding: '10px 12px', fontSize: '14px', fontWeight: '600',
+                                                            color: '#fff', outline: 'none'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Row 2: Frecuencia and Proximo Pago */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                                                        Frecuencia
+                                                    </label>
+                                                    <select
+                                                        value={creditFrecuencia}
+                                                        onChange={e => setCreditFrecuencia(e.target.value)}
+                                                        style={{
+                                                            width: '100%', boxSizing: 'border-box',
+                                                            background: '#1e293b', border: '1px solid #334155',
+                                                            borderRadius: '6px', padding: '10px 12px', fontSize: '13px', fontWeight: '600',
+                                                            color: '#fff', outline: 'none', cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <option value="Libre">Libre</option>
+                                                        <option value="Semanal">Semanal</option>
+                                                        <option value="Quincenal">Quincenal</option>
+                                                        <option value="Mensual">Mensual</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                                                        Próximo Pago
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        value={creditProximoPago}
+                                                        onChange={e => setCreditProximoPago(e.target.value)}
+                                                        style={{
+                                                            width: '100%', boxSizing: 'border-box',
+                                                            background: '#1e293b', border: '1px solid #334155',
+                                                            borderRadius: '6px', padding: '8px 10px', fontSize: '13px', fontWeight: '600',
+                                                            color: '#fff', outline: 'none'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Saldo a Deber Display */}
+                                            <div style={{ 
+                                                textAlign: 'right', 
+                                                paddingTop: '10px', 
+                                                borderTop: '1px solid #1e293b',
+                                                display: 'flex',
+                                                justifyContent: 'flex-end',
+                                                alignItems: 'center'
+                                            }}>
+                                                <span style={{ 
+                                                    color: '#f43f5e',
+                                                    fontWeight: '800', 
+                                                    fontSize: '14px' 
+                                                }}>
+                                                    Saldo a Deber: ${saldoDeber.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -1065,6 +1220,34 @@ const PosModule = () => {
                                 <strong style={{ fontSize: '18px', color: colors.primary }}>${selectedSaleDetail.total?.toLocaleString('es-AR')}</strong>
                             </div>
                         </div>
+
+                        {selectedSaleDetail.customer_info?.creditPlan && (
+                            <div style={{ marginBottom: '24px', fontSize: '13px', background: '#f8fafc', border: `1px solid ${colors.border}`, padding: '16px', borderRadius: '8px' }}>
+                                <span style={{ color: colors.primary, display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '8px', borderBottom: `1px solid ${colors.border}`, paddingBottom: '4px' }}>Planificación de Crédito</span>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+                                    <div>
+                                        <span style={{ fontSize: '10px', color: colors.textSecondary }}>Entrega Inicial:</span><br/>
+                                        <strong>${parseFloat(selectedSaleDetail.customer_info.creditPlan.entrega || 0).toLocaleString('es-AR')}</strong>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: '10px', color: colors.textSecondary }}>Interés:</span><br/>
+                                        <strong>{selectedSaleDetail.customer_info.creditPlan.interes || 0}%</strong>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: '10px', color: colors.textSecondary }}>Frecuencia:</span><br/>
+                                        <strong>{selectedSaleDetail.customer_info.creditPlan.frecuencia}</strong>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: '10px', color: colors.textSecondary }}>Próximo Pago:</span><br/>
+                                        <strong>{selectedSaleDetail.customer_info.creditPlan.proximoPago ? new Date(selectedSaleDetail.customer_info.creditPlan.proximoPago + 'T00:00:00').toLocaleDateString('es-AR') : 'Libre'}</strong>
+                                    </div>
+                                </div>
+                                <div style={{ borderTop: `1px dashed ${colors.border}`, marginTop: '10px', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '11px', color: colors.textSecondary, fontWeight: '700' }}>SALDO A DEBER:</span>
+                                    <strong style={{ color: '#ef4444', fontSize: '14px' }}>${parseFloat(selectedSaleDetail.customer_info.creditPlan.saldo || 0).toLocaleString('es-AR')}</strong>
+                                </div>
+                            </div>
+                        )}
 
                         {selectedSaleDetail.notes && (
                             <div style={{ marginBottom: '24px', fontSize: '13px', background: '#fffbeb', border: '1px solid #fef3c7', padding: '12px', borderRadius: '8px' }}>
