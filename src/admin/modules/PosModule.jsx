@@ -91,7 +91,7 @@ const PosModule = () => {
             `;
         }
 
-        const win = window.open('', '_blank', 'width=360,height=700');
+        const win = window.open('', '_blank', 'width=380,height=600,scrollbars=no,menubar=no,toolbar=no');
         if (!win) {
             alert('El bloqueador de ventanas emergentes impidió abrir el ticket. Por favor, permití las ventanas emergentes en tu navegador.');
             return;
@@ -222,9 +222,19 @@ const PosModule = () => {
                         color: #444;
                         letter-spacing: 0.5px;
                     }
+                    @page {
+                        size: 80mm auto;
+                        margin: 0;
+                    }
                     @media print {
-                        body { padding: 0; width: 100%; }
-                        .no-print { display: none; }
+                        html, body {
+                            width: 80mm !important;
+                            max-width: 80mm !important;
+                            padding: 2mm !important;
+                            margin: 0 !important;
+                            font-size: 10px !important;
+                        }
+                        .no-print { display: none !important; }
                     }
                 </style>
             </head>
@@ -338,6 +348,12 @@ const PosModule = () => {
     const [historyMethod, setHistoryMethod] = useState('Todos');
     const [historyBranchFilter, setHistoryBranchFilter] = useState('Todos');
     const [selectedSaleDetail, setSelectedSaleDetail] = useState(null);
+    const [cajaPage, setCajaPage] = useState(1);
+
+    // Reset page to 1 when any filter is changed
+    useEffect(() => {
+        setCajaPage(1);
+    }, [historyStartDate, historyEndDate, historyBranchFilter, historyMethod]);
 
     // Color picker pending state
     const [colorSelectionPending, setColorSelectionPending] = useState(null);
@@ -466,6 +482,9 @@ const PosModule = () => {
 
             // Auto-trigger printing the non-fiscal ticket
             printTicket(saleData);
+            
+            // Refresh caja list
+            fetchDailyCaja();
         } catch (e) {
             alert('Error al registrar la venta: ' + e.message);
         } finally {
@@ -476,11 +495,12 @@ const PosModule = () => {
     const fetchDailyCaja = async () => {
         setCajaLoading(true);
         try {
-            const start = new Date(historyStartDate);
-            start.setHours(0, 0, 0, 0);
+            // Parse YYYY-MM-DD manually to create timezone-safe local date bounds
+            const [startY, startM, startD] = historyStartDate.split('-').map(Number);
+            const start = new Date(startY, startM - 1, startD, 0, 0, 0, 0);
 
-            const end = new Date(historyEndDate);
-            end.setHours(23, 59, 59, 999);
+            const [endY, endM, endD] = historyEndDate.split('-').map(Number);
+            const end = new Date(endY, endM - 1, endD, 23, 59, 59, 999);
 
             const { data, error } = await supabase
                 .from('sales')
@@ -502,6 +522,150 @@ const PosModule = () => {
     const openCaja = () => {
         fetchDailyCaja();
         setShowCaja(true);
+    };
+
+    // ── Cierre de Caja Receipt Print ─────────────────────────
+    const printCierreCaja = () => {
+        const now = new Date();
+        const dateStr = now.toLocaleString('es-AR');
+        const startLabel = new Date(historyStartDate + 'T00:00:00').toLocaleDateString('es-AR');
+        const endLabel = new Date(historyEndDate + 'T00:00:00').toLocaleDateString('es-AR');
+        const isSameDay = historyStartDate === historyEndDate;
+        const dateRange = isSameDay ? startLabel : `${startLabel} al ${endLabel}`;
+
+        const methodRows = Object.entries(cajaSummary)
+            .filter(([k]) => k !== 'total')
+            .map(([method, amount]) => `
+                <tr>
+                    <td style="padding:4px 0; font-weight:600;">${method}</td>
+                    <td style="padding:4px 0; text-align:right; font-weight:700;">$${amount.toLocaleString('es-AR')}</td>
+                </tr>
+            `).join('');
+
+        // Top products calculation
+        const productCounts = {};
+        branchSales.forEach(sale => {
+            (sale.items || []).forEach(item => {
+                const key = item.name || 'Sin nombre';
+                if (!productCounts[key]) productCounts[key] = { qty: 0, revenue: 0 };
+                productCounts[key].qty += item.quantity || 1;
+                productCounts[key].revenue += (item.price || 0) * (item.quantity || 1);
+            });
+        });
+        const topProducts = Object.entries(productCounts)
+            .sort((a, b) => b[1].qty - a[1].qty)
+            .slice(0, 5)
+            .map(([name, data]) => `
+                <tr>
+                    <td style="padding:3px 0; font-size:10px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</td>
+                    <td style="padding:3px 0; text-align:center; font-size:10px; font-weight:700;">${data.qty}</td>
+                    <td style="padding:3px 0; text-align:right; font-size:10px;">$${data.revenue.toLocaleString('es-AR')}</td>
+                </tr>
+            `).join('');
+
+        const win = window.open('', '_blank', 'width=380,height=600,scrollbars=no,menubar=no,toolbar=no');
+        if (!win) { alert('Permití las ventanas emergentes para imprimir.'); return; }
+
+        win.document.write(`
+            <html>
+            <head>
+                <title>Cierre de Caja - ${dateRange}</title>
+                <style>
+                    @page { size: 80mm auto; margin: 0; }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #000; padding: 10px; width: 280px; line-height: 1.4; }
+                    .sep { border: none; border-top: 1px dashed #000; margin: 8px 0; }
+                    .sep-bold { border: none; border-top: 2px solid #000; margin: 10px 0; }
+                    table { width: 100%; border-collapse: collapse; }
+                    @media print { html, body { width: 80mm !important; max-width: 80mm !important; padding: 2mm !important; margin: 0 !important; } }
+                </style>
+            </head>
+            <body>
+                <hr class="sep-bold" />
+                <div style="text-align:center; padding:6px 0;">
+                    <div style="font-size:22px; font-weight:900; letter-spacing:5px;">OLMO</div>
+                    <div style="font-size:8px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#333;">indumentaria</div>
+                </div>
+                <hr class="sep-bold" />
+
+                <div style="text-align:center; font-size:13px; font-weight:900; letter-spacing:1px; padding:8px 0; text-transform:uppercase;">CIERRE DE CAJA</div>
+
+                <div style="font-size:10px; line-height:1.6; margin:6px 0;">
+                    <strong>Período:</strong> ${dateRange}<br/>
+                    <strong>Generado:</strong> ${dateStr}<br/>
+                    ${historyBranchFilter !== 'Todos' ? `<strong>Sucursal:</strong> ${historyBranchFilter}<br/>` : ''}
+                    ${historyMethod !== 'Todos' ? `<strong>Filtro pago:</strong> ${historyMethod}<br/>` : ''}
+                </div>
+
+                <hr class="sep" />
+                <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">DESGLOSE POR MÉTODO DE PAGO</div>
+                <table>
+                    ${methodRows}
+                    <tr style="border-top: 1px solid #000;">
+                        <td style="padding:6px 0; font-weight:900; font-size:13px;">TOTAL</td>
+                        <td style="padding:6px 0; text-align:right; font-weight:900; font-size:13px;">$${cajaSummary.total.toLocaleString('es-AR')}</td>
+                    </tr>
+                </table>
+
+                <hr class="sep" />
+                <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">RESUMEN</div>
+                <table>
+                    <tr><td style="padding:3px 0;">Cantidad de ventas:</td><td style="text-align:right; font-weight:700;">${branchSales.length}</td></tr>
+                    <tr><td style="padding:3px 0;">Ticket promedio:</td><td style="text-align:right; font-weight:700;">$${branchSales.length > 0 ? Math.round(cajaSummary.total / branchSales.length).toLocaleString('es-AR') : '0'}</td></tr>
+                    <tr><td style="padding:3px 0;">Prendas vendidas:</td><td style="text-align:right; font-weight:700;">${branchSales.reduce((acc, s) => acc + (s.items || []).reduce((sum, i) => sum + (i.quantity || 1), 0), 0)}</td></tr>
+                </table>
+
+                ${topProducts ? `
+                    <hr class="sep" />
+                    <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">TOP 5 PRODUCTOS</div>
+                    <table>
+                        <tr style="border-bottom:1px solid #000;">
+                            <th style="text-align:left; font-size:8px; padding:3px 0;">PRODUCTO</th>
+                            <th style="text-align:center; font-size:8px; padding:3px 0;">CANT</th>
+                            <th style="text-align:right; font-size:8px; padding:3px 0;">TOTAL</th>
+                        </tr>
+                        ${topProducts}
+                    </table>
+                ` : ''}
+
+                <hr class="sep-bold" />
+                <div style="text-align:center; padding:8px 0;">
+                    <div style="font-size:8px; font-weight:700; letter-spacing:0.5px;">DOCUMENTO INTERNO - CIERRE DE CAJA</div>
+                    <div style="font-size:8px; color:#555; margin-top:4px;">olmoind.vercel.app · @olmo.ind</div>
+                </div>
+
+                <script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 1200); }</script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    };
+
+    // ── Export to CSV ────────────────────────────────────────
+    const exportToCSV = () => {
+        if (branchSales.length === 0) { alert('No hay ventas para exportar.'); return; }
+        const headers = ['Fecha', 'Hora', 'Ticket', 'Sucursal', 'Método', 'Items', 'Total'];
+        const rows = branchSales.map(sale => {
+            const meta = sale.customer_info || {};
+            const d = new Date(sale.created_at);
+            return [
+                d.toLocaleDateString('es-AR'),
+                d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+                meta.ticket_number || '-',
+                meta.branch || 'Central',
+                sale.payment_method || meta.method || 'Efectivo',
+                (sale.items || []).map(i => `${i.name} x${i.quantity}`).join(' | '),
+                sale.total || 0
+            ];
+        });
+        const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ventas_olmo_${historyStartDate}_${historyEndDate}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     const reprintSale = (sale) => {
@@ -560,6 +724,10 @@ const PosModule = () => {
         acc.total += sale.total || 0;
         return acc;
     }, { total: 0 });
+
+    const itemsPerPage = 8;
+    const totalPages = Math.ceil(branchSales.length / itemsPerPage);
+    const paginatedSales = branchSales.slice((cajaPage - 1) * itemsPerPage, cajaPage * itemsPerPage);
 
     return (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px', height: 'calc(100vh - 160px)' }}>
@@ -1072,18 +1240,99 @@ const PosModule = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
                                 {/* Resumen Cards */}
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                                    <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: `1px solid ${colors.border}` }}>
-                                        <p style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Total Filtrado</p>
-                                        <p style={{ fontSize: '20px', fontWeight: '900', color: colors.primary, margin: 0 }}>${cajaSummary.total.toLocaleString()}</p>
-                                        <p style={{ fontSize: '10px', color: colors.textSecondary, margin: '2px 0 0 0' }}>{branchSales.length} ventas</p>
+                                    <div style={{ background: 'linear-gradient(135deg, #5c2e91 0%, #3e1b68 100%)', padding: '14px 16px', borderRadius: '10px', color: '#fff' }}>
+                                        <p style={{ fontSize: '10px', fontWeight: '700', opacity: 0.8, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Total Facturado</p>
+                                        <p style={{ fontSize: '22px', fontWeight: '900', margin: 0 }}>${cajaSummary.total.toLocaleString()}</p>
+                                        <p style={{ fontSize: '10px', opacity: 0.7, margin: '2px 0 0 0' }}>{branchSales.length} ventas · Prom: ${branchSales.length > 0 ? '$' + Math.round(cajaSummary.total / branchSales.length).toLocaleString() : '-'}</p>
                                     </div>
-                                    {Object.entries(cajaSummary).filter(([k]) => k !== 'total').map(([method, amount]) => (
-                                        <div key={method} style={{ background: '#fff', padding: '12px 16px', borderRadius: '10px', border: `1px solid ${colors.border}` }}>
-                                            <p style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 2px 0' }}>{method}</p>
-                                            <p style={{ fontSize: '16px', fontWeight: '800', color: colors.text, margin: 0 }}>${amount.toLocaleString()}</p>
-                                        </div>
-                                    ))}
+                                    {Object.entries(cajaSummary).filter(([k]) => k !== 'total').map(([method, amount]) => {
+                                        const pct = cajaSummary.total > 0 ? Math.round((amount / cajaSummary.total) * 100) : 0;
+                                        return (
+                                            <div key={method} style={{ background: '#fff', padding: '12px 16px', borderRadius: '10px', border: `1px solid ${colors.border}`, position: 'relative', overflow: 'hidden' }}>
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, width: `${pct}%`, height: '3px', background: colors.primary, borderRadius: '0 3px 0 0' }} />
+                                                <p style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 2px 0' }}>{method}</p>
+                                                <p style={{ fontSize: '16px', fontWeight: '800', color: colors.text, margin: 0 }}>${amount.toLocaleString()}</p>
+                                                <p style={{ fontSize: '9px', color: colors.textSecondary, margin: '2px 0 0 0' }}>{pct}% del total</p>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
+
+                                {/* Strategic Analytics Row */}
+                                {branchSales.length > 0 && (() => {
+                                    // Top products
+                                    const prodMap = {};
+                                    branchSales.forEach(s => (s.items || []).forEach(i => {
+                                        const k = i.name || '?';
+                                        if (!prodMap[k]) prodMap[k] = { qty: 0, rev: 0 };
+                                        prodMap[k].qty += i.quantity || 1;
+                                        prodMap[k].rev += (i.price || 0) * (i.quantity || 1);
+                                    }));
+                                    const topProds = Object.entries(prodMap).sort((a, b) => b[1].qty - a[1].qty).slice(0, 5);
+
+                                    // Sales by hour
+                                    const hourMap = {};
+                                    branchSales.forEach(s => {
+                                        const h = new Date(s.created_at).getHours();
+                                        hourMap[h] = (hourMap[h] || 0) + 1;
+                                    });
+                                    const peakHour = Object.entries(hourMap).sort((a, b) => b[1] - a[1])[0];
+
+                                    // Best selling day
+                                    const dayMap = {};
+                                    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                                    branchSales.forEach(s => {
+                                        const d = dayNames[new Date(s.created_at).getDay()];
+                                        if (!dayMap[d]) dayMap[d] = { count: 0, rev: 0 };
+                                        dayMap[d].count++;
+                                        dayMap[d].rev += s.total || 0;
+                                    });
+                                    const bestDay = Object.entries(dayMap).sort((a, b) => b[1].rev - a[1].rev)[0];
+
+                                    // Total garments
+                                    const totalGarments = branchSales.reduce((acc, s) => acc + (s.items || []).reduce((sum, i) => sum + (i.quantity || 1), 0), 0);
+
+                                    return (
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                            {/* Top Products */}
+                                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '10px', padding: '14px 16px' }}>
+                                                <p style={{ fontSize: '10px', fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px 0' }}>🏆 Top Productos</p>
+                                                {topProds.map(([name, data], idx) => (
+                                                    <div key={name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: idx < topProds.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
+                                                        <span style={{ fontSize: '12px', color: colors.text, fontWeight: '600', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{idx + 1}. {name}</span>
+                                                        <span style={{ fontSize: '11px', color: colors.textSecondary }}>{data.qty}u · ${data.rev.toLocaleString()}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {/* Quick Stats */}
+                                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '10px', padding: '14px 16px' }}>
+                                                <p style={{ fontSize: '10px', fontWeight: '800', color: colors.primary, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px 0' }}>📊 Insights Estratégicos</p>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                                                        <span style={{ color: colors.textSecondary }}>Prendas vendidas</span>
+                                                        <strong style={{ color: colors.text }}>{totalGarments}</strong>
+                                                    </div>
+                                                    {peakHour && (
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                                                            <span style={{ color: colors.textSecondary }}>Horario pico</span>
+                                                            <strong style={{ color: colors.text }}>{peakHour[0]}:00 hs ({peakHour[1]} ventas)</strong>
+                                                        </div>
+                                                    )}
+                                                    {bestDay && (
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                                                            <span style={{ color: colors.textSecondary }}>Mejor día</span>
+                                                            <strong style={{ color: colors.text }}>{bestDay[0]} (${bestDay[1].rev.toLocaleString()})</strong>
+                                                        </div>
+                                                    )}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                                                        <span style={{ color: colors.textSecondary }}>Venta más alta</span>
+                                                        <strong style={{ color: colors.success }}>${Math.max(...branchSales.map(s => s.total || 0)).toLocaleString()}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Historial List */}
                                 <div style={{ overflowY: 'auto', flex: 1, border: `1px solid ${colors.border}`, borderRadius: '12px', background: '#f8fafc' }}>
@@ -1102,7 +1351,7 @@ const PosModule = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {branchSales.map(sale => {
+                                                {paginatedSales.map(sale => {
                                                     const meta = sale.customer_info || {};
                                                     const saleBranch = meta.branch || (sale.notes?.includes('[Sucursal: ') ? sale.notes.split('[Sucursal: ')[1].split(']')[0] : 'Central');
                                                     const ticketNum = meta.ticket_number || `OLMO-${new Date(sale.created_at).getTime()}`;
@@ -1140,12 +1389,57 @@ const PosModule = () => {
                                         </table>
                                     )}
                                 </div>
-                                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
-                                    <button onClick={() => window.print()} style={{
-                                        padding: '12px 24px', background: '#1e293b', color: '#fff', border: 'none',
-                                        borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif"
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', background: '#fff', padding: '8px 16px', borderRadius: '8px', border: `1px solid ${colors.border}` }}>
+                                        <span style={{ fontSize: '12px', color: colors.textSecondary }}>
+                                            Página <strong>{cajaPage}</strong> de {totalPages} ({branchSales.length} ventas en total)
+                                        </span>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                            <button 
+                                                disabled={cajaPage === 1}
+                                                onClick={() => setCajaPage(prev => Math.max(1, prev - 1))}
+                                                style={{
+                                                    padding: '5px 12px', background: cajaPage === 1 ? '#f1f5f9' : '#fff', 
+                                                    border: `1px solid ${colors.border}`, borderRadius: '6px', fontSize: '12px', 
+                                                    cursor: cajaPage === 1 ? 'not-allowed' : 'pointer', color: cajaPage === 1 ? '#cbd5e1' : colors.text,
+                                                    fontWeight: '600', transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                ◀ Anterior
+                                            </button>
+                                            <button 
+                                                disabled={cajaPage === totalPages}
+                                                onClick={() => setCajaPage(prev => Math.min(totalPages, prev + 1))}
+                                                style={{
+                                                    padding: '5px 12px', background: cajaPage === totalPages ? '#f1f5f9' : '#fff', 
+                                                    border: `1px solid ${colors.border}`, borderRadius: '6px', fontSize: '12px', 
+                                                    cursor: cajaPage === totalPages ? 'not-allowed' : 'pointer', color: cajaPage === totalPages ? '#cbd5e1' : colors.text,
+                                                    fontWeight: '600', transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                Siguiente ▶
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                                    <button onClick={exportToCSV} style={{
+                                        padding: '10px 18px', background: '#f1f5f9', color: '#475569', border: `1px solid ${colors.border}`,
+                                        borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                        display: 'flex', alignItems: 'center', gap: '6px'
                                     }}>
-                                        🖨️ Imprimir Resumen de Ventas
+                                        📥 Exportar CSV
+                                    </button>
+                                    <button onClick={printCierreCaja} style={{
+                                        padding: '10px 18px', background: '#1e293b', color: '#fff', border: 'none',
+                                        borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                        display: 'flex', alignItems: 'center', gap: '6px'
+                                    }}>
+                                        🖨️ Imprimir Cierre de Caja
                                     </button>
                                 </div>
                             </div>

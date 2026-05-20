@@ -91,32 +91,51 @@ export const useStockStore = create((set, get) => ({
                 creditPlan: paymentData.creditPlan || null
             };
 
-            try {
-                // Try inserting with all potential fields
-                const { error: insertError } = await supabase.from('sales').insert([{
+            // Attempt inserts with progressive fallbacks for schema flexibility
+            const saleRecord = {
+                items: cartItems,
+                total: total,
+                payment_method: paymentData.method || 'cash',
+                notes: finalNotes,
+                status: paymentData.status || 'Completada',
+                customer_info: customerMetadata
+            };
+
+            let insertOk = false;
+            
+            // Attempt 1: Full insert with all columns
+            const { error: err1 } = await supabase.from('sales').insert([saleRecord]);
+            if (!err1) {
+                insertOk = true;
+            } else {
+                console.warn('Sale insert attempt 1 failed:', err1.message);
+                // Attempt 2: Without payment_method and notes columns
+                const { error: err2 } = await supabase.from('sales').insert([{
                     items: cartItems,
                     total: total,
-                    payment_method: paymentData.method || 'cash',
-                    notes: finalNotes,
                     status: paymentData.status || 'Completada',
                     customer_info: customerMetadata
                 }]);
-
-                if (insertError) {
-                    console.warn("Full insert failed, retrying with schema-free customer_info fallback...", insertError);
-                    
-                    const { error: fallbackError } = await supabase.from('sales').insert([{
+                if (!err2) {
+                    insertOk = true;
+                } else {
+                    console.warn('Sale insert attempt 2 failed:', err2.message);
+                    // Attempt 3: Minimal insert
+                    const { error: err3 } = await supabase.from('sales').insert([{
                         items: cartItems,
                         total: total,
-                        status: paymentData.status || 'Completada',
                         customer_info: customerMetadata
                     }]);
-
-                    if (fallbackError) throw fallbackError;
+                    if (!err3) {
+                        insertOk = true;
+                    } else {
+                        throw err3;
+                    }
                 }
-            } catch (err) {
-                console.error("Critical error in sale insert:", err);
-                throw err;
+            }
+
+            if (!insertOk) {
+                throw new Error('No se pudo registrar la venta después de múltiples intentos.');
             }
 
             // 2.5. Enviar Notificación Push (Telegram)
@@ -142,11 +161,14 @@ export const useStockStore = create((set, get) => ({
 
     // Create new product (Admin)
     addProduct: async (productData) => {
+        // Separate colors from the rest of the data to avoid schema cache errors
+        const { colors: productColors, ...safeData } = productData;
+
         // Ensure both 'images' array and legacy 'image' string are set
         const finalData = {
-            ...productData,
-            image: (productData.images && productData.images[0]) || productData.image || '',
-            images: productData.images || (productData.image ? [productData.image] : [])
+            ...safeData,
+            image: (safeData.images && safeData.images[0]) || safeData.image || '',
+            images: safeData.images || (safeData.image ? [safeData.image] : [])
         };
 
         const { data, error } = await supabase
@@ -156,8 +178,19 @@ export const useStockStore = create((set, get) => ({
 
         if (error) throw error;
 
+        // Try to add colors separately (silently fails if column doesn't exist)
+        if (data && data[0] && productColors && productColors.length > 0) {
+            try {
+                await supabase.from('products').update({ colors: productColors }).eq('id', data[0].id);
+            } catch (e) {
+                console.warn('Colors column not available, skipping color save:', e);
+            }
+        }
+
         if (data) {
-            set((state) => ({ stock: [...data, ...state.stock] }));
+            // Merge colors back into local state regardless
+            const enrichedData = data.map(d => ({ ...d, colors: productColors || [] }));
+            set((state) => ({ stock: [...enrichedData, ...state.stock] }));
         }
     },
 
