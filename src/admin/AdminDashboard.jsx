@@ -14,6 +14,8 @@ import ShippingModule from './modules/ShippingModule';
 import PosModule from './modules/PosModule';
 import CustomersModule from './modules/CustomersModule';
 import StatisticsModule from './modules/StatisticsModule';
+import { COLOR_PALETTE, isLightColor } from '../constants/colorPalette';
+
 
 // ── Tiendanube Theme Design System ─────────────────────────────────────────────
 const colors = {
@@ -30,6 +32,53 @@ const colors = {
     warning: '#f59e0b',          // Ámbar
     error: '#ef4444',            // Rojo Coral
     info: '#3b82f6'              // Azul
+};
+
+const PaymentIcons = {
+    mp: (
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="6" fill="#00b1ea"/>
+            <path d="M7 13.5L10 16.5L17 8.5" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    ),
+    transfer: (
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="6" fill="#10b981"/>
+            <path d="M4 18H20M5 15V9M9 15V9M13 15V9M17 15V9M4 9L12 4L20 9" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    ),
+    cash: (
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="6" fill="#f59e0b"/>
+            <rect x="5" y="8" width="14" height="8" rx="2" stroke="#ffffff" strokeWidth="2"/>
+            <circle cx="12" cy="12" r="2.5" fill="#ffffff"/>
+        </svg>
+    ),
+    posnet: (
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="6" fill="#8b5cf6"/>
+            <rect x="6" y="5" width="12" height="14" rx="2" stroke="#ffffff" strokeWidth="2"/>
+            <line x1="8" y1="9" x2="16" y2="9" stroke="#ffffff" strokeWidth="2"/>
+            <circle cx="9" cy="13" r="0.8" fill="#ffffff"/>
+            <circle cx="12" cy="13" r="0.8" fill="#ffffff"/>
+            <circle cx="15" cy="13" r="0.8" fill="#ffffff"/>
+            <circle cx="9" cy="15" r="0.8" fill="#ffffff"/>
+            <circle cx="12" cy="15" r="0.8" fill="#ffffff"/>
+            <circle cx="15" cy="15" r="0.8" fill="#ffffff"/>
+        </svg>
+    ),
+    modo: (
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="6" fill="#ff003c"/>
+            <circle cx="12" cy="12" r="5" stroke="#ffffff" strokeWidth="2.5"/>
+        </svg>
+    ),
+    gocuotas: (
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="6" fill="#4ade80"/>
+            <path d="M13 5L6 13H12L11 19L18 11H12L13 5Z" fill="#ffffff"/>
+        </svg>
+    )
 };
 
 const inputStyle = {
@@ -110,8 +159,11 @@ const AdminDashboard = ({ onBack }) => {
     // ── Product form ──────────────────────────────────────────────────────────
     const [formData, setFormData] = useState({
         name: '', price: 0, images: [], category: '',
-        variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+        variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
+        colors: []
     });
+    const [customColorName, setCustomColorName] = useState('');
+    const [customColorHex, setCustomColorHex] = useState('#3b82f6');
     const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
     // ── Local editable copies of settings ────────────────────────────────────
@@ -121,14 +173,53 @@ const AdminDashboard = ({ onBack }) => {
     const [categories, setCategories] = useState([]);
     const [newBannerUrl, setNewBannerUrl] = useState('');
     const [newCategory, setNewCategory] = useState('');
+    const [activeAccordion, setActiveAccordion] = useState('mp');
     const [paymentsConfig, setPaymentsConfig] = useState({
-        mp: { active: true, publicKey: '', accessToken: '' },
-        transfer: { active: true, alias: '', cbu: '', titular: '', banco: '' },
+        mp: { active: true, publicKey: '', accessToken: '', env: 'test', webhookUrl: '' },
+        transfer: { active: true, alias: '', cbu: '', titular: '', banco: '', cuit: '' },
         cash: { active: true, instructions: '' },
         posnet: { active: true },
-        modo: { active: false, clientId: '', clientSecret: '', apiKey: '' },
-        gocuotas: { active: false, apiKey: '', email: '' }
+        modo: { active: false, storeId: '', publicKey: '', privateKey: '' },
+        gocuotas: { active: false, email: '', apiKey: '', branchId: '' }
     });
+
+    const [copiedMpWebhook, setCopiedMpWebhook] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState({});
+
+    const isPaymentMethodConfigured = (id, config) => {
+        if (!config) return false;
+        const item = config[id] || {};
+        switch (id) {
+            case 'mp':
+                return !!(item.publicKey?.trim() && item.accessToken?.trim());
+            case 'transfer':
+                return !!(item.alias?.trim() && item.cbu?.trim() && item.titular?.trim());
+            case 'cash':
+                return !!item.instructions?.trim();
+            case 'posnet':
+                return true;
+            case 'modo':
+                return !!(item.storeId?.trim() && item.publicKey?.trim() && item.privateKey?.trim());
+            case 'gocuotas':
+                return !!(item.email?.trim() && item.apiKey?.trim() && item.branchId?.trim());
+            default:
+                return false;
+        }
+    };
+
+    const handleTestConnection = (methodId) => {
+        const isConfig = isPaymentMethodConfigured(methodId, paymentsConfig);
+        setConnectionStatus(prev => ({
+            ...prev,
+            [methodId]: isConfig ? 'success' : 'error'
+        }));
+        setTimeout(() => {
+            setConnectionStatus(prev => ({
+                ...prev,
+                [methodId]: null
+            }));
+        }, 4000);
+    };
 
     const handleTogglePaymentMethod = (methodId) => {
         setPaymentsConfig(prev => ({
@@ -188,13 +279,14 @@ const AdminDashboard = ({ onBack }) => {
         setHero(settings.hero || {});
         setBanners(Array.isArray(settings.banners) ? settings.banners : []);
         setCategories(Array.isArray(settings.categories) ? settings.categories : []);
-        setPaymentsConfig(settings.payments || {
-            mp: { active: true, publicKey: '', accessToken: '' },
-            transfer: { active: true, alias: '', cbu: '', titular: '', banco: '' },
-            cash: { active: true, instructions: '' },
-            posnet: { active: true },
-            modo: { active: false, clientId: '', clientSecret: '', apiKey: '' },
-            gocuotas: { active: false, apiKey: '', email: '' }
+        const savedPayments = settings.payments || {};
+        setPaymentsConfig({
+            mp: { active: true, publicKey: '', accessToken: '', env: 'test', webhookUrl: '', ...savedPayments.mp },
+            transfer: { active: true, alias: '', cbu: '', titular: '', banco: '', cuit: '', ...savedPayments.transfer },
+            cash: { active: true, instructions: '', ...savedPayments.cash },
+            posnet: { active: true, ...savedPayments.posnet },
+            modo: { active: false, storeId: '', publicKey: '', privateKey: '', ...savedPayments.modo },
+            gocuotas: { active: false, email: '', apiKey: '', branchId: '', ...savedPayments.gocuotas }
         });
     }, [settings]);
 
@@ -271,11 +363,12 @@ const AdminDashboard = ({ onBack }) => {
                 price: item.price || 0,
                 images: initialImages,
                 category: item.category || '',
-                variants: item.variants ? { ...item.variants } : { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }
+                variants: item.variants ? { ...item.variants } : { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
+                colors: item.colors || []
             });
         } else {
             setEditingItem(null);
-            setFormData({ name: '', price: 0, images: [], category: '', variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 } });
+            setFormData({ name: '', price: 0, images: [], category: '', variants: { XS: 0, S: 0, M: 0, L: 0, XL: 0, XXL: 0 }, colors: [] });
         }
         setIsModalOpen(true);
     };
@@ -286,20 +379,41 @@ const AdminDashboard = ({ onBack }) => {
         try {
             if (editingItem) {
                 addLog('Actualizando producto existente...');
-                const { error } = await supabase.from('products').update({
+                const updateData = {
                     name: formData.name,
                     price: formData.price,
                     images: formData.images,
                     image: formData.images[0] || '', // Maintain legacy field
                     category: formData.category,
-                    variants: formData.variants
-                }).eq('id', editingItem.id);
+                    variants: formData.variants,
+                    colors: formData.colors || []
+                };
+                let { error } = await supabase.from('products').update(updateData).eq('id', editingItem.id);
+
+                if (error && (error.message?.includes("column 'colors' of relation 'products'") || error.message?.includes('column "colors"'))) {
+                    console.warn('Colors column missing in products, retrying update without it...');
+                    delete updateData.colors;
+                    const retry = await supabase.from('products').update(updateData).eq('id', editingItem.id);
+                    error = retry.error;
+                    alert('⚠️ Guardado parcial: El producto se guardó con éxito, pero la base de datos no tiene la columna "colors". Para habilitar colores de prendas, ejecuta en el SQL Editor de tu panel de Supabase:\n\nALTER TABLE products ADD COLUMN colors jsonb DEFAULT \'[]\';');
+                }
 
                 if (error) throw error;
                 addLog('Respuesta ok de Supabase (Update).');
             } else {
                 addLog('Insertando nuevo producto...');
-                await addProduct(formData);
+                try {
+                    await addProduct(formData);
+                } catch (err) {
+                    if (err.message?.includes("column 'colors' of relation 'products'") || err.message?.includes('column "colors"')) {
+                        console.warn('Colors column missing in products, retrying insert without it...');
+                        const { colors: _, ...formDataWithoutColors } = formData;
+                        await addProduct(formDataWithoutColors);
+                        alert('⚠️ Guardado parcial: El producto se guardó con éxito, pero la base de datos no tiene la columna "colors". Para habilitar colores de prendas, ejecuta en el SQL Editor de tu panel de Supabase:\n\nALTER TABLE products ADD COLUMN colors jsonb DEFAULT \'[]\';');
+                    } else {
+                        throw err;
+                    }
+                }
                 addLog('Respuesta ok de Supabase (Insert).');
             }
 
@@ -689,226 +803,817 @@ const AdminDashboard = ({ onBack }) => {
                 {/* ── PAGOS (configuración dinámica de medios de pago) ── */}
                 {activeTab === 'payments' && (
                     <div>
-                        <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 8px 0' }}>Medios de Pago</h2>
-                        <p style={{ fontSize: '13px', color: colors.textSecondary, margin: '0 0 24px 0' }}>Habilitá y configurá las credenciales o datos necesarios de los métodos de pago aceptados en tu tienda</p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', margin: '0 0 24px 0' }}>
+                            <div>
+                                <h2 style={{ fontSize: '22px', fontWeight: '800', color: colors.text, margin: '0 0 6px 0' }}>Medios de Pago</h2>
+                                <p style={{ fontSize: '13px', color: colors.textSecondary, margin: '0' }}>Habilitá y configurá las credenciales o datos necesarios de los métodos de pago aceptados en tu tienda</p>
+                            </div>
+                            
+                            <button
+                                onClick={handleSavePaymentsConfig}
+                                style={{
+                                    background: colors.primary, color: '#fff', border: 'none',
+                                    padding: '10px 20px', borderRadius: '8px', fontSize: '12px',
+                                    fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                    boxShadow: '0 2px 4px rgba(92, 46, 145, 0.2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = colors.primaryHover}
+                                onMouseLeave={e => e.currentTarget.style.background = colors.primary}
+                            >
+                                💾 Guardar Cambios
+                            </button>
+                        </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                        {/* Top Overview Cards Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
                             {[
-                                { id: 'mp', icon: '💳', title: 'Mercado Pago', desc: 'Checkout Pro integrado. Acepta tarjetas, débito y QR.', color: '#00b1ea' },
-                                { id: 'transfer', icon: '🏦', title: 'Transferencia Bancaria', desc: 'Alias o CBU. El cliente paga antes del envío.', color: '#10b981' },
-                                { id: 'cash', icon: '💵', title: 'Efectivo', desc: 'Pago en el local o contra entrega.', color: '#f59e0b' },
-                                { id: 'posnet', icon: '🔲', title: 'Posnet / Tarjeta', desc: 'Terminal de tarjeta en el punto de venta.', color: '#8b5cf6' },
-                                { id: 'modo', icon: '🔴', title: 'MODO', desc: 'Billetera digital argentina. Pagos con QR y transferencia.', color: '#ff003c' },
-                                { id: 'gocuotas', icon: '⚡', title: 'Go Cuotas', desc: 'Pago en cuotas sin tarjeta de crédito, con débito.', color: '#4ade80' }
+                                { id: 'mp', title: 'Mercado Pago', desc: 'Checkout Pro. Tarjetas de crédito/débito y saldo de cuenta.', color: '#00b1ea', iconKey: 'mp' },
+                                { id: 'transfer', title: 'Transferencia Bancaria', desc: 'Alias o CBU/CVU. Cobros manuales verificados.', color: '#10b981', iconKey: 'transfer' },
+                                { id: 'cash', title: 'Efectivo / Retiro', desc: 'Pago físico al retirar en sucursal o contra entrega.', color: '#f59e0b', iconKey: 'cash' },
+                                { id: 'posnet', title: 'Posnet / Tarjeta', desc: 'Terminal física para tarjetas en punto de venta.', color: '#8b5cf6', iconKey: 'posnet' },
+                                { id: 'modo', title: 'MODO', desc: 'Billetera argentina. Botón de pago y QR unificado.', color: '#ff003c', iconKey: 'modo' },
+                                { id: 'gocuotas', title: 'Go Cuotas', desc: 'Financiación en cuotas con cualquier tarjeta de débito.', color: '#4ade80', iconKey: 'gocuotas' }
                             ].map(pm => {
                                 const isActive = !!paymentsConfig[pm.id]?.active;
+                                const isConfigured = isPaymentMethodConfigured(pm.id, paymentsConfig);
                                 return (
-                                    <div key={pm.id} style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', borderTop: `4px solid ${pm.color}`, boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                    <div 
+                                        key={pm.id} 
+                                        style={{ 
+                                            background: '#fff', 
+                                            border: `1px solid ${colors.border}`, 
+                                            borderRadius: '12px', 
+                                            padding: '20px', 
+                                            borderLeft: `5px solid ${pm.color}`, 
+                                            boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)', 
+                                            display: 'flex', 
+                                            flexDirection: 'column', 
+                                            justifyContent: 'space-between',
+                                            transition: 'transform 0.2s, box-shadow 0.2s',
+                                            cursor: 'pointer'
+                                        }}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.transform = 'translateY(-2px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.transform = 'translateY(0px)';
+                                            e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(0,0,0,0.05)';
+                                        }}
+                                        onClick={() => {
+                                            setActiveAccordion(pm.id);
+                                            const element = document.getElementById(`accordion-${pm.id}`);
+                                            if (element) {
+                                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            }
+                                        }}
+                                    >
                                         <div>
-                                            <div style={{ fontSize: '28px', marginBottom: '12px' }}>{pm.icon}</div>
-                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0 0 6px 0' }}>{pm.title}</h3>
-                                            <p style={{ fontSize: '12px', color: colors.textSecondary, margin: '0 0 16px 0', lineHeight: '1.5' }}>{pm.desc}</p>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                                <div>{PaymentIcons[pm.iconKey]}</div>
+                                                
+                                                {/* Modern Toggle Switch */}
+                                                <div 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleTogglePaymentMethod(pm.id);
+                                                    }}
+                                                    style={{
+                                                        width: '44px',
+                                                        height: '24px',
+                                                        borderRadius: '12px',
+                                                        background: isActive ? colors.success : '#cbd5e1',
+                                                        padding: '2px',
+                                                        cursor: 'pointer',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        transition: 'background-color 0.2s',
+                                                        boxSizing: 'border-box'
+                                                    }}
+                                                >
+                                                    <div style={{
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        borderRadius: '50%',
+                                                        background: '#ffffff',
+                                                        transform: isActive ? 'translateX(20px)' : 'translateX(0px)',
+                                                        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                                                    }}/>
+                                                </div>
+                                            </div>
+                                            
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0 0 4px 0' }}>{pm.title}</h3>
+                                            <p style={{ fontSize: '12px', color: colors.textSecondary, margin: '0 0 16px 0', lineHeight: '1.4' }}>{pm.desc}</p>
                                         </div>
-                                        <div style={{ marginTop: '12px' }}>
-                                            <button
-                                                onClick={() => handleTogglePaymentMethod(pm.id)}
-                                                style={{
-                                                    padding: '6px 14px',
-                                                    borderRadius: '20px',
-                                                    fontSize: '11px',
-                                                    fontWeight: '700',
-                                                    cursor: 'pointer',
-                                                    border: 'none',
-                                                    background: isActive ? '#dcfce7' : '#fee2e2',
-                                                    color: isActive ? '#15803d' : '#b91c1c',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    fontFamily: "'Inter', sans-serif"
-                                                }}
-                                            >
-                                                ● {isActive ? 'Activo' : 'Inactivo'}
-                                            </button>
+                                        
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', borderTop: `1px solid ${colors.border}`, paddingTop: '12px' }}>
+                                            <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: isActive ? colors.success : colors.textSecondary }}>
+                                                {isActive ? '● Activo' : '○ Inactivo'}
+                                            </span>
+                                            
+                                            {isConfigured ? (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: '800', color: '#15803d', background: '#dcfce7', padding: '3px 8px', borderRadius: '10px' }}>
+                                                    ✓ Listo
+                                                </span>
+                                            ) : (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '3px 8px', borderRadius: '10px' }}>
+                                                    ⚠️ Configurar
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
 
-                        {/* Formularios de Configuración de Credenciales */}
-                        <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            {/* Mercado Pago */}
-                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>💳</span> Credenciales de Mercado Pago
-                                </h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Public Key</label>
-                                        <input
-                                            value={paymentsConfig.mp?.publicKey || ''}
-                                            onChange={e => handleUpdateConfig('mp', 'publicKey', e.target.value)}
-                                            placeholder="Ej: APP_USR-876a3b..."
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Access Token</label>
-                                        <input
-                                            type="password"
-                                            value={paymentsConfig.mp?.accessToken || ''}
-                                            onChange={e => handleUpdateConfig('mp', 'accessToken', e.target.value)}
-                                            placeholder="Ej: APP_USR-..."
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Transferencia Bancaria */}
-                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>🏦</span> Datos para Transferencia Bancaria
-                                </h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Alias</label>
-                                        <input
-                                            value={paymentsConfig.transfer?.alias || ''}
-                                            onChange={e => handleUpdateConfig('transfer', 'alias', e.target.value)}
-                                            placeholder="Ej: OLMO.VENTAS.MP"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>CBU</label>
-                                        <input
-                                            value={paymentsConfig.transfer?.cbu || ''}
-                                            onChange={e => handleUpdateConfig('transfer', 'cbu', e.target.value)}
-                                            placeholder="Ej: 0000003100045678..."
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Titular</label>
-                                        <input
-                                            value={paymentsConfig.transfer?.titular || ''}
-                                            onChange={e => handleUpdateConfig('transfer', 'titular', e.target.value)}
-                                            placeholder="Nombre del titular de la cuenta"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Banco</label>
-                                        <input
-                                            value={paymentsConfig.transfer?.banco || ''}
-                                            onChange={e => handleUpdateConfig('transfer', 'banco', e.target.value)}
-                                            placeholder="Ej: Banco Macro"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* MODO */}
-                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>🔴</span> Credenciales de MODO
-                                </h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Client ID</label>
-                                        <input
-                                            value={paymentsConfig.modo?.clientId || ''}
-                                            onChange={e => handleUpdateConfig('modo', 'clientId', e.target.value)}
-                                            placeholder="Client ID para producción"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Client Secret</label>
-                                        <input
-                                            type="password"
-                                            value={paymentsConfig.modo?.clientSecret || ''}
-                                            onChange={e => handleUpdateConfig('modo', 'clientSecret', e.target.value)}
-                                            placeholder="Client Secret de MODO"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                    <div style={{ gridColumn: 'span 2' }}>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>API Key / Token de Tienda</label>
-                                        <input
-                                            value={paymentsConfig.modo?.apiKey || ''}
-                                            onChange={e => handleUpdateConfig('modo', 'apiKey', e.target.value)}
-                                            placeholder="API Key asignada"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Go Cuotas */}
-                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>⚡</span> Credenciales de Go Cuotas
-                                </h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Email de Comercio</label>
-                                        <input
-                                            value={paymentsConfig.gocuotas?.email || ''}
-                                            onChange={e => handleUpdateConfig('gocuotas', 'email', e.target.value)}
-                                            placeholder="email@comercio.com"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>API Key (Token de Comercio)</label>
-                                        <input
-                                            type="password"
-                                            value={paymentsConfig.gocuotas?.apiKey || ''}
-                                            onChange={e => handleUpdateConfig('gocuotas', 'apiKey', e.target.value)}
-                                            placeholder="Token o API Key asignada"
-                                            style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Efectivo */}
-                            <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>💵</span> Instrucciones para Pago en Efectivo
-                                </h3>
-                                <div>
-                                    <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Texto explicativo para el cliente</label>
-                                    <textarea
-                                        value={paymentsConfig.cash?.instructions || ''}
-                                        onChange={e => handleUpdateConfig('cash', 'instructions', e.target.value)}
-                                        placeholder="Ej: Retiro en local Cervantes 35 con 10% de descuento. Pago contra entrega."
-                                        rows={3}
-                                        style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Guardar todo Button */}
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-                                <button
-                                    onClick={handleSavePaymentsConfig}
-                                    style={{
-                                        background: colors.primary, color: '#fff', border: 'none',
-                                        padding: '14px 28px', borderRadius: '8px', fontSize: '14px',
-                                        fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
-                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                                        transition: 'opacity 0.2s'
+                        {/* Accordion Form List Section */}
+                        <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            
+                            {/* MERCADO PAGO ACCORDION */}
+                            <div 
+                                id="accordion-mp"
+                                style={{ 
+                                    background: '#fff', 
+                                    border: `1px solid ${activeAccordion === 'mp' ? colors.primary : colors.border}`, 
+                                    borderRadius: '12px', 
+                                    overflow: 'hidden',
+                                    boxShadow: activeAccordion === 'mp' ? '0 4px 20px -2px rgba(92, 46, 145, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                            >
+                                <div 
+                                    onClick={() => setActiveAccordion(activeAccordion === 'mp' ? null : 'mp')}
+                                    style={{ 
+                                        padding: '18px 24px', 
+                                        background: activeAccordion === 'mp' ? '#fbf8ff' : '#ffffff', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        borderBottom: activeAccordion === 'mp' ? `1px solid ${colors.border}` : 'none'
                                     }}
-                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                                 >
-                                    Guardar Configuración de Pagos
-                                </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        {PaymentIcons.mp}
+                                        <div>
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0' }}>Mercado Pago</h3>
+                                            <span style={{ fontSize: '12px', color: colors.textSecondary }}>Habilitar Checkout Pro para ventas automatizadas con tarjetas y dinero en cuenta.</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        {isPaymentMethodConfigured('mp', paymentsConfig) ? (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '12px' }}>Configurado ✓</span>
+                                        ) : (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '4px 10px', borderRadius: '12px' }}>Pendiente ⚠️</span>
+                                        )}
+                                        <span style={{ fontSize: '14px', color: colors.textSecondary, transition: 'transform 0.3s', transform: activeAccordion === 'mp' ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                    </div>
+                                </div>
+                                
+                                {activeAccordion === 'mp' && (
+                                    <div style={{ padding: '28px', background: '#ffffff' }}>
+                                        
+                                        {connectionStatus.mp && (
+                                            <div style={{ 
+                                                marginBottom: '20px', 
+                                                padding: '12px 18px', 
+                                                borderRadius: '8px', 
+                                                background: connectionStatus.mp === 'success' ? '#dcfce7' : '#fee2e2',
+                                                color: connectionStatus.mp === 'success' ? '#15803d' : '#b91c1c',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                            }}>
+                                                {connectionStatus.mp === 'success' ? '✓ Credenciales con formato válido. Guarde la configuración para confirmar la conexión comercial.' : '⚠️ Falta ingresar Public Key o Access Token.'}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Step-by-Step Guide */}
+                                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '18px 24px', marginBottom: '24px' }}>
+                                            <h4 style={{ fontSize: '13px', fontWeight: '800', color: colors.text, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📖 Guía de Integración Rápida</h4>
+                                            <ol style={{ fontSize: '12.5px', color: colors.textSecondary, margin: '0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                                                <li>Ingresá a <a href="https://www.mercadopago.com.ar/developers" target="_blank" rel="noreferrer" style={{ color: colors.primary, fontWeight: '700' }}>Mercado Pago Developers</a>.</li>
+                                                <li>Iniciá sesión con tu cuenta vendedora habitual de Mercado Pago.</li>
+                                                <li>Accedé a <strong>Tus Integraciones</strong> y creá una aplicación llamada por ejemplo "Olmoind E-commerce" (tipo de solución: "Pagos Online").</li>
+                                                <li>En el panel lateral de tu aplicación, hacé click en <strong>Credenciales de Producción</strong>. Completá el formulario de onboarding de Mercado Pago para activarlas si aún no lo has hecho.</li>
+                                                <li>Copiá la **Public Key** y el **Access Token** de producción y pegalos a continuación.</li>
+                                                <li>Para recibir notificaciones instantáneas de compra, copiá la Webhook URL de abajo y agregala en la sección de notificaciones Webhook de Mercado Pago.</li>
+                                            </ol>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Entorno de Cobro</label>
+                                                <div style={{ display: 'flex', gap: '16px', marginTop: '4px' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: colors.text, cursor: 'pointer' }}>
+                                                        <input 
+                                                            type="radio" 
+                                                            name="mp-env"
+                                                            checked={(paymentsConfig.mp?.env || 'test') === 'prod'} 
+                                                            onChange={() => handleUpdateConfig('mp', 'env', 'prod')}
+                                                            style={{ accentColor: colors.primary }}
+                                                        />
+                                                        Producción (Dinero Real)
+                                                    </label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: colors.text, cursor: 'pointer' }}>
+                                                        <input 
+                                                            type="radio" 
+                                                            name="mp-env"
+                                                            checked={(paymentsConfig.mp?.env || 'test') === 'test'} 
+                                                            onChange={() => handleUpdateConfig('mp', 'env', 'test')}
+                                                            style={{ accentColor: colors.primary }}
+                                                        />
+                                                        Modo Prueba (Sandbox)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Webhook URL (Notificaciones)</label>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <input
+                                                        readOnly
+                                                        value={window.location.origin + '/api/webhooks/mercadopago'}
+                                                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.textSecondary, borderRadius: '8px', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(window.location.origin + '/api/webhooks/mercadopago');
+                                                            setCopiedMpWebhook(true);
+                                                            setTimeout(() => setCopiedMpWebhook(false), 2000);
+                                                        }}
+                                                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0 16px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', color: colors.text, cursor: 'pointer' }}
+                                                    >
+                                                        {copiedMpWebhook ? 'Copiado!' : 'Copiar'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Public Key</label>
+                                                <input
+                                                    value={paymentsConfig.mp?.publicKey || ''}
+                                                    onChange={e => handleUpdateConfig('mp', 'publicKey', e.target.value)}
+                                                    placeholder="Ej: APP_USR-876a3b..."
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Access Token</label>
+                                                <input
+                                                    type="password"
+                                                    value={paymentsConfig.mp?.accessToken || ''}
+                                                    onChange={e => handleUpdateConfig('mp', 'accessToken', e.target.value)}
+                                                    placeholder="Ej: APP_USR-78912..."
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-start', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleTestConnection('mp')}
+                                                style={{ background: '#f1f5f9', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: colors.text, cursor: 'pointer' }}
+                                            >
+                                                🔌 Probar Credenciales
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* TRANSFERENCIA BANCARIA ACCORDION */}
+                            <div 
+                                id="accordion-transfer"
+                                style={{ 
+                                    background: '#fff', 
+                                    border: `1px solid ${activeAccordion === 'transfer' ? colors.primary : colors.border}`, 
+                                    borderRadius: '12px', 
+                                    overflow: 'hidden',
+                                    boxShadow: activeAccordion === 'transfer' ? '0 4px 20px -2px rgba(92, 46, 145, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                            >
+                                <div 
+                                    onClick={() => setActiveAccordion(activeAccordion === 'transfer' ? null : 'transfer')}
+                                    style={{ 
+                                        padding: '18px 24px', 
+                                        background: activeAccordion === 'transfer' ? '#fbf8ff' : '#ffffff', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        borderBottom: activeAccordion === 'transfer' ? `1px solid ${colors.border}` : 'none'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        {PaymentIcons.transfer}
+                                        <div>
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0' }}>Transferencia Bancaria</h3>
+                                            <span style={{ fontSize: '12px', color: colors.textSecondary }}>Configurar cuenta de banco o billetera virtual para recibir transferencias directas.</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        {isPaymentMethodConfigured('transfer', paymentsConfig) ? (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '12px' }}>Configurado ✓</span>
+                                        ) : (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '4px 10px', borderRadius: '12px' }}>Pendiente ⚠️</span>
+                                        )}
+                                        <span style={{ fontSize: '14px', color: colors.textSecondary, transition: 'transform 0.3s', transform: activeAccordion === 'transfer' ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                    </div>
+                                </div>
+                                
+                                {activeAccordion === 'transfer' && (
+                                    <div style={{ padding: '28px', background: '#ffffff' }}>
+                                        
+                                        {connectionStatus.transfer && (
+                                            <div style={{ 
+                                                marginBottom: '20px', 
+                                                padding: '12px 18px', 
+                                                borderRadius: '8px', 
+                                                background: connectionStatus.transfer === 'success' ? '#dcfce7' : '#fee2e2',
+                                                color: connectionStatus.transfer === 'success' ? '#15803d' : '#b91c1c',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                {connectionStatus.transfer === 'success' ? '✓ Datos completos. Se mostrarán al cliente al terminar el checkout.' : '⚠️ Falta ingresar Alias, CBU o Nombre de Titular.'}
+                                            </div>
+                                        )}
+
+                                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '18px 24px', marginBottom: '24px' }}>
+                                            <h4 style={{ fontSize: '13px', fontWeight: '800', color: colors.text, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🏦 Información de Cobro</h4>
+                                            <p style={{ fontSize: '12.5px', color: colors.textSecondary, margin: '0', lineHeight: '1.6' }}>
+                                                Al seleccionar Transferencia Bancaria, tu e-commerce le proporcionará estos datos al cliente para que realice el pago de forma manual. Una vez finalizada la transferencia, el cliente podrá enviar el comprobante de pago mediante WhatsApp o adjuntarlo en la web.
+                                            </p>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Nombre del Titular</label>
+                                                <input
+                                                    value={paymentsConfig.transfer?.titular || ''}
+                                                    onChange={e => handleUpdateConfig('transfer', 'titular', e.target.value)}
+                                                    placeholder="Ej: Olmo Indumentaria S.R.L."
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>CUIT/CUIL del Titular</label>
+                                                <input
+                                                    value={paymentsConfig.transfer?.cuit || ''}
+                                                    onChange={e => handleUpdateConfig('transfer', 'cuit', e.target.value)}
+                                                    placeholder="Ej: 30-71458921-9"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Banco o Proveedor</label>
+                                                <input
+                                                    value={paymentsConfig.transfer?.banco || ''}
+                                                    onChange={e => handleUpdateConfig('transfer', 'banco', e.target.value)}
+                                                    placeholder="Ej: Banco Galicia o Mercado Pago"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Alias CBU/CVU</label>
+                                                <input
+                                                    value={paymentsConfig.transfer?.alias || ''}
+                                                    onChange={e => handleUpdateConfig('transfer', 'alias', e.target.value)}
+                                                    placeholder="Ej: OLMO.VENTAS.MP"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Nro de CBU o CVU</label>
+                                                <input
+                                                    value={paymentsConfig.transfer?.cbu || ''}
+                                                    onChange={e => handleUpdateConfig('transfer', 'cbu', e.target.value)}
+                                                    placeholder="22 dígitos numéricos"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-start', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleTestConnection('transfer')}
+                                                style={{ background: '#f1f5f9', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: colors.text, cursor: 'pointer' }}
+                                            >
+                                                🔌 Validar Datos
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* MODO ACCORDION */}
+                            <div 
+                                id="accordion-modo"
+                                style={{ 
+                                    background: '#fff', 
+                                    border: `1px solid ${activeAccordion === 'modo' ? colors.primary : colors.border}`, 
+                                    borderRadius: '12px', 
+                                    overflow: 'hidden',
+                                    boxShadow: activeAccordion === 'modo' ? '0 4px 20px -2px rgba(92, 46, 145, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                            >
+                                <div 
+                                    onClick={() => setActiveAccordion(activeAccordion === 'modo' ? null : 'modo')}
+                                    style={{ 
+                                        padding: '18px 24px', 
+                                        background: activeAccordion === 'modo' ? '#fbf8ff' : '#ffffff', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        borderBottom: activeAccordion === 'modo' ? `1px solid ${colors.border}` : 'none'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        {PaymentIcons.modo}
+                                        <div>
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0' }}>MODO</h3>
+                                            <span style={{ fontSize: '12px', color: colors.textSecondary }}>Habilitar cobro directo MODO vía Decidir / Payway.</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        {isPaymentMethodConfigured('modo', paymentsConfig) ? (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '12px' }}>Configurado ✓</span>
+                                        ) : (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '4px 10px', borderRadius: '12px' }}>Pendiente ⚠️</span>
+                                        )}
+                                        <span style={{ fontSize: '14px', color: colors.textSecondary, transition: 'transform 0.3s', transform: activeAccordion === 'modo' ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                    </div>
+                                </div>
+                                
+                                {activeAccordion === 'modo' && (
+                                    <div style={{ padding: '28px', background: '#ffffff' }}>
+                                        
+                                        {connectionStatus.modo && (
+                                            <div style={{ 
+                                                marginBottom: '20px', 
+                                                padding: '12px 18px', 
+                                                borderRadius: '8px', 
+                                                background: connectionStatus.modo === 'success' ? '#dcfce7' : '#fee2e2',
+                                                color: connectionStatus.modo === 'success' ? '#15803d' : '#b91c1c',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                {connectionStatus.modo === 'success' ? '✓ Parámetros correctos. Asegure vincular con el alias de sucursal en Payway.' : '⚠️ Falta ingresar Store ID, API Key Pública o API Key Privada.'}
+                                            </div>
+                                        )}
+
+                                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '18px 24px', marginBottom: '24px' }}>
+                                            <h4 style={{ fontSize: '13px', fontWeight: '800', color: colors.text, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📖 Guía para Habilitar MODO</h4>
+                                            <ol style={{ fontSize: '12.5px', color: colors.textSecondary, margin: '0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                                                <li>MODO opera mediante las credenciales de tu pasarela web <strong>Decidir de Payway</strong>.</li>
+                                                <li>Iniciá sesión en el portal de <a href="https://mi.payway.com.ar" target="_blank" rel="noreferrer" style={{ color: colors.primary, fontWeight: '700' }}>Payway Comercios</a> con tus datos de establecimiento.</li>
+                                                <li>En la pestaña de integraciones web, copiá tu **Nro de Establecimiento** (que será tu **Store ID** en Olmoind).</li>
+                                                <li>Obtené tus **API Key Pública** y **API Key Privada** asignadas por Payway para transacciones seguras de MODO.</li>
+                                                <li>Pegá las tres credenciales en sus respectivos casilleros a continuación.</li>
+                                            </ol>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Store ID (Nº Sitio Payway)</label>
+                                                <input
+                                                    value={paymentsConfig.modo?.storeId || ''}
+                                                    onChange={e => handleUpdateConfig('modo', 'storeId', e.target.value)}
+                                                    placeholder="Ej: 10045612"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>API Key Pública</label>
+                                                <input
+                                                    value={paymentsConfig.modo?.publicKey || ''}
+                                                    onChange={e => handleUpdateConfig('modo', 'publicKey', e.target.value)}
+                                                    placeholder="Ej: pk_decidir_..."
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>API Key Privada</label>
+                                                <input
+                                                    type="password"
+                                                    value={paymentsConfig.modo?.privateKey || ''}
+                                                    onChange={e => handleUpdateConfig('modo', 'privateKey', e.target.value)}
+                                                    placeholder="Ej: sk_decidir_..."
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-start', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleTestConnection('modo')}
+                                                style={{ background: '#f1f5f9', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: colors.text, cursor: 'pointer' }}
+                                            >
+                                                🔌 Verificar Conexión
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* GO CUOTAS ACCORDION */}
+                            <div 
+                                id="accordion-gocuotas"
+                                style={{ 
+                                    background: '#fff', 
+                                    border: `1px solid ${activeAccordion === 'gocuotas' ? colors.primary : colors.border}`, 
+                                    borderRadius: '12px', 
+                                    overflow: 'hidden',
+                                    boxShadow: activeAccordion === 'gocuotas' ? '0 4px 20px -2px rgba(92, 46, 145, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                            >
+                                <div 
+                                    onClick={() => setActiveAccordion(activeAccordion === 'gocuotas' ? null : 'gocuotas')}
+                                    style={{ 
+                                        padding: '18px 24px', 
+                                        background: activeAccordion === 'gocuotas' ? '#fbf8ff' : '#ffffff', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        borderBottom: activeAccordion === 'gocuotas' ? `1px solid ${colors.border}` : 'none'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        {PaymentIcons.gocuotas}
+                                        <div>
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0' }}>Go Cuotas</h3>
+                                            <span style={{ fontSize: '12px', color: colors.textSecondary }}>Habilitar financiación con tarjetas de débito ordinarias.</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        {isPaymentMethodConfigured('gocuotas', paymentsConfig) ? (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '12px' }}>Configurado ✓</span>
+                                        ) : (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '4px 10px', borderRadius: '12px' }}>Pendiente ⚠️</span>
+                                        )}
+                                        <span style={{ fontSize: '14px', color: colors.textSecondary, transition: 'transform 0.3s', transform: activeAccordion === 'gocuotas' ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                    </div>
+                                </div>
+                                
+                                {activeAccordion === 'gocuotas' && (
+                                    <div style={{ padding: '28px', background: '#ffffff' }}>
+                                        
+                                        {connectionStatus.gocuotas && (
+                                            <div style={{ 
+                                                marginBottom: '20px', 
+                                                padding: '12px 18px', 
+                                                borderRadius: '8px', 
+                                                background: connectionStatus.gocuotas === 'success' ? '#dcfce7' : '#fee2e2',
+                                                color: connectionStatus.gocuotas === 'success' ? '#15803d' : '#b91c1c',
+                                                fontSize: '13px',
+                                                fontWeight: '600',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                {connectionStatus.gocuotas === 'success' ? '✓ Credenciales con formato válido para cobros con débito.' : '⚠️ Falta ingresar Email, Token (API Key) o ID de Sucursal.'}
+                                            </div>
+                                        )}
+
+                                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '18px 24px', marginBottom: '24px' }}>
+                                            <h4 style={{ fontSize: '13px', fontWeight: '800', color: colors.text, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📖 Guía de Integración Go Cuotas</h4>
+                                            <ol style={{ fontSize: '12.5px', color: colors.textSecondary, margin: '0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                                                <li>Iniciá sesión en el panel comercial de <a href="https://www.gocuotas.com" target="_blank" rel="noreferrer" style={{ color: colors.primary, fontWeight: '700' }}>Go Cuotas Comercios</a>.</li>
+                                                <li>Dirigite a la sección <strong>Sucursales</strong> y creá una sucursal para tu e-commerce.</li>
+                                                <li>Copiá el **Email del comercio**, el **Token de comercio** (API Key) y el **ID de Sucursal** (Branch ID) que te asigna la plataforma.</li>
+                                                <li>Pegalos a continuación para ofrecer pagos financiados en 2, 3 o 4 cuotas sin tarjeta de crédito.</li>
+                                            </ol>
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Email de Comercio</label>
+                                                <input
+                                                    value={paymentsConfig.gocuotas?.email || ''}
+                                                    onChange={e => handleUpdateConfig('gocuotas', 'email', e.target.value)}
+                                                    placeholder="Ej: olmocomercial@gmail.com"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Token de Comercio (API Key)</label>
+                                                <input
+                                                    type="password"
+                                                    value={paymentsConfig.gocuotas?.apiKey || ''}
+                                                    onChange={e => handleUpdateConfig('gocuotas', 'apiKey', e.target.value)}
+                                                    placeholder="Token de comercio Go Cuotas"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>ID de Sucursal (Branch ID)</label>
+                                                <input
+                                                    value={paymentsConfig.gocuotas?.branchId || ''}
+                                                    onChange={e => handleUpdateConfig('gocuotas', 'branchId', e.target.value)}
+                                                    placeholder="Ej: 10452"
+                                                    style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '10px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-start', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleTestConnection('gocuotas')}
+                                                style={{ background: '#f1f5f9', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: colors.text, cursor: 'pointer' }}
+                                            >
+                                                🔌 Probar Conexión
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* EFECTIVO ACCORDION */}
+                            <div 
+                                id="accordion-cash"
+                                style={{ 
+                                    background: '#fff', 
+                                    border: `1px solid ${activeAccordion === 'cash' ? colors.primary : colors.border}`, 
+                                    borderRadius: '12px', 
+                                    overflow: 'hidden',
+                                    boxShadow: activeAccordion === 'cash' ? '0 4px 20px -2px rgba(92, 46, 145, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                            >
+                                <div 
+                                    onClick={() => setActiveAccordion(activeAccordion === 'cash' ? null : 'cash')}
+                                    style={{ 
+                                        padding: '18px 24px', 
+                                        background: activeAccordion === 'cash' ? '#fbf8ff' : '#ffffff', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        borderBottom: activeAccordion === 'cash' ? `1px solid ${colors.border}` : 'none'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        {PaymentIcons.cash}
+                                        <div>
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0' }}>Efectivo / Retiro en Showroom</h3>
+                                            <span style={{ fontSize: '12px', color: colors.textSecondary }}>Habilitar cobro presencial en billetes físicos al retirar.</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        {isPaymentMethodConfigured('cash', paymentsConfig) ? (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '12px' }}>Configurado ✓</span>
+                                        ) : (
+                                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '4px 10px', borderRadius: '12px' }}>Falta Texto ⚠️</span>
+                                        )}
+                                        <span style={{ fontSize: '14px', color: colors.textSecondary, transition: 'transform 0.3s', transform: activeAccordion === 'cash' ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                    </div>
+                                </div>
+                                
+                                {activeAccordion === 'cash' && (
+                                    <div style={{ padding: '28px', background: '#ffffff' }}>
+                                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '18px 24px', marginBottom: '24px' }}>
+                                            <h4 style={{ fontSize: '13px', fontWeight: '800', color: colors.text, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>💵 Configuración de Instrucciones</h4>
+                                            <p style={{ fontSize: '12.5px', color: colors.textSecondary, margin: '0', lineHeight: '1.6' }}>
+                                                Escribí indicaciones claras para que el cliente sepa la dirección del showroom, los horarios de retiro disponibles, y si cuenta con algún beneficio especial (como descuentos) al abonar en efectivo.
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Texto Explicativo para el Cliente</label>
+                                            <textarea
+                                                value={paymentsConfig.cash?.instructions || ''}
+                                                onChange={e => handleUpdateConfig('cash', 'instructions', e.target.value)}
+                                                placeholder="Ej: Retirá tu pedido en Cervantes 35 local A, Paraná. Horarios: Lunes a Sábado de 10:00 a 20:00 hs. ¡Abonando en efectivo obtenés un 10% de descuento en el total de tu compra!"
+                                                rows={4}
+                                                style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '12px 14px', color: colors.text, outline: 'none', borderRadius: '8px', fontSize: '14px', fontFamily: "'Inter', sans-serif", width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.5' }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* POSNET ACCORDION */}
+                            <div 
+                                id="accordion-posnet"
+                                style={{ 
+                                    background: '#fff', 
+                                    border: `1px solid ${activeAccordion === 'posnet' ? colors.primary : colors.border}`, 
+                                    borderRadius: '12px', 
+                                    overflow: 'hidden',
+                                    boxShadow: activeAccordion === 'posnet' ? '0 4px 20px -2px rgba(92, 46, 145, 0.15)' : '0 1px 3px rgba(0,0,0,0.05)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}
+                            >
+                                <div 
+                                    onClick={() => setActiveAccordion(activeAccordion === 'posnet' ? null : 'posnet')}
+                                    style={{ 
+                                        padding: '18px 24px', 
+                                        background: activeAccordion === 'posnet' ? '#fbf8ff' : '#ffffff', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        borderBottom: activeAccordion === 'posnet' ? `1px solid ${colors.border}` : 'none'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        {PaymentIcons.posnet}
+                                        <div>
+                                            <h3 style={{ fontSize: '15px', fontWeight: '800', color: colors.text, margin: '0' }}>Posnet / Terminal de local</h3>
+                                            <span style={{ fontSize: '12px', color: colors.textSecondary }}>Habilitar cobro con tarjeta física en punto de venta (POS).</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#15803d', background: '#dcfce7', padding: '4px 10px', borderRadius: '12px' }}>Configurado ✓</span>
+                                        <span style={{ fontSize: '14px', color: colors.textSecondary, transition: 'transform 0.3s', transform: activeAccordion === 'posnet' ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                    </div>
+                                </div>
+                                
+                                {activeAccordion === 'posnet' && (
+                                    <div style={{ padding: '28px', background: '#ffffff' }}>
+                                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '18px 24px' }}>
+                                            <h4 style={{ fontSize: '13px', fontWeight: '800', color: colors.text, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🔲 Canal Punto de Venta Físico</h4>
+                                            <p style={{ fontSize: '12.5px', color: colors.textSecondary, margin: '0', lineHeight: '1.6' }}>
+                                                Este método no requiere credenciales de API. Habilita a tus vendedores de local a poder registrar transacciones que se cobren físicamente usando el Posnet/Lapoint (tarjetas de crédito y débito). Al activarse en las Overview Cards superiores, aparecerá como método elegible en tu módulo POS.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+
+                        {/* Bottom Save Action Panel */}
+                        <div style={{ 
+                            marginTop: '28px', 
+                            background: '#ffffff', 
+                            border: `1px solid ${colors.border}`, 
+                            borderRadius: '12px', 
+                            padding: '16px 24px', 
+                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between' 
+                        }}>
+                            <span style={{ fontSize: '13px', color: colors.textSecondary, fontWeight: '500' }}>
+                                {savedMsg ? (
+                                    <span style={{ color: colors.success, fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        ✓ ¡Cambios guardados con éxito en la base de datos!
+                                    </span>
+                                ) : (
+                                    'Asegurate de guardar antes de salir de esta pestaña'
+                                )}
+                            </span>
+                            
+                            <button
+                                onClick={handleSavePaymentsConfig}
+                                style={{
+                                    background: colors.primary, color: '#fff', border: 'none',
+                                    padding: '12px 28px', borderRadius: '8px', fontSize: '14px',
+                                    fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                    boxShadow: '0 2px 4px rgba(92, 46, 145, 0.2)',
+                                    transition: 'opacity 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = '0.95'}
+                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                            >
+                                Guardar Cambios
+                            </button>
                         </div>
                     </div>
                 )}
@@ -997,7 +1702,27 @@ const AdminDashboard = ({ onBack }) => {
                                                     </div>
                                                     <div>
                                                         <span style={{ fontSize: '13px', fontWeight: '700', color: colors.text, textTransform: 'uppercase', display: 'block' }}>{item.name}</span>
-                                                        <span style={{ fontSize: '10px', color: colors.textSecondary, fontFamily: 'monospace' }}>ID: {item.id.slice(0, 8).toUpperCase()}</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                                            <span style={{ fontSize: '10px', color: colors.textSecondary, fontFamily: 'monospace' }}>ID: {item.id.slice(0, 8).toUpperCase()}</span>
+                                                            {item.colors && item.colors.length > 0 && (
+                                                                <div style={{ display: 'flex', gap: '3px', marginLeft: '6px' }}>
+                                                                    {item.colors.map(col => (
+                                                                        <span
+                                                                            key={col.name}
+                                                                            style={{
+                                                                                width: '8px',
+                                                                                height: '8px',
+                                                                                borderRadius: '50%',
+                                                                                background: col.hex,
+                                                                                border: '1px solid #cbd5e1',
+                                                                                display: 'inline-block'
+                                                                            }}
+                                                                            title={col.name}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
 
@@ -1613,6 +2338,119 @@ const AdminDashboard = ({ onBack }) => {
                                         <Check size={16} />
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* Colores de Prenda */}
+                            <div>
+                                <label style={labelStyle}>Colores Disponibles</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: `1px solid ${colors.border}` }}>
+                                    {COLOR_PALETTE.map(c => {
+                                        const isSelected = (formData.colors || []).some(item => item.name === c.name);
+                                        const light = isLightColor(c.hex);
+                                        return (
+                                            <button
+                                                key={c.name}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (isSelected) {
+                                                        setFormData(prev => ({ ...prev, colors: (prev.colors || []).filter(item => item.name !== c.name) }));
+                                                    } else {
+                                                        setFormData(prev => ({ ...prev, colors: [...(prev.colors || []), { name: c.name, hex: c.hex }] }));
+                                                    }
+                                                }}
+                                                style={{
+                                                    position: 'relative',
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    borderRadius: '50%',
+                                                    background: c.hex,
+                                                    border: isSelected ? '2px solid #000' : `1px solid ${light ? '#cbd5e1' : 'transparent'}`,
+                                                    cursor: 'pointer',
+                                                    boxShadow: isSelected ? '0 0 0 2px #fff, 0 4px 6px -1px rgba(0,0,0,0.15)' : '0 1px 3px rgba(0,0,0,0.1)',
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: 0
+                                                }}
+                                                title={c.name}
+                                            >
+                                                {isSelected && (
+                                                    <Check size={14} color={light ? '#000000' : '#ffffff'} strokeWidth={3} />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Custom Color Inline Form */}
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${colors.border}` }}>
+                                    <span style={{ fontSize: '11px', fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', minWidth: '70px' }}>Personalizado:</span>
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre (ej: Beige Claro)"
+                                        value={customColorName}
+                                        onChange={e => setCustomColorName(e.target.value)}
+                                        style={{ ...inputStyle, padding: '6px 10px', fontSize: '12px', flex: 1 }}
+                                    />
+                                    <input
+                                        type="color"
+                                        value={customColorHex}
+                                        onChange={e => setCustomColorHex(e.target.value)}
+                                        style={{ width: '32px', height: '28px', border: `1px solid ${colors.border}`, borderRadius: '6px', cursor: 'pointer', padding: 0, background: 'none' }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (!customColorName.trim()) {
+                                                alert('Por favor ingresa un nombre para el color personalizado.');
+                                                return;
+                                            }
+                                            const newColor = { name: customColorName.trim(), hex: customColorHex };
+                                            if ((formData.colors || []).some(item => item.name.toLowerCase() === newColor.name.toLowerCase())) {
+                                                alert('Ya existe un color con ese nombre.');
+                                                return;
+                                            }
+                                            setFormData(prev => ({ ...prev, colors: [...(prev.colors || []), newColor] }));
+                                            setCustomColorName('');
+                                        }}
+                                        style={{
+                                            background: 'rgba(92, 46, 145, 0.08)',
+                                            color: colors.primary,
+                                            border: `1px solid ${colors.primary}`,
+                                            padding: '6px 12px',
+                                            borderRadius: '6px',
+                                            fontSize: '12px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        Agregar
+                                    </button>
+                                </div>
+
+                                {/* Custom Selection Tags Preview */}
+                                {(formData.colors || []).length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                                        {formData.colors.map(col => {
+                                            const light = isLightColor(col.hex);
+                                            return (
+                                                <div key={col.name} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px', border: `1px solid ${colors.border}` }}>
+                                                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: col.hex, border: light ? '1px solid #94a3b8' : 'none' }}></span>
+                                                    <span style={{ fontSize: '11px', fontWeight: '600', color: colors.text }}>{col.name}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, colors: prev.colors.filter(item => item.name !== col.name) }))}
+                                                        style={{ background: 'none', border: 'none', padding: 0, color: colors.textSecondary, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <X size={10} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Stock by size */}

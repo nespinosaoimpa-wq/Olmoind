@@ -109,7 +109,7 @@ const Header = ({ searchQuery, setSearchQuery }) => {
           methodLabel = 'WhatsApp';
       }
 
-      const itemsList = cart.map(i => `• ${i.name} (${i.size}) x${i.quantity} = $${(i.price * i.quantity).toLocaleString()}`).join('%0A');
+      const itemsList = cart.map(i => `• ${i.name} (${i.size}${i.color ? ` - ${i.color}` : ''}) x${i.quantity} = $${(i.price * i.quantity).toLocaleString()}`).join('%0A');
       const msg = `Hola! Quiero hacer un pedido:%0A${itemsList}%0A%0ATOTAL: $${cartTotal.toLocaleString()}%0A%0AMedio de Pago: ${methodLabel}${additionalInfo}`;
       const phone = settings.contact?.whatsapp || '543434559599';
       
@@ -480,18 +480,18 @@ const Header = ({ searchQuery, setSearchQuery }) => {
                   </div>
                 ) : (
                   cart.map((item) => (
-                    <div key={item.id + item.size} style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #f3f4f6', paddingBottom: '16px' }}>
+                    <div key={item.key || (item.id + item.size)} style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #f3f4f6', paddingBottom: '16px' }}>
                       <div style={{ width: '72px', height: '90px', background: '#f3f4f6', overflow: 'hidden', borderRadius: '4px', flexShrink: 0 }}>
                         <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%)' }} />
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
                           <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#1A1A1A', fontFamily: "'Inter', sans-serif", marginBottom: '4px' }}>{item.name}</h4>
-                          <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif" }}>TALLE: {item.size} | CANT: {item.quantity}</p>
+                          <p style={{ fontSize: '11px', color: '#6b7280', fontFamily: "'Inter', sans-serif" }}>TALLE: {item.size} {item.color ? `| COLOR: ${item.color.toUpperCase()}` : ''} | CANT: {item.quantity}</p>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                           <span style={{ fontSize: '15px', fontWeight: '700', color: '#1A1A1A', fontFamily: "'Inter', sans-serif" }}>${(item.price * item.quantity).toLocaleString()}</span>
-                          <button onClick={() => removeItem(item.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '700' }}>
+                          <button onClick={() => removeItem(item.key || `${item.id}-${item.size || ''}-${item.color || ''}`)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '700' }}>
                             <Trash2 size={14} /> QUITAR
                           </button>
                         </div>

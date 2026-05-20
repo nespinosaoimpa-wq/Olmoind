@@ -65,9 +65,38 @@ const ProductCard = ({ product, onOpen }) => {
                     fontWeight: '500',
                     color: '#6b7280',
                     fontFamily: "'Inter', sans-serif",
+                    marginBottom: '6px'
                 }}>
                     ${product.price ? product.price.toLocaleString() : '0'}
                 </p>
+
+                {/* Swatches in Card */}
+                {product.colors && product.colors.length > 0 && (
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px', height: '14px', overflow: 'hidden' }}>
+                        {product.colors.slice(0, 5).map((col, idx) => {
+                            const isLight = col.hex === '#FFFFFF' || col.hex === '#ffffff' || col.hex === '#F5F0E1' || col.hex === '#f5f0e1';
+                            return (
+                                <span
+                                    key={idx}
+                                    style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        borderRadius: '50%',
+                                        background: col.hex,
+                                        border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(0,0,0,0.05)',
+                                        display: 'inline-block'
+                                    }}
+                                    title={col.name}
+                                />
+                            );
+                        })}
+                        {product.colors.length > 5 && (
+                            <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: '700', display: 'flex', alignItems: 'center', lineHeight: 1 }}>
+                                +{product.colors.length - 5}
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -77,6 +106,7 @@ const ProductCard = ({ product, onOpen }) => {
 const ProductModal = ({ product, onClose }) => {
     const { addItem } = useCartStore();
     const [selectedSize, setSelectedSize] = useState(null);
+    const [selectedColor, setSelectedColor] = useState(null);
     const [currentImageIdx, setCurrentImageIdx] = useState(0);
     const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
@@ -86,6 +116,9 @@ const ProductModal = ({ product, onClose }) => {
     const images = Array.isArray(product.images) && product.images.length > 0 
         ? product.images 
         : (product.image ? [product.image] : ['/olmo_files/625151196_17921692254243739_4681068032369953326_n.jpg']);
+
+    const hasColors = Array.isArray(product.colors) && product.colors.length > 0;
+    const isAddDisabled = !selectedSize || (hasColors && !selectedColor);
 
     return (
         <motion.div
@@ -216,32 +249,92 @@ const ProductModal = ({ product, onClose }) => {
                     })}
                 </div>
 
+                {/* Color Selector */}
+                {hasColors && (
+                    <>
+                        <h4 style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', letterSpacing: '0.15em', marginBottom: '12px', fontFamily: "'Inter', sans-serif" }}>
+                            SELECCIONÁ EL COLOR{selectedColor ? `: ${selectedColor.name.toUpperCase()}` : ''}
+                        </h4>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                            {product.colors.map((col, idx) => {
+                                const isSelected = selectedColor?.name === col.name;
+                                const isLight = col.hex === '#FFFFFF' || col.hex === '#ffffff' || col.hex === '#F5F0E1' || col.hex === '#f5f0e1';
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setSelectedColor(col)}
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            background: col.hex,
+                                            border: isSelected 
+                                                ? '2px solid #1A1A1A' 
+                                                : (isLight ? '1px solid #cbd5e1' : '1px solid rgba(0,0,0,0.15)'),
+                                            cursor: 'pointer',
+                                            position: 'relative',
+                                            padding: 0,
+                                            boxShadow: isSelected ? '0 0 0 2px #ffffff, 0 0 0 4px #1a1a1a' : 'none',
+                                            transition: 'transform 0.2s ease',
+                                            transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                        title={col.name}
+                                    >
+                                        {isSelected && (
+                                            <span style={{ 
+                                                color: isLight ? '#000000' : '#ffffff', 
+                                                fontSize: '12px',
+                                                fontWeight: 'bold',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                lineHeight: 1
+                                            }}>✓</span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
+
                 {/* Add to Cart */}
                 <button
-                    disabled={!selectedSize}
+                    disabled={isAddDisabled}
                     onClick={() => {
-                        if (selectedSize) {
-                            addItem({ ...product, size: selectedSize });
+                        if (selectedSize && (!hasColors || selectedColor)) {
+                            addItem({ 
+                                ...product, 
+                                size: selectedSize, 
+                                color: selectedColor ? selectedColor.name : undefined 
+                            });
                             onClose();
                         }
                     }}
                     style={{
                         width: '100%',
                         padding: '16px',
-                        background: selectedSize ? '#1A1A1A' : '#e5e7eb',
-                        color: selectedSize ? '#ffffff' : '#9ca3af',
+                        background: !isAddDisabled ? '#1A1A1A' : '#e5e7eb',
+                        color: !isAddDisabled ? '#ffffff' : '#9ca3af',
                         border: 'none',
                         fontSize: '11px',
                         fontWeight: '700',
                         textTransform: 'uppercase',
                         letterSpacing: '0.2em',
-                        cursor: selectedSize ? 'pointer' : 'not-allowed',
+                        cursor: !isAddDisabled ? 'pointer' : 'not-allowed',
                         borderRadius: '4px',
                         fontFamily: "'Inter', sans-serif",
                         transition: 'all 0.2s ease',
                     }}
                 >
-                    {selectedSize ? 'AGREGAR AL CARRITO' : 'SELECCIONÁ UN TALLE'}
+                    {!selectedSize 
+                        ? 'SELECCIONÁ UN TALLE' 
+                        : (hasColors && !selectedColor 
+                            ? 'SELECCIONÁ UN COLOR' 
+                            : 'AGREGAR AL CARRITO')}
                 </button>
             </motion.div>
         </motion.div>

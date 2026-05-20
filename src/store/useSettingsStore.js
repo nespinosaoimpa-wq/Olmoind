@@ -8,12 +8,12 @@ const DEFAULTS = {
     banners: [],
     categories: ['Remeras', 'Pantalones', 'Sudaderas', 'Accesorios'],
     payments: {
-        mp: { active: true, publicKey: '', accessToken: '' },
-        transfer: { active: true, alias: 'OLMO.VENTAS.MP', cbu: '0000003100045678901234', titular: 'Olmo S.R.L.', banco: 'Banco Macro' },
+        mp: { active: true, publicKey: '', accessToken: '', env: 'test', webhookUrl: '' },
+        transfer: { active: true, alias: 'OLMO.VENTAS.MP', cbu: '0000003100045678901234', titular: 'Olmo S.R.L.', banco: 'Banco Macro', cuit: '30-71458921-9' },
         cash: { active: true, instructions: 'Retiro en showroom o coordinando contra entrega en efectivo.' },
         posnet: { active: true },
-        modo: { active: false, clientId: '', clientSecret: '', apiKey: '' },
-        gocuotas: { active: false, apiKey: '', email: '' }
+        modo: { active: false, storeId: '', publicKey: '', privateKey: '' },
+        gocuotas: { active: false, email: '', apiKey: '', branchId: '' }
     }
 };
 

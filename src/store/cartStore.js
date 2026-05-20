@@ -3,19 +3,21 @@ import { create } from 'zustand';
 export const useCartStore = create((set) => ({
     cart: [],
     addItem: (product) => set((state) => {
-        const existing = state.cart.find(item => item.id === product.id);
+        const itemKey = `${product.id}-${product.size || ''}-${product.color || ''}`;
+        const existing = state.cart.find(item => item.key === itemKey);
         if (existing) {
             return {
                 cart: state.cart.map(item =>
-                    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                    item.key === itemKey ? { ...item, quantity: item.quantity + (product.quantity || 1) } : item
                 )
             };
         }
-        return { cart: [...state.cart, { ...product, quantity: 1 }] };
+        return { cart: [...state.cart, { ...product, key: itemKey, quantity: product.quantity || 1 }] };
     }),
-    removeItem: (id) => set((state) => ({
-        cart: state.cart.filter(item => item.id !== id)
+    removeItem: (key) => set((state) => ({
+        cart: state.cart.filter(item => item.key !== key)
     })),
     clearCart: () => set({ cart: [] }),
     getTotal: () => set((state) => state.cart.reduce((acc, item) => acc + (item.price * item.quantity), 0))
 }));
+

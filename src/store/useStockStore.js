@@ -75,22 +75,52 @@ export const useStockStore = create((set, get) => ({
             // 2. Record the sale
             const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
             
-            // Si la base de datos no tiene la columna branch ni origen aún, los guardamos en las notas.
             const branchText = paymentData.branch ? `[Sucursal: ${paymentData.branch}] ` : '';
             const sourceText = paymentData.source ? `[Origen: ${paymentData.source}] ` : '';
             const finalNotes = sourceText + branchText + (paymentData.notes || '');
+            const ticketNumber = paymentData.ticketNumber || `OLMO-${Date.now()}`;
 
-            await supabase.from('sales').insert([{
-                items: cartItems,
-                total: total,
-                payment_method: paymentData.method || 'cash',
+            const customerMetadata = {
+                method: paymentData.method || 'cash',
                 notes: finalNotes,
-                status: paymentData.status || 'Completada', // POS sales are completed instantly, online defaults to status or 'Completada'
-            }]);
+                branch: paymentData.branch || 'Central',
+                source: paymentData.source || 'Punto de Venta',
+                ticket_number: ticketNumber,
+                paymentNotes: paymentData.notes || '',
+                amountTendered: paymentData.amountTendered || ''
+            };
+
+            try {
+                // Try inserting with all potential fields
+                const { error: insertError } = await supabase.from('sales').insert([{
+                    items: cartItems,
+                    total: total,
+                    payment_method: paymentData.method || 'cash',
+                    notes: finalNotes,
+                    status: paymentData.status || 'Completada',
+                    customer_info: customerMetadata
+                }]);
+
+                if (insertError) {
+                    console.warn("Full insert failed, retrying with schema-free customer_info fallback...", insertError);
+                    
+                    const { error: fallbackError } = await supabase.from('sales').insert([{
+                        items: cartItems,
+                        total: total,
+                        status: paymentData.status || 'Completada',
+                        customer_info: customerMetadata
+                    }]);
+
+                    if (fallbackError) throw fallbackError;
+                }
+            } catch (err) {
+                console.error("Critical error in sale insert:", err);
+                throw err;
+            }
 
             // 2.5. Enviar Notificación Push (Telegram)
             try {
-                const itemsList = cartItems.map(i => `• ${i.name} (${i.size}) x${i.quantity}`).join('\n');
+                const itemsList = cartItems.map(i => `• ${i.name} (${i.size}${i.color ? ` - ${i.color}` : ''}) x${i.quantity}`).join('\n');
                 fetch('/api/send-notification', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

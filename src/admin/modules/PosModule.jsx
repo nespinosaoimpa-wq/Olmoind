@@ -30,28 +30,42 @@ const PosModule = () => {
     const [paymentNotes, setPaymentNotes] = useState('');
     const [lastSale, setLastSale] = useState(null);
 
+    const generateTicketNumber = () => {
+        const now = new Date();
+        const y = now.getFullYear();
+        const mo = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const h = String(now.getHours()).padStart(2, '0');
+        const mi = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        return `OLMO-${y}${mo}${d}-${h}${mi}${s}`;
+    };
+
     const printTicket = (sale) => {
         if (!sale || !sale.items || sale.items.length === 0) return;
-        const dateStr = new Date().toLocaleString('es-AR');
+        const now = new Date();
+        const dateStr = now.toLocaleString('es-AR');
+        const ticketNum = sale.ticketNumber || generateTicketNumber();
+
         const itemsHtml = sale.items.map(item => `
             <tr>
-                <td>${item.name}</td>
-                <td>${item.size}</td>
-                <td style="text-align: right;">x${item.quantity}</td>
-                <td style="text-align: right;">$${(item.price * item.quantity).toLocaleString('es-AR')}</td>
+                <td style="padding:4px 0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}${item.color ? ` <span style="color:#888;">(${item.color})</span>` : ''}</td>
+                <td style="padding:4px 4px;text-align:center;">${item.size}</td>
+                <td style="padding:4px 4px;text-align:center;">x${item.quantity}</td>
+                <td style="padding:4px 0;text-align:right;white-space:nowrap;">$${(item.price * item.quantity).toLocaleString('es-AR')}</td>
             </tr>
         `).join('');
 
-        let vueltoHtml = '';
+        let paymentDetailHtml = '';
         if (sale.paymentMethod === 'Efectivo' && sale.amountTendered) {
             const vuelto = parseFloat(sale.amountTendered) - sale.total;
-            vueltoHtml = `
-                <div style="margin-top: 4px;"><strong>PAGO CON:</strong> $${parseFloat(sale.amountTendered).toLocaleString('es-AR')}</div>
-                <div><strong>VUELTO:</strong> $${vuelto >= 0 ? vuelto.toLocaleString('es-AR') : '0'}</div>
+            paymentDetailHtml = `
+                <div class="pay-row"><span>PAGÓ CON:</span><span>$${parseFloat(sale.amountTendered).toLocaleString('es-AR')}</span></div>
+                <div class="pay-row" style="font-size:13px;font-weight:900;"><span>VUELTO:</span><span>$${vuelto >= 0 ? vuelto.toLocaleString('es-AR') : '0'}</span></div>
             `;
         }
 
-        const win = window.open('', '_blank', 'width=350,height=600');
+        const win = window.open('', '_blank', 'width=360,height=700');
         if (!win) {
             alert('El bloqueador de ventanas emergentes impidió abrir el ticket. Por favor, permití las ventanas emergentes en tu navegador.');
             return;
@@ -60,119 +74,235 @@ const PosModule = () => {
         win.document.write(`
             <html>
             <head>
-                <title>Ticket de Venta</title>
+                <title>Ticket ${ticketNum}</title>
                 <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
                     body {
-                        font-family: 'Courier New', Courier, monospace;
-                        font-size: 12px;
+                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                        font-size: 11px;
                         color: #000;
-                        margin: 0;
-                        padding: 15px;
+                        padding: 12px;
                         width: 280px;
+                        line-height: 1.4;
+                    }
+                    .thick-sep {
+                        border: none;
+                        border-top: 2px solid #000;
+                        margin: 10px 0;
+                    }
+                    .thin-sep {
+                        border: none;
+                        border-top: 1px dashed #999;
+                        margin: 8px 0;
                     }
                     .header {
                         text-align: center;
-                        margin-bottom: 15px;
+                        padding: 8px 0 4px;
                     }
-                    .logo {
-                        font-size: 15px;
-                        font-weight: bold;
+                    .logo-text {
+                        font-size: 28px;
+                        font-weight: 900;
+                        letter-spacing: 10px;
+                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                        margin-bottom: 2px;
+                    }
+                    .logo-sub {
+                        font-size: 9px;
+                        font-weight: 600;
+                        letter-spacing: 6px;
+                        text-transform: uppercase;
+                        color: #333;
+                    }
+                    .store-info {
+                        text-align: center;
+                        font-size: 10px;
+                        color: #444;
+                        line-height: 1.5;
+                        margin: 6px 0;
+                    }
+                    .ticket-meta {
+                        background: #f5f5f5;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        padding: 8px 10px;
+                        margin: 8px 0;
+                        font-size: 10px;
+                    }
+                    .ticket-meta .ticket-label {
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2px;
+                        text-transform: uppercase;
+                        color: #888;
+                        text-align: center;
+                        margin-bottom: 4px;
+                    }
+                    .ticket-meta .ticket-id {
+                        font-size: 12px;
+                        font-weight: 800;
+                        text-align: center;
+                        font-family: 'Courier New', monospace;
                         letter-spacing: 1px;
                     }
-                    .separator {
-                        border-top: 1px dashed #000;
-                        margin: 8px 0;
+                    .meta-row {
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 10px;
+                        margin-top: 4px;
                     }
-                    .info {
-                        font-size: 11px;
-                        margin-bottom: 8px;
-                        line-height: 1.4;
-                    }
-                    .table {
+                    .meta-row span:first-child { color: #666; font-weight: 600; }
+                    .items-table {
                         width: 100%;
                         border-collapse: collapse;
-                        margin: 8px 0;
+                        margin: 6px 0;
                     }
-                    .table th, .table td {
+                    .items-table th {
+                        font-size: 9px;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        color: #555;
+                        border-bottom: 1px solid #ccc;
+                        padding: 4px 0;
                         text-align: left;
+                    }
+                    .items-table td {
                         font-size: 11px;
-                        padding: 3px 0;
+                        font-family: 'Courier New', monospace;
                         vertical-align: top;
                     }
-                    .total-section {
-                        margin-top: 8px;
+                    .total-box {
+                        background: #000;
+                        color: #fff;
+                        padding: 10px 12px;
+                        border-radius: 4px;
+                        margin: 8px 0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    .total-box .total-label {
                         font-size: 13px;
-                        font-weight: bold;
+                        font-weight: 800;
+                        letter-spacing: 2px;
+                    }
+                    .total-box .total-amount {
+                        font-size: 18px;
+                        font-weight: 900;
+                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                    }
+                    .pay-section {
+                        font-size: 11px;
+                        margin: 6px 0;
+                    }
+                    .pay-row {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 2px 0;
+                    }
+                    .pay-row span:first-child { font-weight: 700; color: #333; }
+                    .non-fiscal-box {
+                        border: 2px solid #000;
+                        padding: 8px;
+                        margin: 12px 0;
+                        text-align: center;
+                    }
+                    .non-fiscal-box .nf-title {
+                        font-size: 9px;
+                        font-weight: 900;
+                        letter-spacing: 1px;
+                        line-height: 1.4;
+                    }
+                    .non-fiscal-box .nf-sub {
+                        font-size: 8px;
+                        color: #555;
+                        margin-top: 2px;
                     }
                     .footer {
                         text-align: center;
-                        font-size: 10px;
-                        margin-top: 15px;
-                        color: #555;
+                        margin-top: 12px;
+                        padding-top: 8px;
                     }
-                    .non-fiscal {
-                        border: 1px solid #000;
-                        padding: 6px;
-                        margin: 12px 0;
-                        font-weight: bold;
-                        text-align: center;
+                    .footer .thanks {
+                        font-size: 12px;
+                        font-weight: 700;
+                        margin-bottom: 4px;
+                    }
+                    .footer .social {
                         font-size: 9px;
-                        line-height: 1.3;
+                        color: #777;
+                        letter-spacing: 0.5px;
+                    }
+                    @media print {
+                        body { padding: 0; width: 100%; }
+                        .no-print { display: none; }
                     }
                 </style>
             </head>
             <body>
+                <hr class="thick-sep" />
                 <div class="header">
-                    <div class="logo">OLMO INDUMENTARIA</div>
-                    <div>Cervantes 35, Local A</div>
-                    <div>Paraná, Entre Ríos</div>
+                    <div class="logo-text">OLMO</div>
+                    <div class="logo-sub">indumentaria</div>
                 </div>
-                <div class="info">
-                    <div><strong>FECHA:</strong> ${dateStr}</div>
-                    <div><strong>SUCURSAL:</strong> ${sale.branch}</div>
-                    <div><strong>ORIGEN:</strong> Punto de Venta</div>
+                <hr class="thick-sep" />
+
+                <div class="store-info">
+                    Cervantes 35, Local A<br/>
+                    Paraná, Entre Ríos<br/>
+                    Tel: 343-4559599<br/>
+                    <strong>@olmo.ind</strong>
                 </div>
-                <div class="separator"></div>
-                <table class="table">
+
+                <div class="ticket-meta">
+                    <div class="ticket-label">Ticket No Fiscal</div>
+                    <div class="ticket-id">${ticketNum}</div>
+                    <div class="meta-row"><span>Fecha:</span><span>${dateStr}</span></div>
+                    <div class="meta-row"><span>Sucursal:</span><span>${sale.branch || 'Central'}</span></div>
+                    <div class="meta-row"><span>Origen:</span><span>Punto de Venta</span></div>
+                </div>
+
+                <hr class="thin-sep" />
+                <table class="items-table">
                     <thead>
                         <tr>
-                            <th>ARTICULO</th>
-                            <th>TALLE</th>
-                            <th style="text-align: right;">CANT</th>
-                            <th style="text-align: right;">SUBT</th>
+                            <th>Artículo</th>
+                            <th style="text-align:center;">Talle</th>
+                            <th style="text-align:center;">Cant</th>
+                            <th style="text-align:right;">Subt.</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${itemsHtml}
                     </tbody>
                 </table>
-                <div class="separator"></div>
-                <div class="total-section">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span>TOTAL:</span>
-                        <span>$${sale.total.toLocaleString('es-AR')}</span>
-                    </div>
+                <hr class="thin-sep" />
+
+                <div class="total-box">
+                    <span class="total-label">TOTAL</span>
+                    <span class="total-amount">$${sale.total.toLocaleString('es-AR')}</span>
                 </div>
-                <div class="info" style="margin-top: 8px;">
-                    <div><strong>METODO DE PAGO:</strong> ${sale.paymentMethod}</div>
-                    ${vueltoHtml}
-                    ${sale.paymentNotes ? `<div style="margin-top: 4px;"><strong>NOTAS:</strong> ${sale.paymentNotes}</div>` : ''}
+
+                <div class="pay-section">
+                    <div class="pay-row"><span>MÉTODO DE PAGO:</span><span>${sale.paymentMethod}</span></div>
+                    ${paymentDetailHtml}
+                    ${sale.paymentNotes ? `<div class="pay-row" style="margin-top:4px;"><span>NOTAS:</span><span style="max-width:140px;text-align:right;">${sale.paymentNotes}</span></div>` : ''}
                 </div>
-                <div class="separator"></div>
-                <div class="non-fiscal">
-                    DOCUMENTO NO VÁLIDO COMO FACTURA
-                    <br/>
-                    (TICKET DE CONTROL INTERNO)
+
+                <div class="non-fiscal-box">
+                    <div class="nf-title">DOCUMENTO NO VÁLIDO COMO FACTURA</div>
+                    <div class="nf-sub">Ticket de control interno</div>
                 </div>
+
                 <div class="footer">
-                    ¡Gracias por tu compra!
-                    <br/>
-                    olmoind.com
+                    <div class="thanks">¡Gracias por tu compra!</div>
+                    <div class="social">olmoind.vercel.app · @olmo.ind</div>
                 </div>
+
                 <script>
                     window.onload = function() {
                         window.print();
-                        setTimeout(function() { window.close(); }, 800);
+                        setTimeout(function() { window.close(); }, 1200);
                     }
                 </script>
             </body>
@@ -198,10 +328,26 @@ const PosModule = () => {
         if (searchRef.current) searchRef.current.focus();
     };
     
-    // Caja States
+    // Caja & Sales History States
     const [showCaja, setShowCaja] = useState(false);
     const [dailySales, setDailySales] = useState([]);
     const [cajaLoading, setCajaLoading] = useState(false);
+    
+    // Filters and Date ranges
+    const [historyStartDate, setHistoryStartDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    });
+    const [historyEndDate, setHistoryEndDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    });
+    const [historyMethod, setHistoryMethod] = useState('Todos');
+    const [historyBranchFilter, setHistoryBranchFilter] = useState('Todos');
+    const [selectedSaleDetail, setSelectedSaleDetail] = useState(null);
+
+    // Color picker pending state
+    const [colorSelectionPending, setColorSelectionPending] = useState(null);
     
     // Multi-branch
     const branches = settings?.contact?.addresses?.map(a => a.name).filter(Boolean) || [];
@@ -231,16 +377,33 @@ const PosModule = () => {
         );
     });
 
-    const addToCart = (product, size) => {
-        const key = `${product.id}-${size}`;
+    const addToCart = (product, size, selectedColor = null) => {
+        if (product.colors && product.colors.length > 0 && !selectedColor) {
+            setColorSelectionPending({ product, size });
+            return;
+        }
+
+        const colorName = selectedColor ? selectedColor.name : '';
+        const key = `${product.id}-${size}-${colorName}`;
         const stock_for_size = (product.variants || {})[size] || 0;
+
         setCart(prev => {
             const existing = prev.find(i => i.key === key);
             if (existing) {
                 if (existing.quantity >= stock_for_size) return prev;
                 return prev.map(i => i.key === key ? { ...i, quantity: i.quantity + 1 } : i);
             }
-            return [...prev, { key, id: product.id, name: product.name, price: product.price, size, quantity: 1, maxStock: stock_for_size, image: product.images?.[0] || product.image }];
+            return [...prev, { 
+                key, 
+                id: product.id, 
+                name: product.name, 
+                price: product.price, 
+                size, 
+                color: colorName, 
+                quantity: 1, 
+                maxStock: stock_for_size, 
+                image: product.images?.[0] || product.image 
+            }];
         });
         setQuery('');
         if (searchRef.current) searchRef.current.focus();
@@ -272,6 +435,7 @@ const PosModule = () => {
                 status: 'Completada'
             });
 
+            const ticketNum = generateTicketNumber();
             const saleData = {
                 items: [...cart],
                 total,
@@ -279,7 +443,8 @@ const PosModule = () => {
                 paymentMethod,
                 amountTendered,
                 paymentNotes,
-                finalNotes
+                finalNotes,
+                ticketNumber: ticketNum
             };
 
             setLastSale(saleData);
@@ -297,21 +462,24 @@ const PosModule = () => {
     const fetchDailyCaja = async () => {
         setCajaLoading(true);
         try {
-            // Get today's start and end timestamps in ISO
-            const startOfDay = new Date();
-            startOfDay.setHours(0, 0, 0, 0);
-            
+            const start = new Date(historyStartDate);
+            start.setHours(0, 0, 0, 0);
+
+            const end = new Date(historyEndDate);
+            end.setHours(23, 59, 59, 999);
+
             const { data, error } = await supabase
                 .from('sales')
                 .select('*')
-                .gte('created_at', startOfDay.toISOString())
+                .gte('created_at', start.toISOString())
+                .lte('created_at', end.toISOString())
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
             setDailySales(data || []);
         } catch (e) {
-            console.error('Error fetching caja:', e);
-            alert('Error al cargar la caja.');
+            console.error('Error fetching sales history:', e);
+            alert('Error al cargar el historial de ventas: ' + e.message);
         } finally {
             setCajaLoading(false);
         }
@@ -322,20 +490,58 @@ const PosModule = () => {
         setShowCaja(true);
     };
 
-    // Filter by branch and exclude online orders
-    const branchSales = dailySales.filter(sale => {
-        // Exclude virtual store sales from physical POS cash register
-        if (sale.notes?.includes('[Origen: Tienda Online]')) return false;
+    const reprintSale = (sale) => {
+        const meta = sale.customer_info || {};
+        const saleData = {
+            items: sale.items || [],
+            total: sale.total,
+            branch: meta.branch || (sale.notes?.includes('[Sucursal: ') ? sale.notes.split('[Sucursal: ')[1].split(']')[0] : 'Central'),
+            paymentMethod: sale.payment_method || meta.method || 'cash',
+            amountTendered: meta.amountTendered || '',
+            paymentNotes: meta.paymentNotes || sale.notes || '',
+            ticketNumber: meta.ticket_number || `OLMO-${new Date(sale.created_at).getTime()}`
+        };
+        printTicket(saleData);
+    };
 
-        if (!selectedBranch) return true; // If no branches exist, show all physical sales
-        return sale.notes?.includes(`[Sucursal: ${selectedBranch}]`);
+    // Filter by branch, source and payment method
+    const branchSales = dailySales.filter(sale => {
+        const meta = sale.customer_info || {};
+        const saleBranch = meta.branch || (sale.notes?.includes('[Sucursal: ') ? sale.notes.split('[Sucursal: ')[1].split(']')[0] : 'Central');
+        const saleMethod = sale.payment_method || meta.method || 'cash';
+        
+        let methodLabel = 'Efectivo';
+        const normMethod = String(saleMethod).toLowerCase();
+        if (normMethod === 'transfer' || normMethod === 'transferencia') methodLabel = 'Transferencia';
+        else if (normMethod === 'mp' || normMethod === 'mercado pago') methodLabel = 'Mercado Pago';
+        else if (normMethod === 'card' || normMethod === 'tarjeta' || normMethod === 'débito' || normMethod === 'crédito') methodLabel = 'Tarjeta';
+        else if (normMethod === 'mixto') methodLabel = 'Mixto';
+        else if (normMethod === 'crédito de la casa') methodLabel = 'Crédito de la casa';
+
+        // Branch filter
+        if (historyBranchFilter !== 'Todos' && saleBranch !== historyBranchFilter) return false;
+
+        // Payment method filter
+        if (historyMethod !== 'Todos' && methodLabel !== historyMethod) return false;
+
+        return true;
     });
 
     // Calculate Caja Totals
     const cajaSummary = branchSales.reduce((acc, sale) => {
-        const method = sale.payment_method || 'Desconocido';
-        if (!acc[method]) acc[method] = 0;
-        acc[method] += sale.total || 0;
+        const meta = sale.customer_info || {};
+        const saleMethod = sale.payment_method || meta.method || 'cash';
+        
+        let methodLabel = 'Efectivo';
+        const normMethod = String(saleMethod).toLowerCase();
+        if (normMethod === 'transfer' || normMethod === 'transferencia') methodLabel = 'Transferencia';
+        else if (normMethod === 'mp' || normMethod === 'mercado pago') methodLabel = 'Mercado Pago';
+        else if (normMethod === 'card' || normMethod === 'tarjeta' || normMethod === 'débito' || normMethod === 'crédito') methodLabel = 'Tarjeta';
+        else if (normMethod === 'mixto') methodLabel = 'Mixto';
+        else if (normMethod === 'crédito de la casa') methodLabel = 'Crédito de la casa';
+
+        if (!acc[methodLabel]) acc[methodLabel] = 0;
+        acc[methodLabel] += sale.total || 0;
         acc.total += sale.total || 0;
         return acc;
     }, { total: 0 });
@@ -470,7 +676,7 @@ const PosModule = () => {
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <p style={{ fontSize: '12px', fontWeight: '700', color: colors.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
                                 <p style={{ fontSize: '11px', color: colors.textSecondary, margin: '2px 0 0 0' }}>
-                                    <span translate="no">Talle {item.size}</span> • ${item.price?.toLocaleString()}
+                                    <span translate="no">Talle {item.size}</span>{item.color ? ` • Color: ${item.color}` : ''} • ${item.price?.toLocaleString()}
                                 </p>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
@@ -665,80 +871,279 @@ const PosModule = () => {
                 }}>
                     <div style={{
                         background: '#fff', borderRadius: '16px', padding: '32px',
-                        width: '90%', maxWidth: '700px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                        width: '95%', maxWidth: '850px', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative'
                     }}>
                         <button onClick={() => setShowCaja(false)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: colors.textSecondary }}>
                             <X size={20} />
                         </button>
                         
-                        <h2 style={{ fontSize: '20px', fontWeight: '800', color: colors.text, marginBottom: '24px' }}>
-                            Cierre de Caja - {selectedBranch ? `${selectedBranch} - ` : ''}{new Date().toLocaleDateString('es-AR')}
+                        <h2 style={{ fontSize: '20px', fontWeight: '800', color: colors.text, marginBottom: '20px' }}>
+                            Historial de Ventas / Cierre de Caja
                         </h2>
 
+                        {/* Search and Filters Section */}
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
+                            <div style={{ flex: '1 1 140px' }}>
+                                <label style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Desde</label>
+                                <input type="date" value={historyStartDate} onChange={e => setHistoryStartDate(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '6px', border: `1px solid ${colors.border}`, fontSize: '13px', color: colors.text, background: '#fff', outline: 'none' }} />
+                            </div>
+                            <div style={{ flex: '1 1 140px' }}>
+                                <label style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Hasta</label>
+                                <input type="date" value={historyEndDate} onChange={e => setHistoryEndDate(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: '6px', border: `1px solid ${colors.border}`, fontSize: '13px', color: colors.text, background: '#fff', outline: 'none' }} />
+                            </div>
+                            <div style={{ flex: '1 1 140px' }}>
+                                <label style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Sucursal</label>
+                                <select value={historyBranchFilter} onChange={e => setHistoryBranchFilter(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: `1px solid ${colors.border}`, fontSize: '13px', color: colors.text, background: '#fff', outline: 'none', fontWeight: '600' }}>
+                                    <option value="Todos">Todas las Sucursales</option>
+                                    {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ flex: '1 1 140px' }}>
+                                <label style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Medio de Pago</label>
+                                <select value={historyMethod} onChange={e => setHistoryMethod(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: `1px solid ${colors.border}`, fontSize: '13px', color: colors.text, background: '#fff', outline: 'none', fontWeight: '600' }}>
+                                    <option value="Todos">Todos los Métodos</option>
+                                    {['Efectivo', 'Transferencia', 'Tarjeta', 'Mixto', 'Crédito de la casa'].map(m => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                            </div>
+                            <button onClick={fetchDailyCaja} style={{ alignSelf: 'flex-end', padding: '9px 18px', background: colors.primary, color: '#fff', border: 'none', borderRadius: '6px', fontWeight: '700', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', height: '36px' }}>
+                                Buscar 🔍
+                            </button>
+                        </div>
+
                         {cajaLoading ? (
-                            <div style={{ padding: '40px', textAlign: 'center', color: colors.textSecondary }}>Cargando datos de hoy...</div>
+                            <div style={{ padding: '40px', textAlign: 'center', color: colors.textSecondary }}>Cargando datos...</div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
                                 {/* Resumen Cards */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-                                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
-                                        <p style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 4px 0' }}>Total del Día</p>
-                                        <p style={{ fontSize: '24px', fontWeight: '900', color: colors.primary, margin: 0 }}>${cajaSummary.total.toLocaleString()}</p>
-                                        <p style={{ fontSize: '11px', color: colors.textSecondary, margin: '4px 0 0 0' }}>{branchSales.length} ventas</p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                                    <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: `1px solid ${colors.border}` }}>
+                                        <p style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 2px 0' }}>Total Filtrado</p>
+                                        <p style={{ fontSize: '20px', fontWeight: '900', color: colors.primary, margin: 0 }}>${cajaSummary.total.toLocaleString()}</p>
+                                        <p style={{ fontSize: '10px', color: colors.textSecondary, margin: '2px 0 0 0' }}>{branchSales.length} ventas</p>
                                     </div>
                                     {Object.entries(cajaSummary).filter(([k]) => k !== 'total').map(([method, amount]) => (
-                                        <div key={method} style={{ background: '#fff', padding: '16px', borderRadius: '12px', border: `1px solid ${colors.border}` }}>
-                                            <p style={{ fontSize: '11px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 4px 0' }}>{method}</p>
-                                            <p style={{ fontSize: '18px', fontWeight: '800', color: colors.text, margin: 0 }}>${amount.toLocaleString()}</p>
+                                        <div key={method} style={{ background: '#fff', padding: '12px 16px', borderRadius: '10px', border: `1px solid ${colors.border}` }}>
+                                            <p style={{ fontSize: '10px', fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', margin: '0 0 2px 0' }}>{method}</p>
+                                            <p style={{ fontSize: '16px', fontWeight: '800', color: colors.text, margin: 0 }}>${amount.toLocaleString()}</p>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Historial List */}
-                                <h3 style={{ fontSize: '14px', fontWeight: '800', color: colors.text, marginBottom: '12px' }}>Historial de Hoy</h3>
                                 <div style={{ overflowY: 'auto', flex: 1, border: `1px solid ${colors.border}`, borderRadius: '12px', background: '#f8fafc' }}>
                                     {branchSales.length === 0 ? (
-                                        <div style={{ padding: '32px', textAlign: 'center', color: colors.textSecondary, fontSize: '13px' }}>No hay ventas registradas el día de hoy en esta sucursal.</div>
+                                        <div style={{ padding: '32px', textAlign: 'center', color: colors.textSecondary, fontSize: '13px' }}>No hay ventas registradas que coincidan con los filtros.</div>
                                     ) : (
                                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                                            <thead style={{ background: '#fff', position: 'sticky', top: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                            <thead style={{ background: '#fff', position: 'sticky', top: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', zIndex: 10 }}>
                                                 <tr>
-                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Hora</th>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Fecha/Hora</th>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Ticket</th>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Sucursal</th>
                                                     <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Método</th>
                                                     <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Total</th>
-                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700' }}>Detalles / Notas</th>
+                                                    <th style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary, fontWeight: '700', textAlign: 'right' }}>Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {branchSales.map(sale => (
-                                                    <tr key={sale.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
-                                                        <td style={{ padding: '12px 16px', color: colors.text }}>{new Date(sale.created_at).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'})}</td>
-                                                        <td style={{ padding: '12px 16px', fontWeight: '600' }}>
-                                                            <span style={{ background: '#e2e8f0', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }}>{sale.payment_method || 'N/A'}</span>
-                                                        </td>
-                                                        <td style={{ padding: '12px 16px', fontWeight: '700', color: colors.primary }}>${sale.total?.toLocaleString()}</td>
-                                                        <td style={{ padding: '12px 16px', color: colors.textSecondary }}>
-                                                            {sale.notes ? sale.notes : (
-                                                                <span style={{ opacity: 0.5 }}>{(sale.items || []).length} art.</span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {branchSales.map(sale => {
+                                                    const meta = sale.customer_info || {};
+                                                    const saleBranch = meta.branch || (sale.notes?.includes('[Sucursal: ') ? sale.notes.split('[Sucursal: ')[1].split(']')[0] : 'Central');
+                                                    const ticketNum = meta.ticket_number || `OLMO-${new Date(sale.created_at).getTime()}`;
+                                                    return (
+                                                        <tr key={sale.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                                            <td style={{ padding: '10px 16px', color: colors.text }}>
+                                                                {new Date(sale.created_at).toLocaleDateString('es-AR')} {new Date(sale.created_at).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'})}
+                                                            </td>
+                                                            <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: '700', fontSize: '11px', color: colors.text }}>
+                                                                {ticketNum}
+                                                            </td>
+                                                            <td style={{ padding: '10px 16px', color: colors.textSecondary }}>
+                                                                {saleBranch}
+                                                            </td>
+                                                            <td style={{ padding: '10px 16px', fontWeight: '600' }}>
+                                                                <span style={{ background: '#e2e8f0', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', color: colors.text }}>
+                                                                    {sale.payment_method || meta.method || 'Efectivo'}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '10px 16px', fontWeight: '800', color: colors.primary }}>${sale.total?.toLocaleString()}</td>
+                                                            <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                                    <button onClick={() => setSelectedSaleDetail(sale)} style={{ padding: '5px 10px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                        Ver Detalle 👁️
+                                                                    </button>
+                                                                    <button onClick={() => reprintSale(sale)} style={{ padding: '5px 10px', background: '#1e293b', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                        Reimprimir 🖨️
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     )}
                                 </div>
-                                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+                                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
                                     <button onClick={() => window.print()} style={{
                                         padding: '12px 24px', background: '#1e293b', color: '#fff', border: 'none',
                                         borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: "'Inter', sans-serif"
                                     }}>
-                                        🖨️ Imprimir Resumen
+                                        🖨️ Imprimir Resumen de Ventas
                                     </button>
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Sale Detail Modal Overlay */}
+            {selectedSaleDetail && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '16px', padding: '32px',
+                        width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', position: 'relative'
+                    }}>
+                        <button onClick={() => setSelectedSaleDetail(null)} style={{ position: 'absolute', top: '24px', right: '24px', background: 'none', border: 'none', cursor: 'pointer', color: colors.textSecondary }}>
+                            <X size={20} />
+                        </button>
+                        
+                        <div style={{ textAlign: 'center', borderBottom: `1px solid ${colors.border}`, paddingBottom: '16px', marginBottom: '20px' }}>
+                            <h3 style={{ fontSize: '20px', fontWeight: '800', color: colors.text, margin: '0 0 6px 0' }}>Detalle de Venta</h3>
+                            <span style={{ fontSize: '12px', fontWeight: '700', color: colors.primary, background: `${colors.primary}15`, padding: '4px 10px', borderRadius: '20px' }}>
+                                {selectedSaleDetail.customer_info?.ticket_number || `OLMO-${new Date(selectedSaleDetail.created_at).getTime()}`}
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px', fontSize: '13px' }}>
+                            <div>
+                                <span style={{ color: colors.textSecondary, display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Fecha/Hora</span>
+                                <strong style={{ color: colors.text }}>{new Date(selectedSaleDetail.created_at).toLocaleString('es-AR')}</strong>
+                            </div>
+                            <div>
+                                <span style={{ color: colors.textSecondary, display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Sucursal</span>
+                                <strong style={{ color: colors.text }}>
+                                    {selectedSaleDetail.customer_info?.branch || (selectedSaleDetail.notes?.includes('[Sucursal: ') ? selectedSaleDetail.notes.split('[Sucursal: ')[1].split(']')[0] : 'Central')}
+                                </strong>
+                            </div>
+                            <div>
+                                <span style={{ color: colors.textSecondary, display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Método de Pago</span>
+                                <strong style={{ color: colors.text }}>{selectedSaleDetail.payment_method || selectedSaleDetail.customer_info?.method || 'N/A'}</strong>
+                            </div>
+                            <div>
+                                <span style={{ color: colors.textSecondary, display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Canal</span>
+                                <strong style={{ color: colors.text }}>{selectedSaleDetail.customer_info?.source || 'Tienda Online'}</strong>
+                            </div>
+                        </div>
+
+                        <div style={{ border: `1px solid ${colors.border}`, borderRadius: '8px', padding: '16px', background: '#f8fafc', marginBottom: '20px' }}>
+                            <h4 style={{ fontSize: '12px', fontWeight: '800', color: colors.text, margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Productos Vendidos</h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {(selectedSaleDetail.items || []).map((item, idx) => (
+                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                                        <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                                            <p style={{ margin: 0, fontWeight: '700', color: colors.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                                            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: colors.textSecondary }}>
+                                                Talle {item.size} {item.color ? `• Color: ${item.color}` : ''} x{item.quantity}
+                                            </p>
+                                        </div>
+                                        <strong style={{ color: colors.text, flexShrink: 0 }}>
+                                            ${(item.price * item.quantity).toLocaleString('es-AR')}
+                                        </strong>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ borderTop: `1px solid ${colors.border}`, marginTop: '14px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong style={{ fontSize: '14px', color: colors.text }}>TOTAL</strong>
+                                <strong style={{ fontSize: '18px', color: colors.primary }}>${selectedSaleDetail.total?.toLocaleString('es-AR')}</strong>
+                            </div>
+                        </div>
+
+                        {selectedSaleDetail.notes && (
+                            <div style={{ marginBottom: '24px', fontSize: '13px', background: '#fffbeb', border: '1px solid #fef3c7', padding: '12px', borderRadius: '8px' }}>
+                                <span style={{ color: '#b45309', display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>Notas de Pago / Detalles</span>
+                                <span style={{ color: '#78350f', fontFamily: 'monospace' }}>{selectedSaleDetail.notes}</span>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => reprintSale(selectedSaleDetail)} style={{
+                                flex: 1, padding: '12px', background: '#1e293b', color: '#fff', border: 'none',
+                                borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                            }}>
+                                🖨️ Reimprimir Ticket
+                            </button>
+                            <button onClick={() => setSelectedSaleDetail(null)} style={{
+                                flex: 1, padding: '12px', background: '#f1f5f9', color: '#475569', border: 'none',
+                                borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer'
+                            }}>
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Color Selector Modal Overlay */}
+            {colorSelectionPending && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '16px', padding: '28px',
+                        width: '90%', maxWidth: '400px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        position: 'relative', textAlign: 'center'
+                    }}>
+                        <button 
+                            onClick={() => setColorSelectionPending(null)} 
+                            style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: colors.textSecondary }}
+                        >
+                            <X size={20} />
+                        </button>
+                        <h3 style={{ fontSize: '18px', fontWeight: '800', color: colors.text, marginBottom: '8px' }}>Seleccionar Color</h3>
+                        <p style={{ fontSize: '13px', color: colors.textSecondary, marginBottom: '20px' }}>
+                            Elegí el color para <strong>{colorSelectionPending.product.name}</strong> (Talle {colorSelectionPending.size}):
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '24px' }}>
+                            {colorSelectionPending.product.colors?.map((col, idx) => {
+                                const isLight = col.hex === '#FFFFFF' || col.hex === '#ffffff' || col.hex === '#F5F0E1' || col.hex === '#f5f0e1';
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => {
+                                            addToCart(colorSelectionPending.product, colorSelectionPending.size, col);
+                                            setColorSelectionPending(null);
+                                        }}
+                                        style={{
+                                            width: '44px', height: '44px', borderRadius: '50%', background: col.hex,
+                                            border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(0,0,0,0.15)',
+                                            cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                            justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', transition: 'transform 0.2s',
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                        title={col.name}
+                                    >
+                                        <span style={{ 
+                                            fontSize: '8px', color: isLight ? '#000' : '#fff', fontWeight: '700', marginTop: '2px',
+                                            background: isLight ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.4)', padding: '1px 3px',
+                                            borderRadius: '3px', maxWidth: '38px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                                        }}>{col.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <button onClick={() => setColorSelectionPending(null)} style={{ width: '100%', padding: '12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>Cancelar</button>
                     </div>
                 </div>
             )}
